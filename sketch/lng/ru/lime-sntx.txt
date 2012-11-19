@@ -349,3 +349,35 @@ LiME:
 		'sync'	-> if(ctl isactive 'nv-sync') sync.cmd or (echo 'not active'; exit 1);
 		default -> (echo 'unknown task'; exit 4)
 	)
+
+Так. Вопрос ещё есть, возможно так:
+
+	mkdir p "/tmp/0x01" && sshfs "mike@0x01.imm.uran.ru:/tmp/flc" "/tmp/0x01"
+
+	mkdir p '/tmp/0x01' && sshfs 'mike@0x01.imm.uran.ru:/tmp/flc' '/tmp/0x01'
+
+	var mp = '/tmp/0x01'; mkdir p mp && sshfs 'mike@0x01.imm.uran.ru:/tmp/flc' mp
+
+	mkdir(p) '/tmp/0x01' && sshfs 'mike@0x01.imm.uran.ru:/tmp/flc' '/tmp/0x01'
+
+	tar xv f.'some.tar.gz'
+
+	(0='some.tar.gz'; gzip cd) | tar mx;
+
+	gzip -cd some.tar.gz | tar mx;
+
+	gzip 'some.tar.gz' cd | tar mx;
+
+Эх. Идеала не существует
+
+	val temp = (su (user) c.(mktemp d.(target + '-XXXX'))).out(0);
+	chmod reference.(backup) temp;
+	echo 'going up: ' (temp);
+
+	su user c.(rsync a (target:backup));
+	touch '%s/.nv-sync.lock'.fmt(temp);
+	mv n (target:backup)
+
+	mv(target:backup) n;
+	run(rsync(target:backup) a) u.(user)
+
