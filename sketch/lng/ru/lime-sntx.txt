@@ -1,0 +1,351 @@
+Так. Проблема в следующем. Если написано
+
+	ffmpeg -f v4l2 -i "/dev/video0"
+
+То парсер не увидит то, что ffmpeg является атомом слева до тех пор, пока не
+увидит -f, и не воспримет уже всю конструкцию, как
+
+	(- ffmpeg (sp f v4l2))
+
+И это, в общем-то определённый уровень задницы. Есть ещё вариант: не мудрить. И
+ничего не делать с приоритетами. Однако, это исключит всякие разные радости:
+
+	var R matrix float = (1 2 3 4 5; 6 7 8 9 10);
+
+	var R matrix float =
+		((1; 2; 3; 4; 5); (6; 7; 8; 9; 10))
+
+Мда уж. Но, может, в самом деле keep it simple?
+
+	ffmpeg f:v4l2 i:"/dev/video0"
+
+	ffmpeg f:v4l2 i:'/dev/video0'
+		vf:(scale(640;480) | colorspace(grayscale(8))) o:'file.avi';
+
+	ffmpeg -f v4l2 -i '/dev/video0'
+		-vf scale(640:480).colorspace(grayscale(8)) -o 'file.avi'
+
+Мда. Векторы, как оказывается, продуманы плохо. И что? Борьба будет за двоеточие
+с высоким приоритетом? Это не очень хорошо. И это ещё полбеды. Настоящая беда в
+том, что не существует никакого левого поддерева. Потому что оно может быть
+только в случае, когда у первого apply меньший приоритет. А его нельзя потопить.
+Получается, только один вариант:
+
+	ffmpeg f.v4l2 i.dev.video.0
+		vf(scale(640;480) | colorspace grayscale.8) fs.dev.video.0
+
+Ладно, когда оно всё вместе написано, то не так уж и плохо выглядит.
+
+	ffmpeg f.v4l2 i.'/dev/video0'
+		vf(scale(640;480) -> x; x -> colorspace grayscale(8)) o.'file.avi'
+
+Ладно.
+
+	swtich
+	(
+	x && y -> dosomething(1);
+	x -> dosomething(x + 2);
+
+	y ^^ z ->
+	(
+		var f = something.1();
+		var x = something.2();
+		var y = something.3();
+
+		for(x != y)
+		(
+			x += 1;
+		);
+
+		pin = f
+	);
+
+	default -> dodefault()
+	);
+
+Альтернатива
+
+	swtich (
+	x && y -> dosomething(1);
+	x -> dosomething(x + 2);
+
+	y ^^ z -> (
+		var f = something.1();
+		var x = something.2();
+		var y = something.3();
+
+		for(x != y)
+		(
+			x += 1;
+		);
+
+		pin = f);
+
+	default -> dodefault())
+
+Ладно. Будем тогда в этой модели дальше думать.
+
+								 К ВОПРОСУ О «:»
+
+Вообще, переменные можно было бы вводить и при помощи двоеточки. Потому что
+область видимости может быть привязана к области видимости оператора. Это не
+страшно. Но вопрос в том... В чём? В том, что нужен какой-нибудь вменяемый
+приоритет для этой двоеточки.
+
+	x : list int = (20; 30; 40);
+
+	for((x;y) := range2d(1:20; 30:40))
+	(
+		print '%d.%d\n'.fmt(x;y))
+	)
+
+Вполне возможно, что вменяемая позиция - это где-нибудь между «=» и прочими
+операциями. И что дальше? А ничего...
+
+Крупица полезного смысла здесь в том, что операторы сами могут быть привязаны к
+области видимости. Ну ладно...
+
+	x: list int = (20; 30; 40);
+
+	for((y; z) := range(1:20; 30:40))
+	(
+		print "%d.%d\n".fmt(x + y; z);
+	)
+
+И чего с этим делать? А пусть будет так:
+
+	(x > 10 && Ex y Nat : x * y == 20) -> x == 2;
+
+	x Nat : (Ex y Nat : x = y * 2) -> Ex z Nat : x = z << 1;
+
+Сойдёт. Значит, система приоритетов получается примерно такая (^^ - это то же
+самое, что и !=):
+
+	0: ;
+	1: = *= /= %= >>= <<= &= += -= |= ^= ||= &&=
+	2: ->
+	3: ||
+	4: &&
+	5: == != < <= > >=
+	6: + - | ^
+	7: * / % << >> &
+	9: .
+
+Было бы неплохо, видимо, иметь приоритет двоеточия где-то чуть выше стрелки.
+Замечательно. Тогда можно писать
+
+	fun max(a Num; b Num) = a > b -> a : b;
+
+Ну и всё. Это однозначно говорит о том, что приоритет выше «=». Ладно, ок. А
+Haskell стиль?
+
+	fun max(a Num) = (fun(b Num) Num = a > b -> a : b)
+
+	var x = max(2)(3);
+
+	fun max(a num; b num) num = a > b -> a : b;
+	stdin.bytes.filter(x byte) max(12345, int = x);
+
+
+						   Mon Nov 19 13:40:29 YEKT 2012
+
+Ок. Примеры из истории надо рассмотреть. Потому что сейчас очередной когнитивный
+диссонанс пришёл, который вызван тремя возможными способами управлять
+приоритетами:
+
+	1. Очень просто. Однонаправленные связи, фиксированный приоритет.
+		s-apply с высоким приоритетом.
+
+	2. Обратная связь от движка, который говорит: а подними-ка ты временно
+		вот эти приоритеты в правом поддереве. Правое поддерево хорошо
+		определяется, как и левое в стандартном парсере.
+
+	3. Сделать низкоприоритетный s-apply.
+
+
+Посмотрим на примеры из истории.
+
+	DISPLAY=:0.0 evince mcp.pdf &>/dev/null </dev/null &
+
+	DISPLAY=0.0 evince 'mcp.pdf' (all)>dev.null <dev.null
+
+Да. Это возможно, если уметь сказать, что неким магическим образом приоритет
+пробела упал. Ок. Если этого сказать нельзя, как это может быть выражено?
+
+	(DISPLAY=0.0; (1:2)=dev.null; evince) 'mcp.pdf'
+
+Мечта идиота (моя), склонного к LISP? Ладно. Допустим. Что дальше? Что-нибудь
+такое:
+
+	(HOME=/tmp/flc/mike/ nice -n 20 linuxdcpp) &
+
+	(HOME=tmp.flc.mike; n=20; nice) linuxdcpp
+
+Ок. А что насчёт эпического?
+
+	screen -S mp mplayer ~/Downloads/87* -vf crop=280:210,scale=320:240 -ao null -osdlevel 0 -display :32.1 -fixed-vo -loop 0
+
+	screen S.mp mplayer vf(crop(280:210):scale(320:240)) ao.null osdlevel.0 display.32.1 vo.fixed loop.0 '~/Downloads.87*'
+
+Ладно. Допустим. Хотя не очень красиво.
+
+	{ [ -f /tmp/agent ] || ssh-agent > /tmp/agent; } && . /tmp/agent && ssh-add ~/.ssh/0xfb.mb
+
+	var a='/tmp/agent'; (test f.(a) || ssh.agent 1.(a)) && (ENV += a) && ssh.add '~/.ssh/0xfb.mb'
+
+	a=/tmp/agent; { [ -f "$a" ] || ssh-agent > "$a"; } && . "$a" && ssh-add ~/.ssh/0xfb.mb
+
+Ну. Определённый уровень корявости есть.
+
+	DISPLAY=:0.0 evince mcp.pdf &>/dev/null </dev/null &
+
+	(DISPLAY=0.0; (1:2)=dev.null; evince) 'mcp.pdf'
+
+	(DISPLAY=0.0; evince (1;2).w('/dev/null')) 'mcp.pdf'
+
+Ладно. А так?
+
+	a = '/tmp/agent'; (test f.(a) || (1=(a); ssh.agent) && (ENV += a) && ssh.add '~/.ssh/0xfb.mb'
+
+Ещё
+
+	mkdir /tmp/0x01 -p && sshfs mike@0x01.imm.uran.ru:/tmp/flc /tmp/0x01
+
+	mkdir p '/tmp/0x01' && sshfs 'mike@0x01.imm.uran.ru:/tmp/fls' '/tmp/0x01'
+
+	mkdir p '/tmp/0x01' &&  sshfs 0x01.imm.uran.ru(mike).tmp.flc '/tmp/0x01'
+
+	'/tmp/0x01' mkdir.p && 0x01.imm.uran.ru(mike).'/tmp/fls' '/tmp/0x01' sshfs
+
+MoarrrrR
+
+	gcc payload.c -fPIC -o pl.so -static-libgcc -shared -Wl,-static -lc -Wl,--strip-all -Wl,--gc-sections
+
+	gcc f.pic shared Wl(static stripall sections) lc lstatic.libgcc o.'pl.so' 'payload.c'
+
+---
+
+	su -c 'cat /root/sys.d/nv-sync'
+
+	su c.(cat '/root/sys.d/nv-sync') // уже распарсено
+
+---
+	#!/bin/dash
+
+	set -e
+
+	alias ctl='/usr/bin/systemctl'
+	alias stat='/usr/bin/stat'
+	alias su='/bin/su'
+	alias chmod='/usr/bin/chmod'
+	alias chown='/usr/bin/chown'
+	alias mktemp='/usr/bin/mktemp'
+	alias touch='/usr/bin/touch'
+	alias mv='/usr/bin/mv'
+
+	sync() {
+		local backup target usr lock temp
+
+		backup="$1"
+		target="$2"
+		user=$(stat -c %U "$backup")
+		lock="$target/.nv-sync.lock"
+
+		echo "$backup($user:$mode) -> $target"
+
+		if [ -d "$target" ]
+		then
+			{ flock -xn 7 \
+				&& su -c "/usr/bin/rsync -a --del --exclude .nv-sync.lock '$target/' '$backup/'" $user \
+				|| { echo "will not sync. can't obtain lock: $lock"; exit 2; }; } 7<"$lock"
+
+			return
+		fi
+
+		echo "no target: $target"
+		if [ "$3" != 'up' ]
+		then
+			echo "no special parameter. not going up"
+			exit 3
+		fi
+
+		temp=$(su -c "/usr/bin/mktemp -d '$target-XXXX'" $user)
+		chmod --reference="$backup" "$temp"
+		echo "going up: $temp"
+
+		su -c "/usr/bin/rsync -a '$backup/' '$temp/'" $user
+		touch "$temp/.nv-sync.lock"
+		mv -n "$temp" "$target"
+	}
+
+	case "$1" in
+	up)
+		sync "/nvram/mb" "/home/mb" up
+		;;
+
+	down)
+		sync "/nvram/mb" "/home/mb"
+		;;
+
+	sync)
+		if ctl is-active nv-sync
+		then
+			sync "/nvram/mb" "/home/mb"
+		else
+			echo "not active"
+			exit 1
+		fi
+		;;
+
+	*)
+		echo "unknown task"
+		exit 4
+	esac
+
+
+LiME:
+	exp mames = (ctl; stat; chmod; chown; mktem; touch; mv; rsync);
+	val names = usr.bin.names;
+	val su = bin.su;
+	cmd sync (backup string) (target string) (up bool = 0) =
+	(
+		val user = (stat c.'%U' backup).out(0);
+		val lock = target + '/.nv-sync.lock';
+
+		echo '%s(%s:%s) -> %s'.fmt(backup; user; ''; target);
+
+		if(test d.target)
+		(
+			run(7 = lock
+				&& (flock xn.7 || (echo 'won\'t sync. can\'t obtain lock: ' lock; exit 2))
+				&& su user c.(rsync a del exclude('.nv-sync.lock') target backup));
+
+			return
+		);
+
+		echo 'no target: ' target;
+
+		if(!up)
+		(
+			echo 'no special parameter. not going up';
+			exit 3
+		);
+
+		val temp = (su user c.(mktemp d.(target + '-XXXX'))).out(0);
+		chmod reference.backup temp;
+		echo 'going up: ' temp;
+
+		su user c.(rsync a target backup);
+		touch '%s/.nv-sync.lock'.fmt(temp);
+		mv n temp target
+	)
+
+	val sync.cmd = sync '/nvram/mb' '/home/mb';
+
+	switch(CMD.1)
+	(
+		'up'	-> sync.cmd 1;
+		'down'	-> sync.cmd;
+		'sync'	-> if(ctl isactive 'nv-sync') sync.cmd or (echo 'not active'; exit 1);
+		default -> (echo 'unknown task'; exit 4)
+	)
