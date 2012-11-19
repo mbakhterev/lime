@@ -381,3 +381,12 @@ LiME:
 	mv(target:backup) n;
 	run(rsync(target:backup) a) u.(user)
 
+	git.filter branch fcmd.(rm rf 'src/password')
+
+	tar c './' | (out='some.tar.gz'; gzip)
+
+В этом, может быть, что-нибудь да есть. Потому что
+
+	mv n (source.1 source.2 source.3 : target)
+
+Структура может помочь избежать ошибок. Unix Haters Handbook
