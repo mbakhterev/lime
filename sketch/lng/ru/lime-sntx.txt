@@ -390,3 +390,7 @@ LiME:
 	mv n (source.1 source.2 source.3 : target)
 
 Структура может помочь избежать ошибок. Unix Haters Handbook
+
+	mkdir -p /tmp/http-root/{tm,dl} && { mount -R /tmp/flc/mike/Downloads/ /tmp/http-root/dl; mount -R /tmp/0x01 /tmp/http-root/tm; }
+
+	fun hr = '/tmp/http-root/%s'.fmt; mkdir p (map(hr) tm dl) && mount R hr(dl).'/tmp/flc/mike/Downloads'  hr(tm)).'/tmp/0x01'
