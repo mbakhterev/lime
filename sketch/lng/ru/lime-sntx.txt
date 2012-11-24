@@ -394,3 +394,231 @@ LiME:
 	mkdir -p /tmp/http-root/{tm,dl} && { mount -R /tmp/flc/mike/Downloads/ /tmp/http-root/dl; mount -R /tmp/0x01 /tmp/http-root/tm; }
 
 	fun hr = '/tmp/http-root/%s'.fmt; mkdir p (map(hr) tm dl) && mount R hr(dl).'/tmp/flc/mike/Downloads'  hr(tm)).'/tmp/0x01'
+
+						   Fri Nov 23 18:11:03 YEKT 2012
+
+Немного воспоминаний об указателях (это вопрос о том нужна ли унарная «.»).
+Может и не нужна но опять возникает вопрос о переписывании какого-нибудь кода.
+Эмс... Возьмём AVL, только куда я его засунул?
+
+static unsigned avl_tree_add_internal(avl_iface(t) * tree, avl_iface(pivot_t) * pivot, avl_iface(pivot_t) ** pivot_ptr) {
+	avl_iface(pivot_t) * p;
+	avl_iface(pivot_t) * q;
+	avl_iface(pivot_t) * r;
+	avl_iface(pivot_t) * s;
+	avl_iface(pivot_t) * t;
+	unsigned ok, found, la, lna;
+	unsigned rv;
+	int a;
+	int rcmp;
+	avl_iface(key_t) * key = pivot->key;
+
+	p = tree->root;
+	r = q = s = NULL;
+
+	*pivot_ptr = NULL;
+
+	rv = code_avl_ok;
+
+	if (p) {
+		s = p;
+		t = NULL;
+		found = 0;
+		while (!found) {
+			rcmp = avl_iface(key_compare)(key, p->key);
+
+			if (rcmp == 0) { // (key == p->value.key) {
+				found = FOUND_MATCH;
+			}
+			else {
+				if (rcmp < 0) { // (key < p->value.key) {
+				 	q = p->links[LEFT];
+				 	if (!q) {
+						found = FOUND_LEFT;
+					}
+				}
+				else {
+					q = p->links[RIGHT];
+					if (!q) {
+						found = FOUND_RIGHT;
+					}
+				}
+			}
+
+			if (!found) {
+				if (q->ballance) {
+					t = p;
+					s = q;
+				}
+				p = q;
+			}
+		}
+
+Это начало. И можно записать так (без обобщённых типов).
+
+fun addinternal(tree avltree.ptr; pivot avlpivot.ptr; pivotptr avlpivot.ptr.ptr) =
+(
+	var (p; q; r; s; t) pivot ptr;
+	var (ok; found; la; lna; rv) unsigned;
+	var (a; rcmp) int;
+	var key avlkey.ptr = .pivot.key;
+)
+
+Точка нужна префиксная, потому что это очень частый use-case. Если представить
+себе ядро, то там указазатель на указателе. Так же нужен специальный синтаксис
+для указания на указатель, чтобы сложные конструкции читались однозначно:
+
+	array(20) hash(string) int ptr
+
+	array(20) hash(string) (int ptr)
+
+	(array(20) hash(string) int).ptr
+
+	array(20) hash(string) int.ptr
+
+Ладно, к вопросу о штуках.
+
+fun addinternal(tree avltree ptr; pivot avlpivot.ptr; pivotptr avlpivot.ptr.ptr) =
+(
+	var (p; q; r; s; t) avlpivot.ptr;
+	var (ok; found; la; lna; rv) uint;
+	var (a; rcmp) int;
+	val key avlkey.ptr(val) = .pivot.key;
+
+	.p = .tree.root;
+	.p = .q = .s = NULL;
+	pivotptr = NULL;
+)
+
+Вот тебе и косяк. Почему в var и не-var различная семантика? Тогда уж должно
+быть так
+
+fun addinternal(.tree avltree; .pivot avlpivot; ..pivotptr avlpivot)
+
+Или тогда уж прямым текстом:
+
+fun addinternal(ptr tree avltree; ptr pivot avlpivot; ptr pivotptr avlpivot ptr)
+= (
+	ptr (p; q; r; s; t) avlpivot;
+	var (ok; found; la; lna; rv) uint;
+	var (a; rcmp) int;
+	ptr key avlkey = ptr pivot.key;
+)
+
+fun addinternal(.tree avltree; .pivot avlpivot; .pivotptr avlpivot.ptr) uint =
+(
+	var (.p; .q; .r; .s; .t) avlpivot;
+	var (ok; found; la; lna; rv) uint;
+	var (a; rcmp) int;
+	val .key avlkey.val = .pivot.key;
+
+	.p = .tree.root;
+	.r = .q = .s = NULL;
+
+	.pivotptr = NULL;
+
+	rv = codeavlok;
+
+	if(p)
+	(
+		.s = .p;
+		.t = NULL;
+		found = 0;
+
+		for(!found)
+		(
+			rcmp = keycompare(key; .p.key);
+
+			if(rcmp == 0)
+			(
+				found = FOUNDMATCH
+			)
+			else
+			(
+				if(rcmp < 0)
+				(
+					.q = .p.links(LEFT);
+		)
+	)
+)
+
+Эх. В этом можно и запутаться за 5 секунд, что и произошло. Ок. И чего дальше?
+
+fun addinternal(
+	tree avltree.ptr;
+	pivot avlpivot.ptr; pivotptr avlpivot.ptr.ptr) uint rv =
+(
+	var (p; q; r; s; t) pivot.ptr;
+	var (ok; found; la; lna) uint;
+	var (a; rcmp) int;
+	val key avlkey.ptr(l) = pivot(l).key;
+
+	val key avlkey.ptr(l) = pivot(1).key;
+
+	p = tree(l).root;
+	r = q = s = NULL;
+
+	pivotptr(r) = NULL;
+
+	if(p)
+	(
+		s = p;
+		t = NULL;
+		found = 0;
+		for(1)
+		(
+			rcmp = keycompare(key; p(l).key);
+
+			if(rcmp == 0)
+			(
+				found = FOUNDMATCH;
+				break
+			);
+
+			if(rcmp < 0)
+			(
+				q = p(l).links(LEFT);
+				if(!q)
+				(
+					found = FOUNDLEFT;
+					break
+				)
+			);
+
+			q = p(0).links(RIGHT);
+			q = p(l).links(RIGHT);
+			if(!q)
+			(
+				found = FOUNDRIGHT;
+				break
+			);
+
+			if(q(l).ballance)
+			(
+				t = p;
+				s = q
+			);
+			p = q
+		)
+	)
+)
+
+У штуки может быть и другой смысл. Типа, указатель - это адрес, относительно
+которого можно вычислять всякое. Почему бы не повычислять p(0)?
+
+ 	mm = get_task_mm(task);
+	if (mm && mm != current->mm && !ptrace_may_access(task, mode)) {
+			mmput(mm);
+			mm = ERR_PTR(-EACCES);
+	}
+	mutex_unlock(&task->signal->cred_guard_mutex);
+
+	mm = gettaskmm(task);
+	if(mm && mm != current(0).mm && !ptracemayaccess(task; mode))
+	(
+		mmput(mm);
+		mm = ERRPTR(-EACCES)
+	);
+	mutex.unlock(ref task(0).signal(0).credguardmutex);
+
+	(ptr task(0).signal(0).credguardmutex).unlock();
