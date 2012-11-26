@@ -622,3 +622,218 @@ fun addinternal(
 	mutex.unlock(ref task(0).signal(0).credguardmutex);
 
 	(ptr task(0).signal(0).credguardmutex).unlock();
+
+Это могло бы и так выглядеть:
+
+	(ptr task@.signal@.credGuardMutex).unlock();
+
+	task:.signal:.credGuardMutex
+
+Ладно. Ещё один вариант.
+
+	(ptr task(0).signal(0).credGuardMutex).unlock();
+
+Тут хитрые штуки, последняя проверка на сегодня.
+
+	bool flush_delayed_work(struct delayed_work *dwork)
+	{
+		local_irq_disable();
+		if (del_timer_sync(&dwork->timer))
+			__queue_work(dwork->cpu,
+					get_work_cwq(&dwork->work)->wq, &dwork->work);
+		local_irq_enable();
+		return flush_work(&dwork->work);
+	}
+
+
+	fun flushDelayedWork(dwork ptr delayedWork) bool =
+	(
+		localirq.disable();
+		if(delTimerSync(ptr dwork(0).timer))
+		(
+			sys.queueWork(dwork(0).cpu; getworkcwq(ptr dwork(0).work)(0).wq; ptr dwork(0).work)
+		);
+		localirq.enable();
+		return flushwork(ptr dwork(0).work);
+	)
+
+	fun flushdelayedwork(dwork ptr delayedwork) bool =
+	(
+		localirq.disable();
+		if(deltimersync(ptr (dwork timer)))
+		(
+			sys.queuework(dwork cpu; getworkcwd(dwork work) wq; ptr (dwork work))
+		);
+		localirq.enable();
+	)
+
+Так. Нужно ещё проверить комбинации с точками.
+
+if (mod->symtab[i].st_value <= addr
+		&& mod->symtab[i].st_value > mod->symtab[best].st_value
+		&& *(mod->strtab + mod->symtab[i].st_name) != '\0'
+		&& !is_arm_mapping_symbol(mod->strtab + mod->symtab[i].st_name))
+	best = i;
+
+if(mod(0).symtab(i).stvalue <= addr
+	&& mod(0).symtab[i].stvalue > mod(0).symtab[best].stvalue
+	&& (mod(0).strtab + mod(0).symtab(i).stname)(0) != '\0'
+	&& !isarmmappingsymbol(mod(0).strtab + mod->symtab[i].stname))
+(
+	best = i
+)
+
+if(val m mod.ref; val t (ptr symtab(i)).ref; pin =
+	t.stvalue <= addr
+	&& t.stvalue > m.symtab(best).stvalue
+	&& (m.strtab + t.stname)(0) != '\0'
+	&& !isarmmappingsymbol(m.strtab + t.stname))
+
+if(val m mod.ref; pin
+	 = m.symtab(i).stvalue <= addr
+	&& m.symtab(i).stvalue > m.symtab(best).stvalue
+	&& m.strtab(m.symtab(i).stname) != '\0'
+	&& isARMMappingSymbol(m.strtab + m.symtab(i).stname))
+(
+	best = i
+)
+
+Какая-то не особо сахарная вата.
+
+if(mod@.symtab(i).stvalue
+	&& mod@.symtab(i).stvalue > mod@.symtab(best).stvalue
+	&& (mod@.strtab + mod@.symtab(i).stname)@ = '\0'
+	&& (mod@.strtab + mod@.symtab(i).stname).is(armmappingsymbol))
+
+
+	x = --py@ + 1
+
+	x = --py(0) + 1
+
+	object@.firstMethodCall(a; @b; c)@.secondCall(1)@.nextCall(10);
+
+	object.firstMethodCall(a; .b; c).secondCall(1).nextCall(10);
+
+if(mod.symtab(i).stvalue
+	&& mod.symtab(i).stvalue > mod.symtab(best).stvalue
+	&& (.mod.strtab + mod.symtab(i).stname) = '\0'
+	&& isARMMappingSymbol(.(.mod.strtab + mod.symtab(i).stname))
+
+Ладно. Может, точка и не самый дурацкий вариант. Попробуем последить.
+
+
+fun addinternal(
+	tree avltree.ptr;
+	pivot avlpivot.ptr; pivotptr avlpivot.ptr.ptr) uint rv =
+(
+	var (p; q; r; s; t) pivot.ptr;
+	var (ok; found; la; lna) uint;
+	var (a; rcmp) int;
+	val key avlkey.ptr(l) = .pivot.key;
+
+	.p = .tree.root;
+	.r = .q = .s = NULL;
+
+	pivotptr = NULL;
+
+	if(.p)
+	(
+		.s = .p;
+		.t = NULL;
+		found = 0;
+		for(1)
+		(
+			rcmp = keycompare(.key; .p.key);
+
+			if(rcmp == 0)
+			(
+				found = FOUNDMATCH;
+				break
+			);
+
+			if(rcmp < 0)
+			(
+				.q = .p.links(LEFT);
+				if(!.q)
+				(
+					found = FOUNDLEFT;
+					break
+				)
+			);
+
+			.q = .p.links(RIGHT);
+			if(!.q)
+			(
+				found = FOUNDRIGHT;
+				break
+			);
+
+			if(q.ballance)
+			(
+				.t = .p;
+				.s = .q
+			);
+			.p = .q
+		)
+	)
+)
+
+
+Логика может быть такой, что всё является указателем. Это стиль JavaScript и это
+не плохо. Плохо то... Или не плохо. Есть же концепция коробки. Будем называть её
+клеткой, дабы было тематично
+
+fun addinternal(tree avltree; pivot avlpivot; pivotptr cell(avlpivot)) uint rv =
+(
+	var (p; q; r; s; t) avlpivot;
+	var (ok; found; la; lna) uint;
+	var (a; rcmp) int;
+	val key avlkey = pivot.key;
+
+	p = tree.root;
+	r = q = s = NULL;
+
+	pivotptr.val = NULL;
+
+	if(p)
+	(
+		s = p;
+		t = NULL;
+		found = 0;
+		for(1)
+		(
+			rcmp = keycompare(key; p.key);
+
+			if(rcmp == 0)
+			(
+				found = FOUNDMATCH;
+				break
+			);
+
+			if(rcmp < 0)
+			(
+				q = p.links(LEFT);
+				if(!q)
+				(
+					found = FOUNDLEFT;
+					break
+				)
+			);
+
+			q = p.links(RIGHT);
+			if(!q)
+			(
+				found = FOUNDRIGHT;
+				break
+			);
+
+			if(q.ballance)
+			(
+				t = p;
+				s = q
+			);
+			p = q
+		)
+	)
+)
+
