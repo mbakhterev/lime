@@ -837,3 +837,6 @@ fun addinternal(tree avltree; pivot avlpivot; pivotptr cell(avlpivot)) uint rv =
 	)
 )
 
+						   Tue Nov 27 14:11:54 YEKT 2012
+
+Так. Коллеги дали добро на такую трактовку указателей. Да будет так
