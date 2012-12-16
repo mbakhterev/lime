@@ -5,7 +5,8 @@
 
 enum
 {
-	aid, adec, ahex, astr
+	// atom hints
+	hintid, hintdec, hinthex, hintstr
 };
 
 typedef struct
@@ -14,20 +15,33 @@ typedef struct
 	unsigned char bytes[1];
 } string;
 
+// it may be overoptimization of memory usage
 typedef struct
 {
-	unsigned string:23;
+	// atom identity, i.e. offset of symbol string in some table
+	unsigned identity:24;
+
 	unsigned code:6;
-	unsigned hint:3;
+	unsigned hint:2;
 } tokenvalue;
+
+typedef struct
+{
+	unsigned line;
+	unsigned byte;
+} tokenposition;
 
 typedef struct
 {	
 	tokenvalue value;
-	unsigned char position[1];	// 32-bit в формате utf-8
-} Token;
 
-extern void rdtoken(FILE *, Token *const *const);
-extern void wrtoken(FILE *, const Token *const *const);
+	// relative offstet; abstracted to change details if it will be needed
+	tokenposition offset;
+} token;
+
+// compiler with flto should optimize this
+extern token rdtoken(FILE *);
+
+extern void wrtoken(FILE *, const token *const);
 
 #endif
