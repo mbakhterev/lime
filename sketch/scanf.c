@@ -5,8 +5,8 @@ int main(int ac, char * av[])
 	char buffer[1024];
 	while(1)
 	{
-		scanf("%c.%c", buffer, buffer + 1);
-		printf("%c %c\n", buffer[0], buffer[1]);
+		scanf("%s.%s", buffer, buffer + 512);
+		printf("%s %s\n", buffer, buffer + 512);
 	}
 	return 0;
 }
