@@ -6,7 +6,7 @@
 enum
 {
 	// atom hints
-	hintid, hintdec, hinthex, hintstr
+	HINTID, HINTDEC, HINTHEX, HINTSTR
 };
 
 typedef struct
@@ -35,11 +35,11 @@ typedef struct
 {	
 	tokenvalue value;
 
-	// relative offstet; abstracted to change details if it will be needed
+	// relative offstet; abstracted to change details if needed
 	tokenposition offset;
 } token;
 
-// compiler with flto should optimize this
+// compiler with LTO should optimize this
 extern token rdtoken(FILE *);
 
 extern void wrtoken(FILE *, const token *const);
