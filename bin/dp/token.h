@@ -1,28 +1,21 @@
-#ifndef symbolhincluded
-#define symbolhincluded
+#ifndef SYMBOLHINCLUDED
+#define SYMBOLHINCLUDED
 
 #include <stdio.h>
 
-enum
-{
-	// atom hints
+// Окраски (hint) атома
+enum {
 	HINTID, HINTDEC, HINTHEX, HINTSTR
 };
 
-typedef struct
-{
+typedef struct {
 	unsigned length;
 	unsigned char bytes[1];
 } string;
 
-// it may be overoptimization of memory usage
-typedef struct
-{
-	// atom identity, i.e. offset of symbol string in some table
-	unsigned identity:24;
-
-	unsigned code:6;
-	unsigned hint:2;
+typedef struct {
+	unsigned identity;
+	unsigned char code, hint;
 } tokenvalue;
 
 typedef struct

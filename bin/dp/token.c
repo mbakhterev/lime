@@ -1,5 +1,5 @@
-#include <dp/token.h>
-#include <dp/symbol.h>
+#include "token.h"
+#include "symbol.h"
 
 #include <stdio.h>
 
@@ -14,17 +14,8 @@ token rdtoken(FILE * f) {
 	unsigned line, byte, id;
 	unsigned atomid = 0;
 
-	if(fscanf(f, "%u.%u %u", &line, &byte, &id) == 3) {} else
-	{
-		error(1, errno, "lexem %u format is broken\n", lexcount);
-	}
-
 	if(fscanf(f, "%u.%u %u", &line, &byte, &id) == 3) { } else {
 		error(1, errno, "lexem %u format is broken\n", lexcount);
-	}
-
-	if(id < opsymcount)
-	{
 	}
 
 	lexcount += 1;
