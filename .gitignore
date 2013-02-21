@@ -1,6 +1,7 @@
 *
 
 !.gitignore
+!TODO
 !TREE
 !README
 !build
@@ -19,3 +20,6 @@
 !tst
 !tst/*.c
 !tst/gnu.mk
+
+!sketch
+!sketch/*.c
