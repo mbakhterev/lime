@@ -40,7 +40,7 @@ static unsigned append(const unsigned v, const unsigned n) {
 	return (v << 6) | (n & 0x3f);
 }
 
-const unsigned char * runerd(const unsigned char * p, unsigned *const vp) {
+const unsigned char * rdrune(const unsigned char * p, unsigned *const vp) {
 	unsigned v = *p;
 	p += 1;
 
@@ -102,7 +102,7 @@ const unsigned char * runerd(const unsigned char * p, unsigned *const vp) {
 	assert(0);
 }
 
-unsigned char * runewr(unsigned char *const p, unsigned v) {
+unsigned char * wrrune(unsigned char *const p, unsigned v) {
 	if(v < 1 << 7) {
 		*p = v;
 		return p + 1;

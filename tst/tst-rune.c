@@ -12,8 +12,8 @@ int main(int argc, char * argv[]) {
 	unsigned len;
 
 	for(unsigned i = 0x7fffff00; i < 0x80000000; i += 1) {
-		assert(runewr(out, i) - out == 6);
-		assert(runerd(out, &v) - out == 6);
+		assert(wrrune(out, i) - out == 6);
+		assert(rdrune(out, &v) - out == 6);
 		assert(v == i);
 	}
 
@@ -30,12 +30,12 @@ int main(int argc, char * argv[]) {
 			assert(c != EOF);
 		}
 
-		assert(runerd(in, &v) - in == len);
+		assert(rdrune(in, &v) - in == len);
 
 		// printf("%u:%x:", runelen(v), v);
 
 		assert(len == runelen(v));
-		assert(runewr(out, v) - out == len);
+		assert(wrrune(out, v) - out == len);
 		assert(runerun(out) == runelen(v));
 
 		fwrite(out, 1, len, stdout);
