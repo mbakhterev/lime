@@ -1,5 +1,7 @@
 #include <lime/atomtab.h>
+
 #include <stdio.h>
+#include <ctype.h>
 
 unsigned item = 0;
 unsigned field = 0;
@@ -7,8 +9,24 @@ const char *unitname = "test";
 
 int main(int argc, char * argv[]) {
 	AtomTable t = ATOMTABNULL;
-	readatom(&t, stdin);
-	fwrite(atombytes(t.atoms[0]), 1, atomlen(t.atoms[0]), stdout);
-	printf("\n");
+
+	while(!feof(stdin)) {
+		int c;
+		while(isspace(c = fgetc(stdin))) {
+		}
+		if(!feof(stdin)) {
+			ungetc(c, stdin);
+			readatom(&t, stdin);
+			item += 1;
+		}
+	}
+
+	for(unsigned i = 0; i < t.count; i += 1) {
+		unsigned char *const a = (unsigned char *)t.index[i];
+		const unsigned hint = a[0];
+		a[0] = 0;
+		printf("%02x.%u.\"%s\"\n", hint, atomlen(a), atombytes(a));
+	}
+
 	return 0;
 }

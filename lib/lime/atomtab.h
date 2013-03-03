@@ -14,7 +14,7 @@ typedef struct {
 	unsigned templen;
 } AtomTable;
 
-#define ATOMTABNULL (AtomTable) { NULL, NULL, NULL, 0, 0, 0 }
+#define ATOMTABNULL (AtomTable) { NULL, NULL, 0, 0, NULL, 0 }
 void resetatomtab(AtomTable *const);
 
 unsigned readatom(AtomTable *const t, FILE *const f);

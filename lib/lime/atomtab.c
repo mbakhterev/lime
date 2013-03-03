@@ -1,6 +1,7 @@
 #include "atomtab.h"
 #include "buffer.h"
 #include "rune.h"
+#include "heapsort.h"
 
 #include <assert.h>
 #include <error.h>
@@ -15,7 +16,10 @@
 #define DBGRDA 1
 #define DBGALEN 2
 #define DBGGRAB 4
-#define DBGFLAGS (DBGRDA | DBGALEN | DBGGRAB)
+#define DBGLOOK 8
+
+#define DBGFLAGS 0
+// #define DBGFLAGS (DBGRDA | DBGALEN | DBGGRAB | DBGLOOK)
 
 #define DBG(f, fmt, ...) \
 	(void)((f & DBGFLAGS) \
@@ -102,7 +106,7 @@ static void growtab(AtomTable *const t) {
 static int cmpatombuff(const Atom,
 	const unsigned char, const unsigned, const unsigned char *const);
 
-static int cmpatoms(const Atom a, const Atom b) {
+static int cmpatoms(const void *const a, const void *const b) {
 	return cmpatombuff(a, atomhint(b), atomlen(b), atombytes(b));
 }
 
@@ -124,6 +128,7 @@ static void grabtemp(AtomTable *const t,
 
 	t->atoms[pos] = a;
 	t->index[pos] = a;
+	heapsort((const void **)t->index, t->count, cmpatoms);
 }
 
 unsigned readatom(AtomTable *const t, FILE *const f) {
@@ -131,7 +136,7 @@ unsigned readatom(AtomTable *const t, FILE *const f) {
 	unsigned k;
 	unsigned l;
 
-	if(fscanf(f, "%u.%u", &k, &l) == 2) { } else {
+	if(fscanf(f, "%2x.%u", &k, &l) == 2) { } else {
 		ERROR("%s", "can't detect hint.length");
 	}
 
@@ -217,6 +222,8 @@ unsigned lookbuffer(AtomTable *const t,
 	const unsigned char *const buff) {
 	assert(len <= MAXLEN);
 
+	DBG(DBGLOOK, "t->count: %u", t->count);
+
 	if(t->count) { } else {
 		return -1;
 	}
@@ -225,21 +232,23 @@ unsigned lookbuffer(AtomTable *const t,
 	const Atom * A = t->index;
 	unsigned r = t->count - 1;
 	unsigned l = 0;
-	int test;
 
 	while(l < r) {
 		const unsigned m = middle(l, r);
 
-		if((test = cmpatombuff(A[m], hint, len, buff)) < 0) {
+		if(cmpatombuff(A[m], hint, len, buff) < 0) {
 			l = m + 1;
 		}
 		else {
 			r = m;
 		}
+
+		DBG(DBGLOOK, "l: %u; r: %u", l, r);
 	}
 
-	if(l == r && test == 0) {
-		return atomnum(A[l]);
+	if(l == r && cmpatombuff(A[l], hint, len, buff) == 0) {
+		DBG(DBGLOOK, "found: %u", l);
+		return atomid(A[l]);
 	}
 
 	return -1;
