@@ -6,7 +6,7 @@ F="$B/foreign"
 
 { test -z "$1" && prefix="$HOME/Gits"; } || prefix="$1"
 
-test -e "$B/toolchain.mk" \
+test -f "$B/toolchain.mk" \
 	|| { echo "no $B/toolchain.mk to propagate" 1>&2; false; }
 
 update () (

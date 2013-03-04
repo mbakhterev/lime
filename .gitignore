@@ -6,6 +6,7 @@
 !README
 !build
 !foreign-up
+!gnu.mk
 
 !bin
 !bin/dp
