@@ -17,12 +17,12 @@ typedef struct {
 #define ATOMTABNULL (AtomTable) { NULL, NULL, 0, 0, NULL, 0 }
 void resetatomtab(AtomTable *const);
 
-unsigned readatom(AtomTable *const t, FILE *const f);
+unsigned loadatom(AtomTable *const t, FILE *const f);
 
-unsigned readtoken(AtomTable *const t, FILE *const f,
-	const unsigned char hint, const unsigned char *const fmt);
+unsigned loadtoken(AtomTable *const t, FILE *const f,
+	const unsigned char hint, const char *const format);
 
-unsigned loadbuffer(AtomTable *const,
+unsigned readbuffer(AtomTable *const,
 	const unsigned char hint, const unsigned len,
 	const unsigned char *const buff);
 

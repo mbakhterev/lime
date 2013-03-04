@@ -17,9 +17,11 @@
 #define DBGALEN 2
 #define DBGGRAB 4
 #define DBGLOOK 8
+#define DBGLDT 16
 
-#define DBGFLAGS 0
+// #define DBGFLAGS 0
 // #define DBGFLAGS (DBGRDA | DBGALEN | DBGGRAB | DBGLOOK)
+#define DBGFLAGS DBGLDT
 
 #define DBG(f, fmt, ...) \
 	(void)((f & DBGFLAGS) \
@@ -115,10 +117,12 @@ static void grabtemp(AtomTable *const t,
 	growtab(t);
 	assert(t->count > pos);
 
-	// Формируем атом
 	tunetemp(t, atomstorelen(len, pos));
+	
+	// Формируем атом
 	unsigned char *const a = t->temp + len;
 	writerune(writerune(a + 1, len), pos);
+
 	a[0] = 0;
 	DBG(DBGGRAB, "atom: %s", atombytes(a));
 	a[0] = hint;
@@ -131,7 +135,7 @@ static void grabtemp(AtomTable *const t,
 	heapsort((const void **)t->index, t->count, cmpatoms);
 }
 
-unsigned readatom(AtomTable *const t, FILE *const f) {
+unsigned loadatom(AtomTable *const t, FILE *const f) {
 	int n;
 	unsigned k;
 	unsigned l;
@@ -163,7 +167,7 @@ unsigned readatom(AtomTable *const t, FILE *const f) {
 	else {
 		// Увеличение t->temp под загружаемые данные и служебную
 		// информацию. Последнее в надежде, что tunetemp в grabtemp
-		// сработает быстро
+		// сработает быстрее
 		l = atomstorelen(len, pos);
 		DBG(DBGRDA, "l: %u", l);
 		renewtemp(t, l);
@@ -252,4 +256,33 @@ unsigned lookbuffer(AtomTable *const t,
 	}
 
 	return -1;
+}
+
+unsigned readbuffer(AtomTable *const t,
+	const unsigned char hint, const unsigned len,
+	const unsigned char *const buff) {
+	const unsigned pos = t->count;
+	const unsigned k = lookbuffer(t, hint, len, buff);
+	if(k != -1) { return k; }
+
+	const unsigned l = atomstorelen(len, pos);
+	if(t->templen >= l) { } else {
+		renewtemp(t, l);
+	}
+
+	memcpy(t->temp, buff, len);
+	grabtemp(t, hint, len, pos);
+
+	return pos;
+}
+
+unsigned loadtoken(AtomTable *const t, FILE *const f,
+	const unsigned char hint, const char *const format) {
+	assert(strlen(format) <= 32);
+	char fmt[64];
+	sprintf(fmt, "%%%u%s%%n", TEMPDEFAULTLEN, format);
+	
+	DBG(DBGLDT, "fmt: %s", fmt);
+
+	return 0;
 }

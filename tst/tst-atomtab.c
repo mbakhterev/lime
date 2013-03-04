@@ -16,7 +16,7 @@ int main(int argc, char * argv[]) {
 		}
 		if(!feof(stdin)) {
 			ungetc(c, stdin);
-			readatom(&t, stdin);
+			loadatom(&t, stdin);
 			item += 1;
 		}
 	}

@@ -3,8 +3,8 @@
 
 #include <lime/rune.h>
 
-static const unsigned N = 1024;
-static const unsigned CNT = 72;
+static const unsigned N = 2048;
+static const unsigned CNT = 1024;
 
 static unsigned genrune() {
 	return rand() % (1024) + '0';
