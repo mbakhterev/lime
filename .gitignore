@@ -20,6 +20,7 @@
 
 !tst
 !tst/*.c
+!tst/*.sh
 !tst/gnu.mk
 
 !sketch
