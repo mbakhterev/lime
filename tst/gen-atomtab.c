@@ -7,7 +7,7 @@ static const unsigned N = 2048;
 static const unsigned CNT = 1024;
 
 static unsigned genrune() {
-	return rand() % (1024) + '0';
+	return rand() % (64) + '0';
 }
 
 int main(int argc, char * argv[]) {

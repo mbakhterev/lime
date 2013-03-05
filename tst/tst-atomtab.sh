@@ -15,8 +15,17 @@ test -e "$P" && { echo "exists: $P" 1>&2; false; }
 mkfifo "$P"
 
 diff \
-	<(filter < "$P" | { time LC_ALL=C sort; } | uniq) \
-	<(./gen-atomtab | tee "$P" | { time ./tst-atomtab; } | filter) \
-	|| echo "NO!" 1>&2
+	<(filter < "$P" | LC_ALL=C sort | uniq) \
+	<(./gen-atomtab | tee "$P" | ./tst-loadatom | filter) \
+	|| { echo "loadatom: NOT PASSED" 1>&2; false; }
+
+rm "$P"
+mkfifo "$P"
+
+diff \
+	<(LC_ALL=C sort < "$P" | uniq) \
+	<(./gen-atomtab | tee "$P" | ./tst-loadtoken) \
+	|| { echo "loadtoken: NOT PASSED" 1>&2; false; }
+
 
 rm "$P"

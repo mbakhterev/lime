@@ -19,9 +19,10 @@
 #define DBGLOOK 8
 #define DBGLDT 16
 
-// #define DBGFLAGS 0
 // #define DBGFLAGS (DBGRDA | DBGALEN | DBGGRAB | DBGLOOK)
-#define DBGFLAGS DBGLDT
+// #define DBGFLAGS DBGLDT
+
+#define DBGFLAGS 0
 
 #define DBG(f, fmt, ...) \
 	(void)((f & DBGFLAGS) \
@@ -279,10 +280,41 @@ unsigned readbuffer(AtomTable *const t,
 unsigned loadtoken(AtomTable *const t, FILE *const f,
 	const unsigned char hint, const char *const format) {
 	assert(strlen(format) <= 32);
+
+	// С учётом места под последний '\0'
+	const unsigned chunklen = TEMPDEFAULTLEN - 1;
 	char fmt[64];
-	sprintf(fmt, "%%%u%s%%n", TEMPDEFAULTLEN, format);
+	sprintf(fmt, "%%%u%s%%n", chunklen, format);
 	
 	DBG(DBGLDT, "fmt: %s", fmt);
 
-	return 0;
+	if(t->templen >= chunklen) { } else {
+		renewtemp(t, TEMPDEFAULTLEN);
+	}
+
+	unsigned loaded = 0;
+	unsigned l;
+
+	while(scanf(fmt, t->temp + loaded, &l) == 1) {
+		loaded += l;
+		if(t->templen < loaded + chunklen) {
+			tunetemp(t, t->templen + TEMPDEFAULTLEN);
+		}
+	}
+
+	if(loaded > 0) { } else {
+		ERROR("can't detect token. format: %s", fmt);
+	}
+
+	DBG(DBGLDT, "tmp: %s", t->temp);
+
+	const unsigned len = loaded;
+
+	if((l = lookbuffer(t, hint, len, t->temp)) != -1) {
+		return l;
+	}
+
+	const unsigned pos = t->count;
+	grabtemp(t, hint, len, pos);
+	return pos;
 }
