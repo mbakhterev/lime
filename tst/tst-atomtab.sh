@@ -12,6 +12,7 @@ P=/tmp/lime-tst-atomtab.pipe
 
 test -e "$P" && { echo "exists: $P" 1>&2; false; }
 
+trap "rm '$P'" EXIT
 mkfifo "$P"
 
 diff \
@@ -28,4 +29,3 @@ diff \
 	|| { echo "loadtoken: NOT PASSED" 1>&2; false; }
 
 
-rm "$P"

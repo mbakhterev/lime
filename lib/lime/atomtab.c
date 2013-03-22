@@ -1,7 +1,8 @@
 #include "atomtab.h"
-#include "buffer.h"
+#include "array.h"
 #include "rune.h"
 #include "heapsort.h"
+#include "util.h"
 
 #include <assert.h>
 #include <error.h>
@@ -9,25 +10,42 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ERROR(fmt, ...) \
-	error(EXIT_FAILURE, errno, "%s(%u:%u) error: " fmt, \
-		unitname, item, field, __VA_ARGS__)
-
-#define DBGRDA 1
-#define DBGALEN 2
-#define DBGGRAB 4
-#define DBGLOOK 8
-#define DBGLDT 16
+#define DBGRDA	1
+#define DBGALEN	2
+#define DBGGRAB	4
+#define DBGLOOK	8
+#define DBGLDT	16
+#define DBGGT	32	
 
 // #define DBGFLAGS (DBGRDA | DBGALEN | DBGGRAB | DBGLOOK)
 // #define DBGFLAGS DBGLDT
+// #define DBGFLAGS (DBGRDA | DBGGRAB | DBGLOOK | DBGGT)
 
 #define DBGFLAGS 0
 
-#define DBG(f, fmt, ...) \
-	(void)((f & DBGFLAGS) \
-		&& fprintf(stderr, \
-			__FILE__ ":%u\t" fmt "\n", __LINE__, __VA_ARGS__))
+AtomTable mkatomtab(void) {
+	return (AtomTable) {
+		.temp = NULL,
+		.templen = 0,
+		.count = 0,
+		.atoms = mkarray(sizeof(Atom *)),
+		.index = mkarray(sizeof(Atom *))
+	};
+}
+
+Atom tabatoms(const AtomTable *const t, const unsigned n) {
+	assert(n < t->count);
+	return ((Atom *)t->atoms.buffer)[n];
+}
+
+Atom tabindex(const AtomTable *const t, const unsigned i) {
+	assert(i < t->count);
+	return ((Atom *)t->index.buffer)[i];
+}
+
+unsigned tabcount(const AtomTable *const t) {
+	return t->count;
+}
 
 unsigned atomhint(const Atom a) {
 	return ((const unsigned char *)a)[0];
@@ -55,7 +73,7 @@ const unsigned char * atombytes(const Atom a) {
 
 void resetatomtab(AtomTable *const t) {
 	for(unsigned i = 0; i < t->count; i += 1) {
-		free((void *)atombytes(t->atoms[i]));
+		free((void *)atombytes(tabatoms(t, i)));
 	}
 
 	t->count = 0;
@@ -95,15 +113,21 @@ static void tunetemp(AtomTable *const t, const unsigned len) {
 static void growtab(AtomTable *const t) {
 	t->count += 1;
 
-	if(t->count <= t->capacity) {
+	assert(t->index.capacity == t->atoms.capacity);
+
+	if(t->count * sizeof(Atom) <= t->atoms.capacity) {
 		return;
 	}
 
-	unsigned k = t->count;
-	t->capacity = t->count;
-	t->index = exporesize(t->index, &k, sizeof(Atom));
-	t->atoms = exporesize(t->atoms, &t->capacity, sizeof(Atom));
-	assert(t->capacity == k);
+// 	unsigned k = t->count;
+// 	t->capacity = t->count;
+// 	t->index = exporesize(t->index, &k, sizeof(Atom));
+// 	t->atoms = exporesize(t->atoms, &t->capacity, sizeof(Atom));
+
+	DBG(DBGGT, "%s", "resizing");
+
+	exporesize(&t->index, t->count);
+	exporesize(&t->atoms, t->count);
 }
 
 static int cmpatombuff(const Atom,
@@ -125,15 +149,15 @@ static void grabtemp(AtomTable *const t,
 	writerune(writerune(a + 1, len), pos);
 
 	a[0] = 0;
-	DBG(DBGGRAB, "atom: %s", atombytes(a));
+	DBG(DBGGT, "atom: %s", atombytes(a));
 	a[0] = hint;
 
 	// temp нужно перезарядить
 	newtemp(t, TEMPDEFAULTLEN);
 
-	t->atoms[pos] = a;
-	t->index[pos] = a;
-	heapsort((const void **)t->index, t->count, cmpatoms);
+	((Atom*)t->atoms.buffer)[pos] = a;
+	((Atom*)t->index.buffer)[pos] = a;
+	heapsort((const void **)t->index.buffer, t->count, cmpatoms);
 }
 
 unsigned loadatom(AtomTable *const t, FILE *const f) {
@@ -234,7 +258,7 @@ unsigned lookbuffer(AtomTable *const t,
 	}
 
 	// Подготовка к поиску. A - отсортированный массив ссылок на атомы
-	const Atom * A = t->index;
+	const Atom * A = t->index.buffer;
 	unsigned r = t->count - 1;
 	unsigned l = 0;
 

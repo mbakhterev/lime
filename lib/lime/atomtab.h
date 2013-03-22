@@ -1,21 +1,21 @@
 #ifndef ATOMTABINCLUDED
 #define ATOMTABINCLUDED
 
+#include "array.h"
+
 #include <stdio.h>
 
 typedef const unsigned char * Atom;
 
 typedef struct {
-	Atom * atoms;
-	Atom * index;
-	unsigned count;
-	unsigned capacity;
 	unsigned char * temp;
 	unsigned templen;
+	unsigned count;
+	Array atoms;
+	Array index;
 } AtomTable;
 
-#define ATOMTABNULL (AtomTable) { NULL, NULL, 0, 0, NULL, 0 }
-void resetatomtab(AtomTable *const);
+AtomTable mkatomtab(void);
 
 unsigned loadatom(AtomTable *const t, FILE *const f);
 
@@ -38,10 +38,8 @@ unsigned atomlen(const Atom);
 unsigned atomhint(const Atom);
 const unsigned char * atombytes(const Atom);
 
-// Координаты при чтении, для формирования сообщения об ошибке. Устанавливаются
-// извне
-extern unsigned item;
-extern unsigned field;
-extern const char * unitname;
+Atom tabatoms(const AtomTable *const, unsigned n);
+Atom tabindex(const AtomTable *const, unsigned i);
+unsigned tabcount(const AtomTable *const);
 
 #endif
