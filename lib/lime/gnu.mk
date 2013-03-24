@@ -1,6 +1,6 @@
 lmbits = $(call bitspath)
 
-lmsrc = rune.c atomtab.c array.c heapsort.c util.c
+lmsrc = rune.c atomtab.c array.c heapsort.c util.c construct.c
 lmobj = $(call c2o,$(bitspath),$(lmsrc))
 
 $(L)/liblime.a: $(lmobj)

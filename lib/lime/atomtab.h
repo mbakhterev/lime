@@ -10,7 +10,7 @@ typedef const unsigned char * Atom;
 typedef struct {
 	unsigned char * temp;
 	unsigned templen;
-	unsigned count;
+//	unsigned count;
 	Array atoms;
 	Array index;
 } AtomTable;

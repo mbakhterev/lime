@@ -1,6 +1,7 @@
 #include "array.h"
-
 #include "util.h"
+
+#include <string.h>
 
 #define DBGER	1
 
@@ -26,6 +27,10 @@ void * exporesize(Array *const a, unsigned count) {
 	const unsigned len = clp2(a->itemlength * count);
 	assert(len);
 
+	if(a->capacity >= len) {
+		return a->buffer;
+	}
+
 	DBG(DBGER, "resizing for buf: %p; il: %u; count: %u; len: %u",
 		a->buffer, a->itemlength, count, len);
 	
@@ -39,5 +44,18 @@ void * exporesize(Array *const a, unsigned count) {
 }
 
 Array mkarray(const unsigned ilen) {
-	return (Array) { .buffer = NULL, .capacity = 0, .itemlength = ilen };
+	return (Array) {
+		.buffer = NULL,
+		.capacity = 0,
+		.itemlength = ilen,
+		.count = 0
+	};
+}
+
+void * append(Array *const a, const void *const p) {
+	const unsigned count = a->count;
+	unsigned char (*const buf)[a->itemlength] = exporesize(a, count + 1);
+	a->count += 1;
+	memcpy(buf + count, p, sizeof(*buf));
+	return buf + count;
 }

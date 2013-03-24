@@ -28,7 +28,7 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	for(unsigned i = 0; i < t.count; i += 1) {
+	for(unsigned i = 0; i < t.atoms.count; i += 1) {
 		const unsigned char *const a = (const unsigned char *)tabindex(&t, i);
 		fwrite(atombytes(a), 1, atomlen(a), stdout);
 		fputc('\n', stdout);

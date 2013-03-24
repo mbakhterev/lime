@@ -27,24 +27,24 @@ AtomTable mkatomtab(void) {
 	return (AtomTable) {
 		.temp = NULL,
 		.templen = 0,
-		.count = 0,
+// 		.count = 0,
 		.atoms = mkarray(sizeof(Atom *)),
 		.index = mkarray(sizeof(Atom *))
 	};
 }
 
 Atom tabatoms(const AtomTable *const t, const unsigned n) {
-	assert(n < t->count);
+	assert(n < t->atoms.count);
 	return ((Atom *)t->atoms.buffer)[n];
 }
 
 Atom tabindex(const AtomTable *const t, const unsigned i) {
-	assert(i < t->count);
+	assert(i < t->index.count);
 	return ((Atom *)t->index.buffer)[i];
 }
 
 unsigned tabcount(const AtomTable *const t) {
-	return t->count;
+	return t->atoms.count;
 }
 
 unsigned atomhint(const Atom a) {
@@ -72,11 +72,12 @@ const unsigned char * atombytes(const Atom a) {
 }
 
 void resetatomtab(AtomTable *const t) {
-	for(unsigned i = 0; i < t->count; i += 1) {
+	for(unsigned i = 0; i < t->atoms.count; i += 1) {
 		free((void *)atombytes(tabatoms(t, i)));
 	}
 
-	t->count = 0;
+	t->atoms.count = 0;
+	t->index.count = 0;
 }
 
 enum {
@@ -110,25 +111,25 @@ static void tunetemp(AtomTable *const t, const unsigned len) {
 	t->templen = len;
 }
 
-static void growtab(AtomTable *const t) {
-	t->count += 1;
-
-	assert(t->index.capacity == t->atoms.capacity);
-
-	if(t->count * sizeof(Atom) <= t->atoms.capacity) {
-		return;
-	}
-
-// 	unsigned k = t->count;
-// 	t->capacity = t->count;
-// 	t->index = exporesize(t->index, &k, sizeof(Atom));
-// 	t->atoms = exporesize(t->atoms, &t->capacity, sizeof(Atom));
-
-	DBG(DBGGT, "%s", "resizing");
-
-	exporesize(&t->index, t->count);
-	exporesize(&t->atoms, t->count);
-}
+// static void growtab(AtomTable *const t) {
+// 	t->count += 1;
+// 
+// 	assert(t->index.capacity == t->atoms.capacity);
+// 
+// 	if(t->count * sizeof(Atom) <= t->atoms.capacity) {
+// 		return;
+// 	}
+// 
+// // 	unsigned k = t->count;
+// // 	t->capacity = t->count;
+// // 	t->index = exporesize(t->index, &k, sizeof(Atom));
+// // 	t->atoms = exporesize(t->atoms, &t->capacity, sizeof(Atom));
+// 
+// 	DBG(DBGGT, "%s", "resizing");
+// 
+// 	exporesize(&t->index, t->count);
+// 	exporesize(&t->atoms, t->count);
+// }
 
 static int cmpatombuff(const Atom,
 	const unsigned char, const unsigned, const unsigned char *const);
@@ -139,8 +140,8 @@ static int cmpatoms(const void *const a, const void *const b) {
 
 static void grabtemp(AtomTable *const t,
 	const unsigned char hint, const unsigned len, const unsigned pos) {
-	growtab(t);
-	assert(t->count > pos);
+//	growtab(t);
+//	assert(t->count > pos);
 
 	tunetemp(t, atomstorelen(len, pos));
 	
@@ -155,9 +156,17 @@ static void grabtemp(AtomTable *const t,
 	// temp нужно перезарядить
 	newtemp(t, TEMPDEFAULTLEN);
 
-	((Atom*)t->atoms.buffer)[pos] = a;
-	((Atom*)t->index.buffer)[pos] = a;
-	heapsort((const void **)t->index.buffer, t->count, cmpatoms);
+// 	((Atom*)t->atoms.buffer)[pos] = a;
+// 	((Atom*)t->index.buffer)[pos] = a;
+
+	append(&t->atoms, &a);
+	append(&t->index, &a);
+
+	assert(t->atoms.count == t->index.count);
+	assert(t->atoms.capacity == t->index.capacity);
+	assert(t->atoms.count < t->atoms.capacity);
+
+	heapsort((const void **)t->index.buffer, t->index.count, cmpatoms);
 }
 
 unsigned loadatom(AtomTable *const t, FILE *const f) {
@@ -170,7 +179,7 @@ unsigned loadatom(AtomTable *const t, FILE *const f) {
 	}
 
 	// Если атом новый, то его порядковый номер будет t->count
-	const unsigned pos = t->count;
+	const unsigned pos = t->atoms.count;
 	const unsigned len = l;
 	const unsigned hint = k;
 
@@ -251,15 +260,16 @@ unsigned lookbuffer(AtomTable *const t,
 	const unsigned char *const buff) {
 	assert(len <= MAXLEN);
 
-	DBG(DBGLOOK, "t->count: %u", t->count);
+	DBG(DBGLOOK, "t->atoms.count: %u; t->index.count: %u",
+		t->atoms.count, t->index.count);
 
-	if(t->count) { } else {
+	if(t->atoms.count) { } else {
 		return -1;
 	}
 
 	// Подготовка к поиску. A - отсортированный массив ссылок на атомы
 	const Atom * A = t->index.buffer;
-	unsigned r = t->count - 1;
+	unsigned r = t->index.count - 1;
 	unsigned l = 0;
 
 	while(l < r) {
@@ -286,7 +296,7 @@ unsigned lookbuffer(AtomTable *const t,
 unsigned readbuffer(AtomTable *const t,
 	const unsigned char hint, const unsigned len,
 	const unsigned char *const buff) {
-	const unsigned pos = t->count;
+	const unsigned pos = t->atoms.count;
 	const unsigned k = lookbuffer(t, hint, len, buff);
 	if(k != -1) { return k; }
 
@@ -338,7 +348,7 @@ unsigned loadtoken(AtomTable *const t, FILE *const f,
 		return l;
 	}
 
-	const unsigned pos = t->count;
+	const unsigned pos = t->atoms.count;
 	grabtemp(t, hint, len, pos);
 	return pos;
 }

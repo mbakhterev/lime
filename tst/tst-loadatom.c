@@ -21,7 +21,7 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	for(unsigned i = 0; i < t.count; i += 1) {
+	for(unsigned i = 0; i < t.atoms.count; i += 1) {
 		unsigned char *const a = (unsigned char *)tabindex(&t, i);
 		const unsigned hint = a[0];
 		a[0] = 0;
