@@ -32,12 +32,14 @@ static List * nipoff(List **const lptr) {
 static List * listalloc() {
 	List *const p = malloc(sizeof(List));
 	assert(p);
+	p->code = FREE;
 	return p;
 }
 
 static Node * nodealloc() {
 	Node *const p = malloc(sizeof(Node));
 	assert(p);
+	p->code = (unsigned)FREE;
 	return p;
 }
 
@@ -68,7 +70,7 @@ List * newlist(unsigned code) {
 }
 
 List * extend(List *const k, List *const l) {
-	assert(k);
+	assert(l);
 
 	if(k) { } else {
 		return l;
@@ -86,3 +88,5 @@ List * extend(List *const k, List *const l) {
 
 	return l;
 }
+
+

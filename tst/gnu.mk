@@ -31,6 +31,6 @@ $(T)/tst-loadtoken: $(tstbits)/tst-loadtoken.o $(lib)
 $(T)/gen-atomtab: $(tstbits)/gen-atomtab.o $(lib)
 $(T)/tst-atomtab.sh: tst/tst-atomtab.sh
 
-$(T)/tst-list: $(tstbits)/tst-list.o
+$(T)/tst-list: $(tstbits)/tst-list.o $(lib)
 
 include $(call o2d,$(tstobj))

@@ -59,3 +59,15 @@ void * append(Array *const a, const void *const p) {
 	memcpy(buf + count, p, sizeof(*buf));
 	return buf + count;
 }
+
+void freearray(Array *const a) {
+	assert(a->buffer 
+		&& a->capacity
+		&& a->itemlength * a->count < a->capacity);
+	
+	free(a->buffer);
+	a->buffer = 0;
+	a->capacity = 0;
+	a->count = 0;
+	a->itemlength = 0;
+}

@@ -10,6 +10,7 @@ typedef struct {
 
 // Создание пустого массива
 extern Array mkarray(const unsigned itemlength);
+extern void freearray(Array *const);
 
 // Массив будет расширен для вмещения count элементов размером itemlength. Общая
 // доступная длина будет capacity * itemlength
