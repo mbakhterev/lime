@@ -38,6 +38,7 @@ typedef struct {
 		Node * node;
 	} u;
 	unsigned code;
+	unsigned id;
 } Binding;
 
 typedef struct {
