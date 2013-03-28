@@ -1,4 +1,6 @@
 #include "construct.h"
+#include "util.h"
+#include "heapsort.h"
 
 Environment mkenvironment() {
 	return (Environment) {
@@ -12,12 +14,14 @@ void freeenvironment(Environment *const env) {
 	freearray(&env->index);
 }
 
-static int cmplists(const Binding *const k, const Binding *const l) {
-	
+static int cmplists(const List *const k, const List *const l) {
+	return 0;
 }
 
-static int cmpbindings(const Binding *const a, const Binding *const b) {
-	return cmplists(a->key, b->key);
+static int cmpbindings(
+	const void *const bindings, const unsigned i, const unsigned j) {
+	const Binding *const b = bindings;
+	return cmplists(b[i].key, b[j].key);
 }
 
 extern unsigned lookbinding(Environment *const env, const List *const key) {
@@ -49,10 +53,18 @@ extern unsigned lookbinding(Environment *const env, const List *const key) {
 }
 
 extern unsigned loadbinding(Environment *const env, const Binding *const b) {
-	const unsigned k = lookbinding(env, b->key); 
+	unsigned k = lookbinding(env, b->key); 
 	if(k != -1) { return k; }
 
-	const Binding *const bptr = append(&env->bindings, b);
-	append(&env->index, &bptr);
-	heapsort((const void **)env->index.buffer, env->index.count, cmplists);
+//	const Binding *const bptr = append(&env->bindings, b);
+
+	k = env->bindings.count;
+	append(&env->index, &k);
+
+//	heapsort((const void **)env->index.buffer, env->index.count, cmplists);
+
+	heapsort((const void *)env->bindings.buffer,
+		(unsigned *)env->index.buffer, k, cmpbindings);
+
+	return k;
 }

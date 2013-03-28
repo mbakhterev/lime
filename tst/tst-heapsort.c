@@ -4,29 +4,31 @@
 
 #include <lime/heapsort.h>
 
-static int cmp(const void *const a, const void *const b) {
-	unsigned long x = (unsigned long)a;
-	unsigned long y = (unsigned long)b;
+static int cmp(const void *const D, const unsigned i, const unsigned j) {
+	unsigned long x = ((unsigned long *)D)[i];
+	unsigned long y = ((unsigned long *)D)[j];
 	return 1 - (x == y) - ((x < y) << 1);
 }
 
 int main(int argc, char * argv[]) {
 	const unsigned N = 65536;
-	const void * B[N];
+	unsigned long D[N];
+	unsigned I[N];
 
 	srand(time(NULL));
 
 	for(int i = 0; i < N; i += 1) {
-		B[i] = (void *)(unsigned long)rand();
+		D[i] = (unsigned long)rand();
+		I[i] = i;
 	}
 
-	heapsort(B, N, cmp);
+	heapsort(D, I, N, cmp);
 
-	const void *p = 0;
+	int p = 0;
 	for(int i = 0; i < N; i += 1) {
-		const void *q = B[i];
-		printf("%016lx\t%u\n", (unsigned long)q, cmp(p, q) > 0);
-		p = q;
+		unsigned long q = D[I[i]];
+		printf("%016lx\t%u\n", (unsigned long)q, cmp(D, p, i) > -1);
+		p = i;
 	}
 
 	return 0;

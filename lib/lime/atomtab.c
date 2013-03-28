@@ -29,7 +29,7 @@ AtomTable mkatomtab(void) {
 		.templen = 0,
 // 		.count = 0,
 		.atoms = mkarray(sizeof(Atom *)),
-		.index = mkarray(sizeof(Atom *))
+		.index = mkarray(sizeof(unsigned))
 	};
 }
 
@@ -134,7 +134,10 @@ static void tunetemp(AtomTable *const t, const unsigned len) {
 static int cmpatombuff(const Atom,
 	const unsigned char, const unsigned, const unsigned char *const);
 
-static int cmpatoms(const void *const a, const void *const b) {
+static int cmpatoms(const void *const D, const unsigned i, const unsigned j) {
+	const Atom *const A = (const Atom *)D;
+	const Atom a = A[i];
+	const Atom b = A[j];
 	return cmpatombuff(a, atomhint(b), atomlen(b), atombytes(b));
 }
 
@@ -159,14 +162,21 @@ static void grabtemp(AtomTable *const t,
 // 	((Atom*)t->atoms.buffer)[pos] = a;
 // 	((Atom*)t->index.buffer)[pos] = a;
 
+//	append(&t->atoms, &a);
+//	append(&t->index, &a);
+
 	append(&t->atoms, &a);
-	append(&t->index, &a);
+	append(&t->index, &t->atoms.count);
 
 	assert(t->atoms.count == t->index.count);
-	assert(t->atoms.capacity == t->index.capacity);
-	assert(t->atoms.count < t->atoms.capacity);
+//	assert(t->atoms.capacity == t->index.capacity);
+	assert(t->atoms.count * t->atoms.itemlength <= t->atoms.capacity);
+	assert(t->index.count * t->index.itemlength <= t->index.capacity);
 
-	heapsort((const void **)t->index.buffer, t->index.count, cmpatoms);
+//	heapsort((const void **)t->index.buffer, t->index.count, cmpatoms);
+
+	heapsort((const void *const)t->atoms.buffer,
+		(unsigned *const)t->index.buffer, t->index.count, cmpatoms);
 }
 
 unsigned loadatom(AtomTable *const t, FILE *const f) {
@@ -251,9 +261,9 @@ static int cmpatombuff(const Atom a,
 	return 1 - (al == len) - ((al < len) << 1);
 }
 
-static unsigned middle(const unsigned a, const unsigned b) {
-	return a + (b - a) / 2;
-}
+// static unsigned middle(const unsigned a, const unsigned b) {
+// 	return a + (b - a) / 2;
+// }
 
 unsigned lookbuffer(AtomTable *const t,
 	const unsigned char hint, const unsigned len,

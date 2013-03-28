@@ -1,7 +1,8 @@
 #ifndef HEAPSORTHINCLUDED
 #define HEAPSORTHINCLUDED
 
-void heapsort(const void * A[], const unsigned,
-	int (*cmp)(const void *const, const void *const));
+typedef int(*Cmp)(const void *const data, const unsigned i, const unsigned j);
+
+void heapsort(const void *const data, unsigned index[], const unsigned, Cmp);
 
 #endif

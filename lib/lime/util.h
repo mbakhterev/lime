@@ -19,4 +19,6 @@ extern const char * unitname;
 			__FILE__ ":%u\t%s\t" fmt "\n", \
 			__LINE__, __func__, __VA_ARGS__))
 
+extern unsigned middle(const unsigned l, const unsigned r);
+
 #endif
