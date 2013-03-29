@@ -29,8 +29,23 @@ struct ListStruct {
 	int code;
 };
 
-extern List * newlist(const unsigned code);
+// withsubstructure - флаг, указывающий на то, следует ли выделять ту структуру,
+// на которую будет ссылаться новый элемент списка
+extern List * newlist(const unsigned code, const unsigned withsubstructure);
+
 extern List * extend(List *const, List *const);
+
+// Создание нового списка копированием списка-ссылки. При копировании ссылок на
+// узлы счётчик ссылок в них увеличвается. Новые узлы не создаются
+extern List * forklist(const List *const);
+
+extern void releaselist(List *const);
+
+extern char *dumplist(const List *const);
+
+typedef void (*Oneach)(List *const, const unsigned, void *const);
+
+extern void foreach(List *const, Oneach, void *const);
 
 typedef struct {
 	const List * key;
