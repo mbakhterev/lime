@@ -19,6 +19,7 @@
 
 // #define DBGFLAGS (DBGRDA | DBGALEN | DBGGRAB | DBGLOOK)
 // #define DBGFLAGS DBGLDT
+
 // #define DBGFLAGS (DBGRDA | DBGGRAB | DBGLOOK | DBGGT)
 
 #define DBGFLAGS 0
@@ -40,7 +41,9 @@ Atom tabatoms(const AtomTable *const t, const unsigned n) {
 
 Atom tabindex(const AtomTable *const t, const unsigned i) {
 	assert(i < t->index.count);
-	return ((Atom *)t->index.buffer)[i];
+	const unsigned *const I = t->index.buffer;
+	assert(I[i] < t->atoms.count);
+	return ((Atom *)t->atoms.buffer)[I[i]];
 }
 
 unsigned tabcount(const AtomTable *const t) {
@@ -165,8 +168,10 @@ static void grabtemp(AtomTable *const t,
 //	append(&t->atoms, &a);
 //	append(&t->index, &a);
 
+	const unsigned k = t->atoms.count;
 	append(&t->atoms, &a);
-	append(&t->index, &t->atoms.count);
+//	append(&t->index, &t->atoms.count);
+	append(&t->index, &k);
 
 	assert(t->atoms.count == t->index.count);
 //	assert(t->atoms.capacity == t->index.capacity);
@@ -278,14 +283,15 @@ unsigned lookbuffer(AtomTable *const t,
 	}
 
 	// Подготовка к поиску. A - отсортированный массив ссылок на атомы
-	const Atom * A = t->index.buffer;
+	const unsigned *const I = t->index.buffer;
+	const Atom *const A = t->atoms.buffer;
 	unsigned r = t->index.count - 1;
 	unsigned l = 0;
 
 	while(l < r) {
 		const unsigned m = middle(l, r);
 
-		if(cmpatombuff(A[m], hint, len, buff) < 0) {
+		if(cmpatombuff(A[I[m]], hint, len, buff) < 0) {
 			l = m + 1;
 		}
 		else {
@@ -295,9 +301,9 @@ unsigned lookbuffer(AtomTable *const t,
 		DBG(DBGLOOK, "l: %u; r: %u", l, r);
 	}
 
-	if(l == r && cmpatombuff(A[l], hint, len, buff) == 0) {
+	if(l == r && cmpatombuff(A[I[l]], hint, len, buff) == 0) {
 		DBG(DBGLOOK, "found: %u", l);
-		return atomid(A[l]);
+		return atomid(A[I[l]]);
 	}
 
 	return -1;
