@@ -3,6 +3,7 @@
 #include <time.h>
 
 #include <lime/heapsort.h>
+#include <lime/util.h>
 
 static int cmp(const void *const D, const unsigned i, const unsigned j) {
 	unsigned long x = ((unsigned long *)D)[i];
@@ -10,8 +11,12 @@ static int cmp(const void *const D, const unsigned i, const unsigned j) {
 	return 1 - (x == y) - ((x < y) << 1);
 }
 
+// static int cmp(const void *const D, const unsigned i, const unsigned j) {
+// 	return cmpui(((unsigned long *)D)[i], ((unsigned long *)D)[j]);
+// }
+
 int main(int argc, char * argv[]) {
-	const unsigned N = 65536;
+	const unsigned N = 65535;
 	unsigned long D[N];
 	unsigned I[N];
 
@@ -27,7 +32,9 @@ int main(int argc, char * argv[]) {
 	int p = 0;
 	for(int i = 0; i < N; i += 1) {
 		unsigned long q = D[I[i]];
-		printf("%016lx\t%u\n", (unsigned long)q, cmp(D, p, i) > -1);
+
+		// Текущий элемент не должен быть меньше предыдущего
+		printf("%016lx\t%u\n", (unsigned long)q, cmp(D, I[i], I[p]) > -1);
 		p = i;
 	}
 

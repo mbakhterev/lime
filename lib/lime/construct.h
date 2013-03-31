@@ -8,16 +8,17 @@
 typedef struct ListStruct List;
 
 typedef struct {
+	List * sources;
 	unsigned code;
-	unsigned suffix;
-	union {
-		unsigned number;
-		List * sources;
-	} u;
 	unsigned nrefs;
+
+	// Некая дополнительная информация, которая может быть специально
+	// проинтерпретирована пользователем. Рассчёт на то, что extra -- это
+	// индекс в некотором массиве
+	unsigned extra;
 } Node;
 
-enum { NUMBER, ATOM, TYPE, NODE, LIST, FREE = -1 };
+enum { NUMBER, ATOM, TYPE, NODE, ENV, LIST, FREE = -1 };
 
 struct ListStruct {
 	List * next;
@@ -71,8 +72,7 @@ extern unsigned lookbinding(Environment *const, const List *const key);
 
 // Загрузить сырой список из файла (сырой - такой, в котором не подставлены типы
 // и атомы) используя универсальную таблицу (надо куда-то складывать прочитанные
-// "зюквочки".
-
+// "зюквочки"
 extern List * loadrawlist(AtomTable * universe, List *const env, FILE *);
 
 #endif
