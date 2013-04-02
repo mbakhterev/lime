@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-static void printer(List *const l, const unsigned isfinal, void *const ptr) {
+static int printer(List *const l, const unsigned isfinal, void *const ptr) {
 // 	static int cnt = 0;
 // 	if(cnt > 32) {
 // 		exit(EXIT_FAILURE);
@@ -30,15 +30,18 @@ static void printer(List *const l, const unsigned isfinal, void *const ptr) {
 		break;
 
 	case LIST:
-		foreach(l->u.list, printer, NULL);
+		forlist(l->u.list, printer, NULL, 0);
 
 	default:
 		assert(0);
 	}
+
+	return 0;
 }
 
-static void checkfree(List *const l, const unsigned isfinal, void *const ptr) {
+static int checkfree(List *const l, const unsigned isfinal, void *const ptr) {
 	assert(l->code == FREE);
+	return 0;
 }
 
 int main(int argc, char * argv[]) {
@@ -47,15 +50,15 @@ int main(int argc, char * argv[]) {
 //		printf("%d\n", i);
 		List *const k = newlist(NUMBER, 0);
 		k->u.number = i;
-		foreach(k, printer, NULL);
+		forlist(k, printer, NULL, 0);
 		l = extend(l, k);
 	}
 	printf("---\n");
 
 // 	List *const k = forklist(l);
-// 	foreach(l, printer, NULL);
+// 	forlist(l, printer, NULL);
 // 	printf("---\n");
-// 	foreach(k, printer, NULL);
+// 	forlist(k, printer, NULL);
 // 
 
 	char *c = dumplist(l);
@@ -68,7 +71,7 @@ int main(int argc, char * argv[]) {
 	free(c);
 
 	releaselist(k);
-	foreach(k, checkfree, NULL);
+	forlist(k, checkfree, NULL, 0);
 
 	return 0;
 }

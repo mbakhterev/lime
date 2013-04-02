@@ -118,20 +118,23 @@ List * extend(List *const k, List *const l) {
 	return l;
 }
 
-void foreach(List *const k, Oneach fn, void *const ptr) {
+int forlist(List *const k, Oneach fn, void *const ptr, const int key) {
 	assert(k);
 	List *p = k;
 	List *q = k->next;
+	int r;
 	do {
-		DBG(DBGFE, "k: %p; p: %p", k, p);
+		DBG(DBGFE, "k: %p; p: %p", (void *)k, (void *)p);
 
 		p = q;
 		q = p->next;
-		fn(p, p == k, ptr);
-	} while(p != k);
+		r = fn(p, p == k, ptr);
+	} while(r == key && p != k);
+
+	return r;
 }
 
-static void forkitem(List *const k, const unsigned isfinal, void *const ptr) {
+static int forkitem(List *const k, const unsigned isfinal, void *const ptr) {
 	List **const lptr = ptr;
 	List *l = newlist(k->code, 0);
 
@@ -158,16 +161,18 @@ static void forkitem(List *const k, const unsigned isfinal, void *const ptr) {
 	}
 
 	*lptr = extend(*lptr, l);
+
+	return 0;
 }
 
 List *forklist(const List *const k) {
 	List *l = NULL;
 
-	foreach((List *)k, forkitem, &l);
+	forlist((List *)k, forkitem, &l, 0);
 	return l;
 }
 
-static void releaser(List *const l, unsigned const isfinal, void *const p) {
+static int releaser(List *const l, unsigned const isfinal, void *const p) {
 	l->code = FREE;
 
 	if(l->code == NODE) {
@@ -176,22 +181,24 @@ static void releaser(List *const l, unsigned const isfinal, void *const p) {
 	}
 
 	extend(freelist, l);
+
+	return 0;
 }
 
 void releaselist(List *const l) {
-	foreach(l, releaser, NULL);
+	forlist(l, releaser, NULL, 0);
 }
 
-static void dumper(List *const l, const unsigned, void *const file);
+static int dumper(List *const l, const unsigned, void *const file);
 
 static void dumptostream(List *const l, FILE *const f) {
 	assert(fputc('(', f) != EOF);
-	foreach(l, dumper, f);
+	forlist(l, dumper, f, 0);
 //	assert(fseek(f, (long)-1, SEEK_CUR) == 0);
 	assert(fputc(')', f) != EOF);
 }
 
-static void dumper(List *const l, const unsigned isfinal, void *const file) {
+static int dumper(List *const l, const unsigned isfinal, void *const file) {
 	FILE *const f = file;
 
 	switch(l->code) {
@@ -209,7 +216,7 @@ static void dumper(List *const l, const unsigned isfinal, void *const file) {
 	
 	case NODE:
 		assert(l->u.node);
-		assert(fprintf(f, "N:%p", l->u.node) > 0);
+		assert(fprintf(f, "N:%p", (void *)l->u.node) > 0);
 		break;
 	
 	case LIST:
@@ -224,6 +231,8 @@ static void dumper(List *const l, const unsigned isfinal, void *const file) {
 	if(!isfinal) {
 		assert(fputc(' ', f) != EOF);
 	}
+
+	return 0;
 }
 
 char *dumplist(const List *const l) {

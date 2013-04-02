@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 typedef struct ListStruct List;
+typedef struct EnvironmentStruct Environment;
 
 typedef struct {
 	List * sources;
@@ -23,8 +24,9 @@ enum { NUMBER, ATOM, TYPE, NODE, ENV, LIST, FREE = -1 };
 struct ListStruct {
 	List * next;
 	union {
-		List * list;
-		Node * node;
+		List *list;
+		Node *node;
+		Environment *environment;
 		unsigned number;
 	} u;
 	int code;
@@ -44,9 +46,11 @@ extern void releaselist(List *const);
 
 extern char *dumplist(const List *const);
 
-typedef void (*Oneach)(List *const, const unsigned, void *const);
-
-extern void foreach(List *const, Oneach, void *const);
+// Функция forlist применяет другую функцию типа Oneach к каждому элементу
+// списка, пока последняя возвращает значение, равное key. foreach устроена так,
+// что позволяет менять ->next в обрабатываемом элементе списка.
+typedef int (*Oneach)(List *const, const unsigned, void *const);
+extern int forlist(List *const, Oneach, void *const, const int key);
 
 typedef struct {
 	const List * key;
@@ -57,10 +61,10 @@ typedef struct {
 	unsigned id;
 } Binding;
 
-typedef struct {
+struct EnvironmentStruct {
 	Array bindings;
 	Array index;
-} Environment;
+};
 
 extern Environment mkenvironment();
 extern void freeenvironment(Environment *const);
@@ -68,7 +72,7 @@ extern void freeenvironment(Environment *const);
 extern unsigned readbinding(
 	Environment *const, const List *const key, const Binding value);
 
-extern unsigned lookbinding(Environment *const, const List *const key);
+extern const Binding *lookbinding(const List *const env, const List *const key);
 
 // Загрузить сырой список из файла (сырой - такой, в котором не подставлены типы
 // и атомы) используя универсальную таблицу (надо куда-то складывать прочитанные
