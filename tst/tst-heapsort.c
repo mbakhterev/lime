@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <lime/heapsort.h>
+#include <lime/heap.h>
 #include <lime/util.h>
 
 static int cmp(const void *const D, const unsigned i, const unsigned j) {

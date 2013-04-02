@@ -1,32 +1,93 @@
 #ifndef CONSTRUCTHINCLUDED
 #define CONSTRUCTHINCLUDED
 
-#include "atomtab.h"
+#include "heap.h"
 
 #include <stdio.h>
 
-typedef struct ListStruct List;
-typedef struct EnvironmentStruct Environment;
+// Имена для основных типов
+
+typedef struct NodeTag Node;
+typedef struct ListTag List;
+typedef struct ArrayTag Array;
+
+// Индексированные массивы
+
+
+struct ArrayTag {
+	KeyCmp keycmp;
+	ItemCmp itemcmp;
+
+	void *data;
+	unsigned *index;
+	unsigned capacity;
+	unsigned itemlength;
+	unsigned count;
+
+	int code;
+};
+
+// mk - это make; rl - release
+extern Array mkarray(const int code, const unsigned itemlen, ItemCmp, KeyCmp);
+extern void rlarray(Array *const);
+
+extern void *itemat(const Array *const, const unsigned);
+extern void *attach(Array *const, const void *const val);
+extern unsigned search(const Array *const, const void *const key);
+
+// Таблицы атомов
+
+typedef const unsigned char *Atom;
 
 typedef struct {
-	List * sources;
-	unsigned code;
+	Atom *bytes;
+	unsigned length;
+	unsigned char hint;
+} AtomPack;
+
+extern unsigned atomlen(const Atom);
+extern unsigned atomhint(const Atom);
+extern AtomPack atompack(const Atom);
+extern unsigned char *atombytes(const Atom);
+
+extern Array mkatomtab(void);
+extern void rlatomtab(Array *const);
+
+extern unsigned attachpack(Array *const, const AtomPack *const);
+extern unsigned loadatom(Array *const, FILE *const);
+
+extern unsigned loadtoken(Array *const, FILE *const,
+	const unsigned char hint, const char *const format);
+
+// Узлы
+
+struct NodeTag {
 	unsigned nrefs;
+	unsigned code;
+	union {
+		Node *nextfree;
+		List *sources;
+	} u;
 
 	// Некая дополнительная информация, которая может быть специально
 	// проинтерпретирована пользователем. Рассчёт на то, что extra -- это
 	// индекс в некотором массиве
 	unsigned extra;
-} Node;
+};
+
+extern Node *newnode(const unsigned code);
+extern void freenode(Node *const);
+
+// Списки
 
 enum { NUMBER, ATOM, TYPE, NODE, ENV, LIST, FREE = -1 };
 
-struct ListStruct {
+struct ListTag {
 	List * next;
 	union {
 		List *list;
 		Node *node;
-		Environment *environment;
+		Array *environment;
 		unsigned number;
 	} u;
 	int code;
@@ -34,7 +95,7 @@ struct ListStruct {
 
 // withsubstructure - флаг, указывающий на то, следует ли выделять ту структуру,
 // на которую будет ссылаться новый элемент списка
-extern List * newlist(const unsigned code, const unsigned withsubstructure);
+extern List * newlist(const int code, const unsigned withsubstructure);
 
 extern List * extend(List *const, List *const);
 
@@ -42,7 +103,7 @@ extern List * extend(List *const, List *const);
 // узлы счётчик ссылок в них увеличвается. Новые узлы не создаются
 extern List * forklist(const List *const);
 
-extern void releaselist(List *const);
+extern void freelist(List *const);
 
 extern char *dumplist(const List *const);
 
@@ -52,31 +113,30 @@ extern char *dumplist(const List *const);
 typedef int (*Oneach)(List *const, const unsigned, void *const);
 extern int forlist(List *const, Oneach, void *const, const int key);
 
+// Окружения
+
 typedef struct {
-	const List * key;
+	const List *key;
 	union {
-		Node * node;
+		Node *node;
+		void *generic;
 	} u;
-	unsigned code;
-	unsigned id;
+	int code;
 } Binding;
 
-struct EnvironmentStruct {
-	Array bindings;
-	Array index;
-};
+extern Array mkenv(void);
+extern void rlenv(Array *const);
 
-extern Environment mkenvironment();
-extern void freeenvironment(Environment *const);
-
-extern unsigned readbinding(
-	Environment *const, const List *const key, const Binding value);
+extern unsigned attachbinding(Array *const, const List *const key, const int code,
+const void *const);
 
 extern const Binding *lookbinding(const List *const env, const List *const key);
+
+// Семантические функции
 
 // Загрузить сырой список из файла (сырой - такой, в котором не подставлены типы
 // и атомы) используя универсальную таблицу (надо куда-то складывать прочитанные
 // "зюквочки"
-extern List * loadrawlist(AtomTable * universe, List *const env, FILE *);
+extern List * loadrawlist(Array *const universe, List *const env, FILE *);
 
 #endif

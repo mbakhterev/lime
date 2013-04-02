@@ -2,12 +2,13 @@ lmbits = $(call bitspath)
 
 lmsrc = \
 	rune.c		\
-	atomtab.c	\
-	array.c		\
-	heapsort.c	\
 	util.c		\
-	list.c		\
-	environment.c
+	array.c
+
+# 	atomtab.c	\
+# 	heapsort.c	\
+# 	list.c		\
+# 	environment.c
 
 lmobj = $(call c2o,$(bitspath),$(lmsrc))
 

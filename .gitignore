@@ -25,3 +25,6 @@
 
 !sketch
 !sketch/*.c
+
+!tcn
+!tcn/*.mk
