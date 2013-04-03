@@ -103,7 +103,7 @@ extern List * extend(List *const, List *const);
 // узлы счётчик ссылок в них увеличвается. Новые узлы не создаются
 extern List * forklist(const List *const);
 
-extern void freelist(List *const);
+extern void rllist(List *const);
 
 extern char *dumplist(const List *const);
 

@@ -10,7 +10,7 @@ typedef int (*KeyCmp)(const void *const data,
 extern void heapsort(const void *const data,
 	unsigned index[], const unsigned, ItemCmp);
 
-extern void heapsearch(const void *const data,
-	unsigned index[], const void *const key);
+extern unsigned heapsearch(const void *const D,
+	const unsigned I[], const unsigned N, const void *const key, KeyCmp);
 
 #endif

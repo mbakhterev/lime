@@ -1,5 +1,12 @@
 #include "util.h"
 
+#include <stdlib.h>
+#include <assert.h>
+
+#define DBGEG 1
+
+#define DBGFLAGS (DBGEG)
+
 unsigned middle(const unsigned a, const unsigned b) {
 	return a + (b - a) / 2;
 }
@@ -20,22 +27,24 @@ static unsigned clp2(unsigned n) {
 	return n + 1;
 }
 
-void * expogrow(const void *ptr, const unsigned ilen, const unsigned count) {
-	const unsigned len = clp2(a->itemlength * count);
+void *expogrow(void *const buf, const unsigned ilen, const unsigned cnt) {
+	const unsigned curlen = clp2(ilen * cnt);
+	assert(curlen < MAXNUM);
+	const unsigned len = clp2(ilen * (cnt + 1));
 	assert(len && len < MAXNUM);
 
-	if(a->capacity >= len) {
-		return a->data;
+	if(len <= curlen) {
+		return buf;
 	}
 
-	DBG(DBGER, "resizing for buf: %p; il: %u; count: %u; len: %u",
-		a->data, a->itemlength, count, len);
+	DBG(DBGEG, "resizing for buf: %p; il: %u; count: %u; len: %u -> %u",
+		buf, ilen, cnt, curlen, len);
 	
-	void *const p = realloc(a->data, len);
+	void *const p = realloc(buf, len);
 	assert(p);
 
-	a->capacity = len;
-	a->data = p;
+// 	a->capacity = len;
+// 	a->data = p;
 
 	return p;
 }

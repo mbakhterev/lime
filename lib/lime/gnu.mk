@@ -3,6 +3,7 @@ lmbits = $(call bitspath)
 lmsrc = \
 	rune.c		\
 	util.c		\
+	heap.c		\
 	array.c
 
 # 	atomtab.c	\

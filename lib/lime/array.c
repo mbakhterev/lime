@@ -1,12 +1,9 @@
 #include "construct.h"
 #include "util.h"
+#include "heap.h"
+#include "util.h"
 
 #include <string.h>
-
-#define DBGER	1
-
-// #define DBGFLAGS (DBGER)
-#define DBGFLAGS 0
 
 #include <assert.h>
 #include <stdlib.h>
@@ -18,29 +15,47 @@ Array mkarray(const int code, const unsigned ilen,
 		.itemcmp = icmp,
 		.data = NULL,
 		.index = NULL, 
-		.capacity = 0,
 		.itemlength = ilen,
 		.count = 0,
 		.code = code
 	};
 }
 
+void rlarray(Array *const a) {
+	if(a->data) {
+		assert(a->index && a->count);
+		free(a->data);
+		free(a->index);
+		*a = mkarray(a->code, a->itemlength, a->itemcmp, a->keycmp);
+	}
+}
+
+void *itemat(const Array *const a, const unsigned i) {
+	unsigned char *ptr = a->data;
+	return ptr + i * a->itemlength;
+}
+
 void *attach(Array *const a, const void *const p) {
 	const unsigned count = a->count;
-	unsigned char (*const buf)[a->itemlength] = exporesize(a, count + 1);
-	a->count += 1;
+	const unsigned ilen = a->itemlength;
+
+	unsigned char (*const buf)[a->itemlength]
+		= expogrow(a->data, ilen, count);
+	
+	unsigned *const idx = expogrow(a->index, sizeof(unsigned), count);
+		
 	memcpy(buf + count, p, sizeof(*buf));
+	idx[count] = count;
+
+	a->data = buf;
+	a->index = idx;
+	a->count += 1;
+
+	heapsort(buf, idx, count + 1, a->itemcmp);
+
 	return buf + count;
 }
 
-void freearray(Array *const a) {
-	assert(a->buffer 
-		&& a->capacity
-		&& a->itemlength * a->count < a->capacity);
-	
-	free(a->buffer);
-	a->buffer = 0;
-	a->capacity = 0;
-	a->count = 0;
-	a->itemlength = 0;
+unsigned search(const Array *const a, const void *const key) {
+	return heapsearch(a->data, a->index, a->count, key, a->keycmp);
 }
