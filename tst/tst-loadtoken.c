@@ -1,4 +1,4 @@
-#include <lime/atomtab.h>
+#include <lime/construct.h>
 
 #include <stdio.h>
 #include <ctype.h>
@@ -13,7 +13,7 @@ unsigned field = 0;
 const char *unitname = "test";
 
 int main(int argc, char * argv[]) {
-	AtomTable t = mkatomtab();
+	Array t = mkatomtab();
 	char fmt[64];
 	mkfmt(fmt);
 
@@ -28,8 +28,9 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	for(unsigned i = 0; i < t.atoms.count; i += 1) {
-		const unsigned char *const a = (const unsigned char *)tabindex(&t, i);
+	const unsigned *const I = t.index;
+	for(unsigned i = 0; i < t.count; i += 1) {
+		const unsigned char *const a = *(Atom *)itemat(&t, I[i]);
 		fwrite(atombytes(a), 1, atomlen(a), stdout);
 		fputc('\n', stdout);
 	}

@@ -43,8 +43,5 @@ void *expogrow(void *const buf, const unsigned ilen, const unsigned cnt) {
 	void *const p = realloc(buf, len);
 	assert(p);
 
-// 	a->capacity = len;
-// 	a->data = p;
-
 	return p;
 }
