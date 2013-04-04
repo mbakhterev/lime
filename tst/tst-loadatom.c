@@ -29,5 +29,7 @@ int main(int argc, char * argv[]) {
 		printf("%02x.%u.\"%s\"\n", hint, atomlen(a), atombytes(a));
 	}
 
+	rlatomtab(&t);
+
 	return 0;
 }

@@ -28,11 +28,11 @@ int main(int argc, char * argv[]) {
 	Some s;
 
 	s.key = (unsigned)-1;
-	attach(&a, &s);
+	readin(&a, &s);
 
 	for(unsigned i = 1; i < N; i += 1) {
 		s.key = rand() % 2345223234;
-		attach(&a, &s);
+		readin(&a, &s);
 		if(i % 1024) { } else {
 			printf("%u items attached\n", i);
 		}

@@ -35,5 +35,7 @@ int main(int argc, char * argv[]) {
 		fputc('\n', stdout);
 	}
 
+	rlatomtab(&t);
+
 	return 0;
 }

@@ -35,7 +35,7 @@ void *itemat(const Array *const a, const unsigned i) {
 	return ptr + i * a->itemlength;
 }
 
-void *attach(Array *const a, const void *const p) {
+void *readin(Array *const a, const void *const p) {
 	const unsigned count = a->count;
 	const unsigned ilen = a->itemlength;
 
@@ -56,6 +56,6 @@ void *attach(Array *const a, const void *const p) {
 	return buf + count;
 }
 
-unsigned search(const Array *const a, const void *const key) {
+unsigned lookup(const Array *const a, const void *const key) {
 	return heapsearch(a->data, a->index, a->count, key, a->keycmp);
 }

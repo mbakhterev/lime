@@ -28,19 +28,21 @@ struct ArrayTag {
 };
 
 // mk - это make; rl - release
-extern Array mkarray(const int code, const unsigned itemlen, ItemCmp, KeyCmp);
+extern Array mkarray(const int code, const unsigned itemlen,
+	const ItemCmp, const KeyCmp);
+
 extern void rlarray(Array *const);
 
 extern void *itemat(const Array *const, const unsigned);
-extern void *attach(Array *const, const void *const val);
-extern unsigned search(const Array *const, const void *const key);
+extern void *readin(Array *const, const void *const val);
+extern unsigned lookup(const Array *const, const void *const key);
 
 // Таблицы атомов
 
 typedef const unsigned char *Atom;
 
 typedef struct {
-	Atom *bytes;
+	const unsigned char *bytes;
 	unsigned length;
 	unsigned char hint;
 } AtomPack;
@@ -48,12 +50,13 @@ typedef struct {
 extern unsigned atomlen(const Atom);
 extern unsigned atomhint(const Atom);
 extern AtomPack atompack(const Atom);
-extern unsigned char *atombytes(const Atom);
+extern const unsigned char *atombytes(const Atom);
 
 extern Array mkatomtab(void);
 extern void rlatomtab(Array *const);
 
-extern unsigned attachpack(Array *const, const AtomPack *const);
+extern unsigned readpack(Array *const, const AtomPack *const);
+extern unsigned lookpack(Array *const, const AtomPack *const);
 extern unsigned loadatom(Array *const, FILE *const);
 
 extern unsigned loadtoken(Array *const, FILE *const,

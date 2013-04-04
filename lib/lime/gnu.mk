@@ -4,7 +4,8 @@ lmsrc = \
 	rune.c		\
 	util.c		\
 	heap.c		\
-	array.c
+	array.c		\
+	atomtab.c
 
 # 	atomtab.c	\
 # 	heapsort.c	\
