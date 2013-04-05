@@ -13,7 +13,7 @@ unsigned field = 0;
 const char *unitname = "test";
 
 int main(int argc, char * argv[]) {
-	Array t = mkatomtab();
+	Array t = makeatomtab();
 	char fmt[64];
 	mkfmt(fmt);
 
@@ -35,7 +35,7 @@ int main(int argc, char * argv[]) {
 		fputc('\n', stdout);
 	}
 
-	rlatomtab(&t);
+	freeatomtab(&t);
 
 	return 0;
 }

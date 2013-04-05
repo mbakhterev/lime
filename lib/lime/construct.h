@@ -28,10 +28,10 @@ struct ArrayTag {
 };
 
 // mk - это make; rl - release
-extern Array mkarray(const int code, const unsigned itemlen,
+extern Array makearray(const int code, const unsigned itemlen,
 	const ItemCmp, const KeyCmp);
 
-extern void rlarray(Array *const);
+extern void freearray(Array *const);
 
 extern void *itemat(const Array *const, const unsigned);
 extern void *readin(Array *const, const void *const val);
@@ -52,8 +52,8 @@ extern unsigned atomhint(const Atom);
 extern AtomPack atompack(const Atom);
 extern const unsigned char *atombytes(const Atom);
 
-extern Array mkatomtab(void);
-extern void rlatomtab(Array *const);
+extern Array makeatomtab(void);
+extern void freeatomtab(Array *const);
 
 extern unsigned readpack(Array *const, const AtomPack *const);
 extern unsigned lookpack(Array *const, const AtomPack *const);
@@ -65,17 +65,21 @@ extern unsigned loadtoken(Array *const, FILE *const,
 // Узлы
 
 struct NodeTag {
-	unsigned nrefs;
-	unsigned code;
 	union {
 		Node *nextfree;
 		List *sources;
 	} u;
 
+	unsigned code;
+	
 	// Некая дополнительная информация, которая может быть специально
 	// проинтерпретирована пользователем. Рассчёт на то, что extra -- это
 	// индекс в некотором массиве
 	unsigned extra;
+
+	// Отметка о посещении для различных алгоритмов обхода dag-а. Например,
+	// для mark-and-sweep сборщика мусора
+	unsigned mark:1;
 };
 
 extern Node *newnode(const unsigned code);
@@ -96,9 +100,9 @@ struct ListTag {
 	int code;
 };
 
-// withsubstructure - флаг, указывающий на то, следует ли выделять ту структуру,
-// на которую будет ссылаться новый элемент списка
-extern List * newlist(const int code, const unsigned withsubstructure);
+// allocate - флаг, указывающий на то, следует ли выделять ту структуру, на
+// которую будет ссылаться новый элемент списка
+extern List * newlist(const int code, const unsigned allocate);
 
 extern List * extend(List *const, List *const);
 
@@ -106,7 +110,7 @@ extern List * extend(List *const, List *const);
 // узлы счётчик ссылок в них увеличвается. Новые узлы не создаются
 extern List * forklist(const List *const);
 
-extern void rllist(List *const);
+extern void freelist(List *const);
 
 extern char *dumplist(const List *const);
 
@@ -127,10 +131,10 @@ typedef struct {
 	int code;
 } Binding;
 
-extern Array mkenv(void);
-extern void rlenv(Array *const);
+extern Array makeenvironment(void);
+extern void freeenvironment(Array *const);
 
-extern unsigned attachbinding(Array *const, const List *const key, const int code,
+extern unsigned readbinding(Array *const, const List *const key, const int code,
 const void *const);
 
 extern const Binding *lookbinding(const List *const env, const List *const key);

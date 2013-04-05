@@ -6,8 +6,8 @@
 
 Environment mkenvironment() {
 	return (Environment) {
-		.index = mkarray(sizeof(Binding *)),
-		.bindings = mkarray(sizeof(Binding))
+		.index = makearray(sizeof(Binding *)),
+		.bindings = makearray(sizeof(Binding))
 	};
 }
 

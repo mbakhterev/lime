@@ -8,7 +8,7 @@ unsigned field = 0;
 const char *unitname = "test";
 
 int main(int argc, char * argv[]) {
-	Array t = mkatomtab(); 
+	Array t = makeatomtab(); 
 
 	while(!feof(stdin)) {
 		int c;
@@ -29,7 +29,7 @@ int main(int argc, char * argv[]) {
 		printf("%02x.%u.\"%s\"\n", hint, atomlen(a), atombytes(a));
 	}
 
-	rlatomtab(&t);
+	freeatomtab(&t);
 
 	return 0;
 }

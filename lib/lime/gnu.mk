@@ -7,7 +7,6 @@ lmsrc = \
 	array.c		\
 	atomtab.c
 
-# 	atomtab.c	\
 # 	heapsort.c	\
 # 	list.c		\
 # 	environment.c

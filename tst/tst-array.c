@@ -24,7 +24,7 @@ static int kcmp(const void *const D, const unsigned i, const void *const key) {
 
 int main(int argc, char * argv[]) {
 	const unsigned N = 1 << 13;
-	Array a = mkarray(0, sizeof(Some), icmp, kcmp);
+	Array a = makearray(0, sizeof(Some), icmp, kcmp);
 	Some s;
 
 	s.key = (unsigned)-1;

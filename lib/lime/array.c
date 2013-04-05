@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-Array mkarray(const int code, const unsigned ilen,
+Array makearray(const int code, const unsigned ilen,
 	const ItemCmp icmp, const KeyCmp kcmp) {
 	return (Array) {
 		.keycmp = kcmp,
@@ -21,12 +21,12 @@ Array mkarray(const int code, const unsigned ilen,
 	};
 }
 
-void rlarray(Array *const a) {
+void freearray(Array *const a) {
 	if(a->data) {
 		assert(a->index && a->count);
 		free(a->data);
 		free(a->index);
-		*a = mkarray(a->code, a->itemlength, a->itemcmp, a->keycmp);
+		*a = makearray(a->code, a->itemlength, a->itemcmp, a->keycmp);
 	}
 }
 

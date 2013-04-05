@@ -70,7 +70,7 @@ int main(int argc, char * argv[]) {
 	printf("k: %s\n", c);
 	free(c);
 
-	rllist(k);
+	freelist(k);
 	forlist(k, checkfree, NULL, 0);
 
 	return 0;

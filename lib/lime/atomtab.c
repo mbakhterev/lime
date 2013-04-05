@@ -53,11 +53,11 @@ static int icmp(const void *const D, const unsigned i, const unsigned j) {
 	return kcmp(D, i, &ap);
 }
 
-Array mkatomtab(void) {
-	return mkarray(ATOM, sizeof(Atom), icmp, kcmp);
+Array makeatomtab(void) {
+	return makearray(ATOM, sizeof(Atom), icmp, kcmp);
 }
 
-void rlatomtab(Array *const t) {
+void freeatomtab(Array *const t) {
 	assert(t->code == ATOM);
 
 	if(t->data) {
@@ -68,7 +68,7 @@ void rlatomtab(Array *const t) {
 		}
 	}
 
-	*t = mkatomtab();
+	*t = makeatomtab();
 }
 
 unsigned atomhint(const Atom a) {
