@@ -1,28 +1,15 @@
 #include "construct.h"
 #include "util.h"
-#include "heapsort.h"
 
 #include <assert.h>
-
-Environment mkenvironment() {
-	return (Environment) {
-		.index = makearray(sizeof(Binding *)),
-		.bindings = makearray(sizeof(Binding))
-	};
-}
-
-void freeenvironment(Environment *const env) {
-	freearray(&env->bindings);
-	freearray(&env->index);
-}
 
 static int cmplists(const List *const, const List *const);
 
 // Сравнение элементов списка. Без лукавых мудростей: сравниваются только узлы с
 // числовым содержимым (NUMBER, ATOM, TYPE) и подсписки похожей структуры.
 // Попытка сравнить узлы другой строкутуры - баг. Порядок между числами из
-// различных классов определяется порядком классов в соответствующем enum (см.
-// lib/lime/construct.h
+// различных классов определяется порядком классов в соответствующем enum (cf.
+// lib/lime/construct.h)
 
 static int iscomparable(const List *const k) {
 	return k->code <= LIST;
@@ -31,8 +18,6 @@ static int iscomparable(const List *const k) {
 static int cmpitems(const List *const k, const List *const l) {
 	assert(iscomparable(k));
 	assert(iscomparable(l));
-
-//	unsigned r = 1 - (k->code == l->code) - ((k->code - l->code) << 1);
 
 	unsigned r = cmpui(k->code, l->code);
 	if(r) { return r; }
@@ -75,39 +60,21 @@ static int cmplists(const List *const k, const List *const l) {
 	return 1 - (ck == k && cl == l) - ((ck == k && cl != l) << 1);
 }
 
-static int cmpbindings(
-	const void *const bindings, const unsigned i, const unsigned j) {
-	const Binding *const b = bindings;
-	return cmplists(b[i].key, b[j].key);
+static int kcmp(const void *const D, const unsigned i, const void *const key) {
+	return cmplists(((const Binding *)D)[i].key, key);
 }
 
-static unsigned lookbindingsingle(const Environment *const env,
-	const List *const key) {
-	if(env->index.count) { } else {
-		return -1;
-	}
+static int icmp(const void *const D, const unsigned i, const unsigned j) {
+	return kcmp(D, i, ((const Binding *)D)[j].key);
+}
 
-	const Binding *const *const B = env->index.buffer;
-	unsigned r = env->index.count - 1;
-	unsigned l = 0;
+Array makeenvironment(void) {
+	return makearray(ENV, sizeof(Binding), icmp, kcmp);
+}
 
-	while(l < r) {
-		const unsigned m = middle(l, r);
-
-		if(cmplists(B[m]->key, key) < 0) {
-			l = m + 1;
-		}
-		else {
-			r = m;
-		
-		}
-	}
-
-	if(l == r && cmplists(B[l]->key, key) == 0) {
-		return B[l]->id;
-	}
-
-	return -1;
+void freeenvironment(Array *const env) {
+	assert(env->code == ENV);
+	freearray(env);
 }
 
 typedef struct {
@@ -115,14 +82,14 @@ typedef struct {
 	const Binding *result;
 } LookingState;
 
-static int looker(List *const env, const unsigned isfinal, void *const ptr) {
+static int looker(List *const env, void *const ptr) {
 	assert(env && env->code == ENV);
 
 	LookingState *const s = ptr;
-	const unsigned k = lookbindingsingle(env->u.environment, s->key);
+	const unsigned k = lookup(env->u.environment, s->key);
 
 	if(k != -1) {
-		s->result = (Binding *)env->u.environment->bindings.buffer + k;
+		s->result = (const Binding *)env->u.environment->data + k;
 		return 1;
 	}
 
@@ -138,23 +105,16 @@ const Binding *lookbinding(const List *const env, const List *const key) {
 		return s.result;
 	}
 
-	return 0;
+	assert(s.result == NULL);
+
+	return NULL;
 }
 
-extern unsigned loadbinding(Environment *const env, Binding b) {
-	unsigned k = lookbindingsingle(env, b.key); 
+extern unsigned readbinding(Array *const env, const Binding *const b) {
+	assert(env->code == ENV);
+
+	const unsigned k = lookup(env, b->key); 
 	if(k != -1) { return k; }
 
-	b.key = forklist(b.key);
-	append(&env->bindings, &b);
-
-	k = env->bindings.count;
-	append(&env->index, &k);
-
-//	heapsort((const void **)env->index.buffer, env->index.count, cmplists);
-
-	heapsort((const void *)env->bindings.buffer,
-		(unsigned *)env->index.buffer, k, cmpbindings);
-
-	return k;
+	return readin(env, b);
 }

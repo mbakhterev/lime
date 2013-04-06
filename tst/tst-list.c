@@ -4,14 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-static int printer(List *const l, const unsigned isfinal, void *const ptr) {
-// 	static int cnt = 0;
-// 	if(cnt > 32) {
-// 		exit(EXIT_FAILURE);
-// 	}
-// 
-// 	cnt += 1;
-	
+static int printer(List *const l, void *const ptr) {
 	switch(l->code) {
 	case NUMBER:
 		printf("N: %u\n", l->u.number);
@@ -39,7 +32,7 @@ static int printer(List *const l, const unsigned isfinal, void *const ptr) {
 	return 0;
 }
 
-static int checkfree(List *const l, const unsigned isfinal, void *const ptr) {
+static int checkfree(List *const l, void *const ptr) {
 	assert(l->code == FREE);
 	return 0;
 }
@@ -47,19 +40,12 @@ static int checkfree(List *const l, const unsigned isfinal, void *const ptr) {
 int main(int argc, char * argv[]) {
 	List * l = NULL;
 	for(int i = 0; i < 20; i += 1) {
-//		printf("%d\n", i);
 		List *const k = newlist(NUMBER, 0);
 		k->u.number = i;
 		forlist(k, printer, NULL, 0);
 		l = extend(l, k);
 	}
 	printf("---\n");
-
-// 	List *const k = forklist(l);
-// 	forlist(l, printer, NULL);
-// 	printf("---\n");
-// 	forlist(k, printer, NULL);
-// 
 
 	char *c = dumplist(l);
 	printf("l: %s\n", c);
@@ -72,6 +58,12 @@ int main(int argc, char * argv[]) {
 
 	freelist(k);
 	forlist(k, checkfree, NULL, 0);
+
+	List *const m = forklist(l);
+	printf("m: %s\n", dumplist(m));
+
+	List *const n = forklist(m);
+	printf("n: %s\n", dumplist(n));
 
 	return 0;
 }

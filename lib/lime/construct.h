@@ -33,9 +33,9 @@ extern Array makearray(const int code, const unsigned itemlen,
 
 extern void freearray(Array *const);
 
-extern void *itemat(const Array *const, const unsigned);
-extern void *readin(Array *const, const void *const val);
+extern unsigned readin(Array *const, const void *const val);
 extern unsigned lookup(const Array *const, const void *const key);
+extern void *itemat(const Array *const, const unsigned);
 
 // Таблицы атомов
 
@@ -82,7 +82,7 @@ struct NodeTag {
 	unsigned mark:1;
 };
 
-extern Node *newnode(const unsigned code);
+extern Node *newnode(void);
 extern void freenode(Node *const);
 
 // Списки
@@ -105,19 +105,14 @@ struct ListTag {
 extern List * newlist(const int code, const unsigned allocate);
 
 extern List * extend(List *const, List *const);
-
-// Создание нового списка копированием списка-ссылки. При копировании ссылок на
-// узлы счётчик ссылок в них увеличвается. Новые узлы не создаются
 extern List * forklist(const List *const);
-
 extern void freelist(List *const);
-
 extern char *dumplist(const List *const);
 
 // Функция forlist применяет другую функцию типа Oneach к каждому элементу
 // списка, пока последняя возвращает значение, равное key. foreach устроена так,
 // что позволяет менять ->next в обрабатываемом элементе списка.
-typedef int (*Oneach)(List *const, const unsigned, void *const);
+typedef int (*Oneach)(List *const, void *const);
 extern int forlist(List *const, Oneach, void *const, const int key);
 
 // Окружения
@@ -133,10 +128,7 @@ typedef struct {
 
 extern Array makeenvironment(void);
 extern void freeenvironment(Array *const);
-
-extern unsigned readbinding(Array *const, const List *const key, const int code,
-const void *const);
-
+extern unsigned readbinding(Array *const, const Binding *const);
 extern const Binding *lookbinding(const List *const env, const List *const key);
 
 // Семантические функции

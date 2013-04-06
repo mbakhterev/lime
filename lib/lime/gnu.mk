@@ -5,11 +5,9 @@ lmsrc = \
 	util.c		\
 	heap.c		\
 	array.c		\
-	atomtab.c
-
-# 	heapsort.c	\
-# 	list.c		\
-# 	environment.c
+	atomtab.c	\
+	list.c		\
+	environment.c
 
 lmobj = $(call c2o,$(bitspath),$(lmsrc))
 

@@ -1,4 +1,5 @@
 #include "construct.h"
+
 #include "util.h"
 #include "rune.h"
 
@@ -68,7 +69,7 @@ void freeatomtab(Array *const t) {
 		}
 	}
 
-	*t = makeatomtab();
+	freearray(t);
 }
 
 unsigned atomhint(const Atom a) {
@@ -116,11 +117,7 @@ static unsigned grabpack(Array *const t, const AtomPack *const ap) {
 	DBG(DBGGT, "atom: %s", atombytes(a));
 	a[0] = hint;
 
-	const unsigned id = t->count;
-
-	readin(t, &a);
-
-	return id;
+	return readin(t, &a);
 }
 
 unsigned loadatom(Array *const t, FILE *const f) {

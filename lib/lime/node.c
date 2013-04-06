@@ -24,7 +24,7 @@ static Node *tipoff(Node **const lptr) {
 
 }
 
-Node *newnode(const unsigned code) {
+Node *newnode(void) {
 	Node *n;
 
 	if(freenodes) {
@@ -39,7 +39,6 @@ Node *newnode(const unsigned code) {
 	}
 
 	n->u.nextfree = n;
-	n->code = code;
 
 	return n;
 }

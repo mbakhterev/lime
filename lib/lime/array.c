@@ -35,7 +35,7 @@ void *itemat(const Array *const a, const unsigned i) {
 	return ptr + i * a->itemlength;
 }
 
-void *readin(Array *const a, const void *const p) {
+unsigned readin(Array *const a, const void *const p) {
 	const unsigned count = a->count;
 	const unsigned ilen = a->itemlength;
 
@@ -53,7 +53,7 @@ void *readin(Array *const a, const void *const p) {
 
 	heapsort(buf, idx, count + 1, a->itemcmp);
 
-	return buf + count;
+	return count;
 }
 
 unsigned lookup(const Array *const a, const void *const key) {

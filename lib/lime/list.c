@@ -4,9 +4,11 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#define DBGFE	1
+#define DBGFE 1
+#define DBGPOOL 2
 
 // #define DBGFLAGS (DBGFE)
+// #define DBGFLAGS (DBGPOOL)
 
 #define DBGFLAGS 0
 
@@ -14,11 +16,10 @@
 // эффективность. Списки будут кольцевые, поэтому храним только один указатель.
 // Это указатель (ptr) на конец списка. На начало указывает ptr->next
 
-static List * freelist = NULL;
-static List * freenodes = NULL;
+static List * freeitems = NULL;
 
 // Откусить первый элемент
-static List * nipoff(List **const lptr) {
+static List * tipoff(List **const lptr) {
 	List *const l = *lptr;
 	assert(l);
 
@@ -26,71 +27,45 @@ static List * nipoff(List **const lptr) {
 	List *const n = l->next;
 
 	if(l != n) {
-		// Список из >1 элемента.
+		// Список из > 1 элемента.
 		l->next = n->next;
 	}
 	else {
 		*lptr = NULL;
 	}
 
-	return 0;
+	return n;
 }
 
-static List * listalloc() {
-	List *const p = malloc(sizeof(List));
-	assert(p);
-	p->code = FREE;
-	return p;
-}
+List * newlist(const int code, const unsigned allocate) {
+	List *l = NULL;
 
-static Node * nodealloc() {
-	Node *const p = malloc(sizeof(Node));
-	assert(p);
-	p->code = (unsigned)FREE;
-	return p;
-}
+	if(freeitems) {
+		DBG(DBGPOOL, "tipping off: %p", (void *)freeitems);
 
-List * newlist(const unsigned code, const unsigned withsubstructure) {
+		l = tipoff(&freeitems);
+		assert(l->code == FREE);
+	}
+	else {
+		l = malloc(sizeof(List));
+		assert(l);
+	}
+
+	l->code = code;
+	l->next = l;
+
 	switch(code) {
 	case NUMBER:
 	case ATOM:
-	case TYPE: {
-		List *const l
-			= freelist ? nipoff(&freelist) : listalloc();
-		assert(l->code == FREE);
-		l->code = code;
-		l->next = l;
+	case TYPE:
 		return l;
-	}
 
 	case NODE:
-		if(withsubstructure) {
-			if(freenodes) {
-				List *const l = nipoff(&freenodes);
-
-				assert(l->code == FREE
-					&& l->u.node->code == (unsigned)FREE);
-
-				l->next = l;
-				return l;
-			}
-			else {
-				List *const l = listalloc();
-				l->code = NODE;
-				l->next = l;
-				l->u.node = nodealloc();
-				l->u.node->code = (unsigned)FREE;
-				return l;
-			}
+		if(allocate) {
+			l->u.node = newnode();
 		}
-		else {
-			List *const l
-				= freelist ? nipoff(&freelist) : listalloc();
-			assert(l->code == FREE);
-			l->code = code;
-			l->next = l;
-			return l;
-		}
+
+		return l;
 	}
 
 	assert(0);
@@ -128,13 +103,13 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key) {
 
 		p = q;
 		q = p->next;
-		r = fn(p, p == k, ptr);
+		r = fn(p, ptr);
 	} while(r == key && p != k);
 
 	return r;
 }
 
-static int forkitem(List *const k, const unsigned isfinal, void *const ptr) {
+static int forkitem(List *const k, void *const ptr) {
 	List **const lptr = ptr;
 	List *l = newlist(k->code, 0);
 
@@ -148,7 +123,6 @@ static int forkitem(List *const k, const unsigned isfinal, void *const ptr) {
 	case NODE:
 		assert(k->u.node);
 		l->u.node = k->u.node;
-		l->u.node->nrefs += 1;
 		break;
 	
 	case LIST:
@@ -172,34 +146,49 @@ List *forklist(const List *const k) {
 	return l;
 }
 
-static int releaser(List *const l, unsigned const isfinal, void *const p) {
+static int releaser(List *const l, void *const p) {
 	l->code = FREE;
 
-	if(l->code == NODE) {
-		assert(l->u.node->nrefs > 0);
-		l->u.node->nrefs -= 1;
-	}
+	DBG(DBGPOOL, "pooling: %p", l);
 
-	extend(freelist, l);
+	l->next = l;
+	freeitems = extend(freeitems, l);
 
 	return 0;
 }
 
-void releaselist(List *const l) {
+void freelist(List *const l) {
 	forlist(l, releaser, NULL, 0);
 }
 
-static int dumper(List *const l, const unsigned, void *const file);
+static int dumper(List *const l, void *const file);
+
+typedef struct {
+	FILE *file;
+	const List *first;
+} DumpState;
 
 static void dumptostream(List *const l, FILE *const f) {
 	assert(fputc('(', f) != EOF);
-	forlist(l, dumper, f, 0);
-//	assert(fseek(f, (long)-1, SEEK_CUR) == 0);
+
+	DumpState s = { .file = f, .first = NULL };
+	forlist(l, dumper, &s, 0);
+
 	assert(fputc(')', f) != EOF);
 }
 
-static int dumper(List *const l, const unsigned isfinal, void *const file) {
-	FILE *const f = file;
+static int dumper(List *const l, void *const state) {
+	DumpState *const s = state;
+	FILE *const f = s->file;
+	unsigned isfinal;
+
+	if(s->first) { 	
+		isfinal = l->next == s->first;
+	}
+	else {
+		isfinal = 0;
+		s->first = l;
+	}
 
 	switch(l->code) {
 	case NUMBER:
