@@ -87,7 +87,7 @@ extern void freenode(Node *const);
 
 // Списки
 
-enum { NUMBER, ATOM, TYPE, NODE, ENV, LIST, FREE = -1 };
+enum { NUMBER, ATOM, TYPE, LIST, NODE, ENV, MAP, FREE = -1 };
 
 struct ListTag {
 	List * next;
@@ -131,11 +131,64 @@ extern void freeenvironment(Array *const);
 extern unsigned readbinding(Array *const, const Binding *const);
 extern const Binding *lookbinding(const List *const env, const List *const key);
 
+// Биективное unsigned -> unsigned отображение. Предназначение двойное.
+
+// 1. Нужно для того, чтобы создавать локальные "карты" атомов и типов. Когда
+// нужно загружать модуль поверх уже загруженных (или инициализированных)
+// структур данных для атомов и типов, то ссылки на атомы и типы по номерам в
+// загружаемом модуле не будут соответствовать накопленной информации. Нужно эти
+// локальные номера отображать в глобальные. Это прямое отображение.
+
+// 2. Иногда нужно выделять особые типы и атомы, чтобы специально их
+// обрабатывать. Тогда можно перенумеровать эти атомы при помощи обратного
+// отображения. Например, узнать локальный порядковый номер атома должно помочь
+// выражение: reverse(&map, lookpack(&atoms, &atompack));
+
+extern Array makeuimap(void);
+extern void freeuimap(Array *const);
+
+extern unsigned uimap(Array *const, const unsigned);
+extern unsigned direct(const Array *const, const unsigned);
+extern unsigned reverse(const Array *const, const unsigned);
+
 // Семантические функции
 
-// Загрузить сырой список из файла (сырой - такой, в котором не подставлены типы
-// и атомы) используя универсальную таблицу (надо куда-то складывать прочитанные
-// "зюквочки"
-extern List * loadrawlist(Array *const universe, List *const env, FILE *);
+// Обобщённая загрузка dag-а (списка узлов, со списками ссылок на другие узлы в
+// каждом) из файла. Загрузка происходит с узнаванием "ключевых узлов".  Узлы
+// описываются атомами, ключевые заданы специальным uimap. Когда loadrawdag
+// замечает такой узел, он вызывает соответствующую (по reverse(atomnum))
+// функцию типа LoadAction для специальной обработки узла. Это необходимо для
+// специальной логики обработки специальных узлов.
+
+typedef struct LoadContextTag LoadContext;
+typedef List *(*LoadAction)(LoadContext *const, void *const state);
+
+struct LoadContextTag {
+	FILE *file;
+	Array *universe;		// общая таблица атомов
+	Array *keymap;			// ключевые атомы в ней
+	const LoadAction *actions;	// специальные действия
+	List *env;			// окружение
+};
+
+extern List *loadrawdag(LoadContext *const, void *const state);
+
+// Создать согласованную с таблицей атомов keymap по списку атомов в массиве из
+// строк.
+
+extern Array keymap(Array *const universe, const unsigned hint,
+	const char *const atoms[], const unsigned N);
+
+// Некоторые стандартные LoadAction
+
+// 'ANum x = Num -- особенность в том, что Num не является списоком
+// 'TNum -- аналогично
+extern const LoadAction onatomnum;
+extern const LoadAction ontypenum;
+
+// 'ALook x = 01.2."34" -- описание атома не является списоком
+extern const LoadAction onatomlook;
+extern const LoadAction onform;
 
 #endif
+

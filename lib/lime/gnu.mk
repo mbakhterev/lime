@@ -7,7 +7,8 @@ lmsrc = \
 	array.c		\
 	atomtab.c	\
 	list.c		\
-	environment.c
+	environment.c	\
+	uimap.c
 
 lmobj = $(call c2o,$(bitspath),$(lmsrc))
 
