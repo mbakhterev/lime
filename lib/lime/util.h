@@ -34,4 +34,7 @@ extern unsigned min(const unsigned, const unsigned);
 // увеличит буфер в два раза.
 extern void *expogrow(void *const buf, const unsigned cnt, const unsigned ilen);
 
+extern int skipspaces(FILE *const);
+extern void errexpect(const int expecting, const int have);
+
 #endif

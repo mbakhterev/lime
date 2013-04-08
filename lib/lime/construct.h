@@ -165,10 +165,14 @@ typedef List *(*LoadAction)(LoadContext *const, void *const state);
 
 struct LoadContextTag {
 	FILE *file;
+	void *state;
+	
+	List *env;			// окружение из имён узлов
 	Array *universe;		// общая таблица атомов
 	Array *keymap;			// ключевые атомы в ней
 	const LoadAction *actions;	// специальные действия
-	List *env;			// окружение
+
+	unsigned keyonly:1;		// допускать узлы только в keymap
 };
 
 extern List *loadrawdag(LoadContext *const, void *const state);
@@ -188,6 +192,8 @@ extern const LoadAction ontypenum;
 
 // 'ALook x = 01.2."34" -- описание атома не является списоком
 extern const LoadAction onatomlook;
+
+// 'F x = (...) -- список узлов формы должен быть загружен в новом окружении
 extern const LoadAction onform;
 
 #endif

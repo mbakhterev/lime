@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <ctype.h>
 
 #define DBGEG 1
 
@@ -50,4 +51,19 @@ void *expogrow(void *const buf, const unsigned ilen, const unsigned cnt) {
 	assert(p);
 
 	return p;
+}
+
+int skipspaces(FILE *const f) {
+	int c;
+	while(isspace(c = fgetc(f))) {
+		item += c == '\n';
+	}
+
+	return c;
+}
+
+void errexpect(const int expecting, const int have) {
+	char buffer[32];
+	assert(sprintf(buffer, have == EOF ? "EOF" : "%c", have) > 0);
+	ERR("parse error: expecting: %c; got: %s", expecting, buffer);
 }
