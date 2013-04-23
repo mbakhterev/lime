@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
+#include <error.h>
 
 #define DBGEG 1
 
@@ -64,6 +65,13 @@ int skipspaces(FILE *const f) {
 
 void errexpect(const int expecting, const int have) {
 	char buffer[32];
-	assert(sprintf(buffer, have == EOF ? "EOF" : "%c", have) > 0);
+
+	if(have != EOF) {
+		assert(sprintf(buffer, "%c", have) > 0);
+	}
+	else {
+		assert(sprintf(buffer, "EOF") > 0);
+	}
+
 	ERR("parse error: expecting: %c; got: %s", expecting, buffer);
 }

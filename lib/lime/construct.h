@@ -5,6 +5,8 @@
 
 #include <stdio.h>
 
+enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
+
 // Имена для основных типов
 
 typedef struct NodeTag Node;
@@ -12,7 +14,6 @@ typedef struct ListTag List;
 typedef struct ArrayTag Array;
 
 // Индексированные массивы
-
 
 struct ArrayTag {
 	KeyCmp keycmp;
@@ -87,26 +88,68 @@ extern void freenode(Node *const);
 
 // Списки
 
+// Основное предназначение списков - быть структурированными (имеется в виду,
+// что с под-списками) ссылки на другие объекты: числа, атомы, типы, узлы. Числа
+// могут быть заданы прямо в элементе списка (это ссылки на объективную
+// численную реальность), атомы и типы тоже могут быть заданы прямо в элементе
+// своими номерами в таблицах. Узлы задаются ссылкой на соответствующую
+// структуру данных.
+
+// Списки могут быть использованы и для специальных случаев: стэк областей
+// видимости, например (Environment).
+
+// Имеет смысл отдельно вынести описание вариантов ссылок, которые могут быть в
+// элементе списка
+
+typedef union {
+	List *list;
+	Node *node;
+	Array *environment;
+	unsigned number;
+} Ref;
+
+// Конструкторы для Ref
+
+extern Ref refnum(const unsigned);
+extern Ref refenv(Array *const);
+extern Ref reflist(List *const);
+extern Ref refnode(Node *const);
+
 enum { NUMBER, ATOM, TYPE, LIST, NODE, ENV, MAP, FREE = -1 };
 
 struct ListTag {
 	List * next;
-	union {
-		List *list;
-		Node *node;
-		Array *environment;
-		unsigned number;
-	} u;
+
+// 	union {
+// 		List *list;
+// 		Node *node;
+// 		Array *environment;
+// 		unsigned number;
+// 	} u;
+
+	Ref u;	
+
 	int code;
 };
 
-// allocate - флаг, указывающий на то, следует ли выделять ту структуру, на
-// которую будет ссылаться новый элемент списка
-extern List * newlist(const int code, const unsigned allocate);
+// r - это Ref, которая определяет, как будет сконструирован список. Если по
+// семантике ссылка должна быть числом (NUMBER, ATOM, TYPE), то копируется поле
+// r.number. Если списком (LIST), то копируется поле n.list, даже если оно NULL
+// (пустые подсписки бывают). Если узлом (NODE), то ссылка копируется, если
+// r.node != NULL; если же r.node == NULL, то создаётся пустой узел с кодом FREE
 
-extern List * extend(List *const, List *const);
-extern List * forklist(const List *const);
-extern void freelist(List *const);
+extern List *newlist(const int code, Ref r);
+
+extern List *extend(List *const, List *const);
+extern List *tipoff(List **const);
+
+// clone/erase указывают на то, следует ли при копировании/освобождении списка
+// копировать/удалять так же и подструктуры (узлы в случае элемента списка с
+// code == NODE)
+
+extern List *forklist(const List *const, const unsigned clone);
+extern void freelist(List *const, const unsigned erase);
+
 extern char *dumplist(const List *const);
 
 // Функция forlist применяет другую функцию типа Oneach к каждому элементу
@@ -175,13 +218,13 @@ struct LoadContextTag {
 	unsigned keyonly:1;		// допускать узлы только в keymap
 };
 
-extern List *loadrawdag(LoadContext *const, void *const state);
+extern List *loadrawdag(LoadContext *const);
 
 // Создать согласованную с таблицей атомов keymap по списку атомов в массиве из
 // строк.
 
-extern Array keymap(Array *const universe, const unsigned hint,
-	const char *const atoms[], const unsigned N);
+extern Array keymap(Array *const universe,
+	const unsigned hint, const char *const atoms[], const unsigned N);
 
 // Некоторые стандартные LoadAction
 

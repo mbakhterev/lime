@@ -104,7 +104,6 @@ static unsigned atomstorelen(const unsigned len) {
 	return len + 1 + runelen(len);
 }
 
-enum { MAXHINT = 255, MAXLEN = MAXNUM, CHUNKLEN = 32 };
 
 static unsigned grabpack(Array *const t, const AtomPack *const ap) {
 	// Формируем атом
@@ -128,18 +127,18 @@ unsigned loadatom(Array *const t, FILE *const f) {
 	unsigned l;
 
 	if(fscanf(f, "%2x.%u", &k, &l) == 2) { } else {
-		ERROR("%s", "can't detect hint.length");
+		ERR("%s", "can't detect hint.length");
 	}
 
 	const unsigned len = l;
 	const unsigned hint = k;
 
 	if(hint <= MAXHINT && len <= MAXLEN) { } else {
-		ERROR("hint.length is out of limit 0x%x.0x%x", MAXHINT, MAXLEN);
+		ERR("hint.length is out of limit 0x%x.0x%x", MAXHINT, MAXLEN);
 	}
 
 	if(fscanf(f, ".\"%n", &n) == 0 && n == 2) { } else {
-		ERROR("%s", "can't detect .\"-leading");
+		ERR("%s", "can't detect .\"-leading");
 	}
 
 	l = atomstorelen(len);
@@ -149,11 +148,11 @@ unsigned loadatom(Array *const t, FILE *const f) {
 	assert(tmp);
 
 	if(fread(tmp, 1, len, f) == len) { } else {
-		ERROR("can't load %u bytes", len);
+		ERR("can't load %u bytes", len);
 	}
 
 	if(fscanf(f, "\"%n", &n) == 0 && n == 1) { } else {
-		ERROR("%s", "can't detect \"-finishing");
+		ERR("%s", "can't detect \"-finishing");
 	}
 
 	const AtomPack ap = { .bytes = tmp, .length = len, .hint = hint };
@@ -222,7 +221,7 @@ unsigned loadtoken(Array *const t, FILE *const f,
 	}
 
 	if(loaded > 0) { } else {
-		ERROR("can't detect token. format: %s", fmt);
+		ERR("can't detect token. format: %s", fmt);
 	}
 
 	DBG(DBGLDT, "tmp: %s", tmp);

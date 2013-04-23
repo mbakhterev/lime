@@ -19,7 +19,7 @@
 static List * freeitems = NULL;
 
 // Откусить первый элемент
-static List * tipoff(List **const lptr) {
+List *tipoff(List **const lptr) {
 	List *const l = *lptr;
 	assert(l);
 
@@ -27,17 +27,36 @@ static List * tipoff(List **const lptr) {
 	List *const n = l->next;
 
 	if(l != n) {
-		// Список из > 1 элемента.
+		// Список из >1 элементов
 		l->next = n->next;
 	}
 	else {
 		*lptr = NULL;
 	}
 
+	// Закольцовываем в одноэлементный список
+	n->next = n;
+
 	return n;
 }
 
-List * newlist(const int code, const unsigned allocate) {
+extern Ref refnum(const unsigned n) {
+	return (Ref) { .number = n };
+}
+
+extern Ref refenv(Array *const e) {
+	return (Ref) { .environment = e };
+}
+
+extern Ref refnode(Node *const n) {
+	return (Ref) { .node = n };
+}
+
+extern Ref reflist(List *const l) {
+	return (Ref) { .list = l };
+}
+
+List * newlist(const int code, Ref r) {
 	List *l = NULL;
 
 	if(freeitems) {
@@ -45,23 +64,30 @@ List * newlist(const int code, const unsigned allocate) {
 
 		l = tipoff(&freeitems);
 		assert(l->code == FREE);
+		assert(l->next == l);
 	}
 	else {
 		l = malloc(sizeof(List));
 		assert(l);
+		l->next = l;
 	}
 
 	l->code = code;
-	l->next = l;
+
+//	l->next = l;
 
 	switch(code) {
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+		l->u.number = r.number;
 		return l;
 
 	case NODE:
-		if(allocate) {
+		if(r.node) {
+			l->u.node = r.node;
+		}
+		else {
 			l->u.node = newnode();
 		}
 
@@ -109,15 +135,27 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key) {
 	return r;
 }
 
+// FState - fork/free state
+
+typedef struct {
+	List *list;
+	unsigned flag;	// clone/erase flag
+} FState;
+
 static int forkitem(List *const k, void *const ptr) {
-	List **const lptr = ptr;
-	List *l = newlist(k->code, 0);
+// 	List **const lptr = ptr;
+// 	List *l = newlist(k->code, 0);
+
+	FState *const fs = ptr;
+	List *l = NULL;
 
 	switch(l->code) {
 	case NUMBER:
 	case ATOM:
 	case TYPE:
-		l->u.number = k->u.number;
+//		l->u.number = k->u.number;
+
+		l = newlist(k->code, refnum(k->u.number));
 		break;
 
 	case NODE:
@@ -127,23 +165,31 @@ static int forkitem(List *const k, void *const ptr) {
 	
 	case LIST:
 		assert(k->u.list);
-		l->u.list = forklist(k->u.list);
+
+//		l->u.list = forklist(k->u.list);
+
+		l = newlist(LIST, reflist(forklist(k->u.list, fs->flag)));
 		break;
 	
 	default:
 		assert(0);
 	}
 
-	*lptr = extend(*lptr, l);
+	fs->list = extend(fs->list, l);
 
 	return 0;
 }
 
-List *forklist(const List *const k) {
-	List *l = NULL;
+List *forklist(const List *const k, const unsigned clone) {
+//	List *l = NULL;
 
-	forlist((List *)k, forkitem, &l, 0);
-	return l;
+	FState fs = { .list = NULL, .flag = clone };
+
+	forlist((List *)k, forkitem, &fs, 0);
+
+//	return l;
+
+	return fs.list;
 }
 
 static int releaser(List *const l, void *const p) {
@@ -157,8 +203,11 @@ static int releaser(List *const l, void *const p) {
 	return 0;
 }
 
-void freelist(List *const l) {
-	forlist(l, releaser, NULL, 0);
+void freelist(List *const l, const unsigned erase) {
+//	forlist(l, releaser, NULL, 0);
+
+	FState fs = { .list = NULL, .flag = erase };
+	forlist(l, releaser, &fs, 0);
 }
 
 static int dumper(List *const l, void *const file);

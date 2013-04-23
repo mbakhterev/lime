@@ -40,8 +40,10 @@ static int checkfree(List *const l, void *const ptr) {
 int main(int argc, char * argv[]) {
 	List * l = NULL;
 	for(int i = 0; i < 20; i += 1) {
-		List *const k = newlist(NUMBER, 0);
-		k->u.number = i;
+		List *const k = newlist(NUMBER, refnum(i));
+
+//		k->u.number = i;
+
 		forlist(k, printer, NULL, 0);
 		l = extend(l, k);
 	}
@@ -51,18 +53,18 @@ int main(int argc, char * argv[]) {
 	printf("l: %s\n", c);
 	free(c);
 
-	List *const k = forklist(l);
+	List *const k = forklist(l, 0);
 	c = dumplist(k);
 	printf("k: %s\n", c);
 	free(c);
 
-	freelist(k);
+	freelist(k, 0);
 	forlist(k, checkfree, NULL, 0);
 
-	List *const m = forklist(l);
+	List *const m = forklist(l, 0);
 	printf("m: %s\n", dumplist(m));
 
-	List *const n = forklist(m);
+	List *const n = forklist(m, 0);
 	printf("n: %s\n", dumplist(n));
 
 	return 0;

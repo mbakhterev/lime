@@ -2,6 +2,8 @@
 #define UTILHINCLUDED
 
 #include <stdio.h>
+#include <errno.h>
+#include <err.h>
 
 // Координаты при чтении, для формирования сообщения об ошибке. Устанавливаются
 // извне
@@ -9,9 +11,13 @@ extern unsigned item;
 extern unsigned field;
 extern const char * unitname;
 
-#define ERROR(fmt, ...) \
-	error(EXIT_FAILURE, errno, "%s(%u:%u) error: " fmt, \
+#define ERR(fmt, ...) \
+	err(EXIT_FAILURE, "%s(%u:%u) error: " fmt, \
 		unitname, item, field, __VA_ARGS__)
+
+// 	error(EXIT_FAILURE, errno, "%s(%u:%u) error: " fmt, \
+// 		unitname, item, field, __VA_ARGS__)
+
 
 #define DBG(f, fmt, ...) \
 	(void)((f & DBGFLAGS) \

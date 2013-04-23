@@ -1,13 +1,14 @@
 #include "construct.h"
 
 #include <stdlib.h>
+#include <assert.h>
 
 static Node *freenodes = NULL;
 
 // Откусывание первого элемента из списка узлов, связанных u.nextfree.
 // cf. lib/lime/list.c
 
-static Node *tipoff(Node **const lptr) {
+static Node *tipoffnode(Node **const lptr) {
 	Node *const l = *lptr;
 	assert(l);
 
@@ -28,7 +29,7 @@ Node *newnode(void) {
 	Node *n;
 
 	if(freenodes) {
-		n = tipoff(&freenodes);
+		n = tipoffnode(&freenodes);
 		assert(n->code = FREE && n->mark == 0);
 	}
 	else {
