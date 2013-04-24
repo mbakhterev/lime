@@ -140,15 +140,15 @@ struct ListTag {
 
 extern List *newlist(const int code, Ref r);
 
-extern List *extend(List *const, List *const);
+extern List *append(List *const, List *const);
 extern List *tipoff(List **const);
 
 // clone/erase указывают на то, следует ли при копировании/освобождении списка
 // копировать/удалять так же и подструктуры (узлы в случае элемента списка с
 // code == NODE)
 
-extern List *forklist(const List *const, const unsigned clone);
-extern void freelist(List *const, const unsigned erase);
+extern List *forklist(const List *const);
+extern void freelist(List *const);
 
 extern char *dumplist(const List *const);
 

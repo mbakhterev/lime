@@ -99,7 +99,7 @@ List * newlist(const int code, Ref r) {
 	return NULL;
 }
 
-List * extend(List *const k, List *const l) {
+List * append(List *const k, List *const l) {
 	assert(l);
 
 	if(k) { } else {
@@ -149,7 +149,8 @@ static int forkitem(List *const k, void *const ptr) {
 	FState *const fs = ptr;
 	List *l = NULL;
 
-	switch(l->code) {
+//	switch(l->code) {
+	switch(k->code) {
 	case NUMBER:
 	case ATOM:
 	case TYPE:
@@ -160,7 +161,11 @@ static int forkitem(List *const k, void *const ptr) {
 
 	case NODE:
 		assert(k->u.node);
-		l->u.node = k->u.node;
+
+//		l->u.node = k->u.node;
+
+		l = newlist(NODE, refnode(k->u.node));
+
 		break;
 	
 	case LIST:
@@ -168,22 +173,22 @@ static int forkitem(List *const k, void *const ptr) {
 
 //		l->u.list = forklist(k->u.list);
 
-		l = newlist(LIST, reflist(forklist(k->u.list, fs->flag)));
+		l = newlist(LIST, reflist(forklist(k->u.list)));
 		break;
 	
 	default:
 		assert(0);
 	}
 
-	fs->list = extend(fs->list, l);
+	fs->list = append(fs->list, l);
 
 	return 0;
 }
 
-List *forklist(const List *const k, const unsigned clone) {
+List *forklist(const List *const k) {
 //	List *l = NULL;
 
-	FState fs = { .list = NULL, .flag = clone };
+	FState fs = { .list = NULL, .flag = 0 };
 
 	forlist((List *)k, forkitem, &fs, 0);
 
@@ -193,20 +198,30 @@ List *forklist(const List *const k, const unsigned clone) {
 }
 
 static int releaser(List *const l, void *const p) {
+//	const FState *const fs = p;
+
+// 	switch(l->code) {
+// 	case NODE:
+// 		if(fs->flag) {
+// 			assert(l->u.node);
+// 			freenode(l->u.node);
+// 		}
+// 	}
+
 	l->code = FREE;
 
 	DBG(DBGPOOL, "pooling: %p", l);
 
 	l->next = l;
-	freeitems = extend(freeitems, l);
+	freeitems = append(freeitems, l);
 
 	return 0;
 }
 
-void freelist(List *const l, const unsigned erase) {
+void freelist(List *const l) {
 //	forlist(l, releaser, NULL, 0);
 
-	FState fs = { .list = NULL, .flag = erase };
+	FState fs = { .list = NULL, .flag = 0 };
 	forlist(l, releaser, &fs, 0);
 }
 

@@ -45,7 +45,7 @@ int main(int argc, char * argv[]) {
 //		k->u.number = i;
 
 		forlist(k, printer, NULL, 0);
-		l = extend(l, k);
+		l = append(l, k);
 	}
 	printf("---\n");
 
@@ -53,18 +53,19 @@ int main(int argc, char * argv[]) {
 	printf("l: %s\n", c);
 	free(c);
 
-	List *const k = forklist(l, 0);
+	List *const k = forklist(l);
+	printf("k forked\n"); fflush(stdout);
 	c = dumplist(k);
 	printf("k: %s\n", c);
 	free(c);
 
-	freelist(k, 0);
+	freelist(k);
 	forlist(k, checkfree, NULL, 0);
 
-	List *const m = forklist(l, 0);
+	List *const m = forklist(l);
 	printf("m: %s\n", dumplist(m));
 
-	List *const n = forklist(m, 0);
+	List *const n = forklist(m);
 	printf("n: %s\n", dumplist(n));
 
 	return 0;

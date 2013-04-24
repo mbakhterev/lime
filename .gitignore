@@ -5,6 +5,7 @@
 !TREE
 !README
 !build
+!notify-build
 !foreign-up
 !gnu.mk
 

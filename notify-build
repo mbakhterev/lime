@@ -1,0 +1,8 @@
+set -e
+
+inotifywait -rm --exclude '\.sw?|lto-llvm\.o|\.txt|\.git' -e modify ./ \
+	| while read a; do
+		echo "$a"
+		dash ~/flow/lime/build -b /tmp/bld/ -j 20 || true
+		acpi
+	done

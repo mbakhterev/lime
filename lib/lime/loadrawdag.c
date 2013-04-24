@@ -43,7 +43,7 @@ List *loadrawdag(LoadContext *const ctx) {
 	le.code = ENV;
 	le.u.environment = &env;
 
-	ctx->env = extend(&le, ctx->env);
+	ctx->env = append(&le, ctx->env);
 
 	unsigned state = DONE;
 	while(state != DONE) {
