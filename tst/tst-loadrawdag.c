@@ -4,6 +4,6 @@ static void somefn(int have, const int expecting[]) {
 }
 
 int main(const int ac, const char *const av[]) {
-	somefn(EOF, (int[]) { 'a', 'b', 'c' });
+	somefn(EOF, (int[]) { 'a', 'b', 'c', ac });
 	return 0;
 }

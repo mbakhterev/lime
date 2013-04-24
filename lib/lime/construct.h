@@ -101,16 +101,19 @@ extern void freenode(Node *const);
 // Имеет смысл отдельно вынести описание вариантов ссылок, которые могут быть в
 // элементе списка
 
-typedef union {
-	List *list;
-	Node *node;
-	Array *environment;
-	unsigned number;
+typedef struct {
+	unsigned code;
+	union {
+		List *list;
+		Node *node;
+		Array *environment;
+		unsigned number;
+	} u;
 } Ref;
 
 // Конструкторы для Ref
 
-extern Ref refnum(const unsigned);
+extern Ref refnum(const unsigned code, const unsigned);
 extern Ref refenv(Array *const);
 extern Ref reflist(List *const);
 extern Ref refnode(Node *const);
@@ -126,10 +129,12 @@ struct ListTag {
 // 		Array *environment;
 // 		unsigned number;
 // 	} u;
+// 
+// 	Ref u;	
+// 
+// 	int code;
 
-	Ref u;	
-
-	int code;
+	Ref ref;
 };
 
 // r - это Ref, которая определяет, как будет сконструирован список. Если по
@@ -138,7 +143,25 @@ struct ListTag {
 // (пустые подсписки бывают). Если узлом (NODE), то ссылка копируется, если
 // r.node != NULL; если же r.node == NULL, то создаётся пустой узел с кодом FREE
 
-extern List *newlist(const int code, Ref r);
+// newlist - неудобный вариант конструктора
+// extern List *newlist(const int code, Ref r);
+
+// Слепить несколько ссылок в массив вида Ref[], воспринимаемый readrefs.
+// Необходимо, чтобы он заканчивался ссылкой с кодом FREE.
+
+#define MKR(...) ((const Ref[]) { __VA_ARGS__, (Ref) { .code = FREE } })
+
+// Конструктор списка из массива ссылок. Чтобы сконструировать список из одной
+// ссылки нужно написать: list = readrefs(MKR(refnum(42)))
+
+extern List *readrefs(const Ref refs[]);
+
+// Записывает ссылки из списка (не рекурсивно, и не спускаясь в подсписки) в
+// массив. Записывает не больше N элементов. Если возвращает 0, то записаны N
+// элементов, из списка длиной N. Если возвращается N, то записаны N элементов
+// из списка длиной >N. Если возвращается число, меньшее N
+
+extern unsigned writerefs(const List *const, Ref refs[], const unsigned N);
 
 extern List *append(List *const, List *const);
 extern List *tipoff(List **const);
@@ -155,8 +178,11 @@ extern char *dumplist(const List *const);
 // Функция forlist применяет другую функцию типа Oneach к каждому элементу
 // списка, пока последняя возвращает значение, равное key. foreach устроена так,
 // что позволяет менять ->next в обрабатываемом элементе списка.
+
 typedef int (*Oneach)(List *const, void *const);
 extern int forlist(List *const, Oneach, void *const, const int key);
+
+extern unsigned listlen(const List *const);
 
 // Окружения
 

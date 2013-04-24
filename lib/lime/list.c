@@ -40,31 +40,94 @@ List *tipoff(List **const lptr) {
 	return n;
 }
 
-extern Ref refnum(const unsigned n) {
-	return (Ref) { .number = n };
+extern Ref refnum(const unsigned code, const unsigned n) {
+	switch(code) {
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+		break;
+	
+	default:
+		assert(0);
+	}
+
+	return (Ref) { .code = code, .u.number = n };
 }
 
 extern Ref refenv(Array *const e) {
-	return (Ref) { .environment = e };
+	return (Ref) { .code = ENV, .u.environment = e };
 }
 
 extern Ref refnode(Node *const n) {
-	return (Ref) { .node = n };
+	return (Ref) { .code = NODE, .u.node = n };
 }
 
 extern Ref reflist(List *const l) {
-	return (Ref) { .list = l };
+	return (Ref) { .code = LIST, .u.list = l };
 }
 
-List * newlist(const int code, Ref r) {
+// List * newlist(const int code, Ref r) {
+// 	List *l = NULL;
+// 
+// 	if(freeitems) {
+// 		DBG(DBGPOOL, "tipping off: %p", (void *)freeitems);
+// 
+// 		l = tipoff(&freeitems);
+// 		assert(l->code == FREE);
+// 		assert(l->next == l);
+// 	}
+// 	else {
+// 		l = malloc(sizeof(List));
+// 		assert(l);
+// 		l->next = l;
+// 	}
+// 
+// 	l->code = code;
+// 
+// //	l->next = l;
+// 
+// 	switch(code) {
+// 	case NUMBER:
+// 	case ATOM:
+// 	case TYPE:
+// 		l->u.number = r.number;
+// 		return l;
+// 
+// 	case NODE:
+// 		if(r.node) {
+// 			l->u.node = r.node;
+// 		}
+// 		else {
+// 			l->u.node = newnode();
+// 		}
+// 
+// 		return l;
+// 	}
+// 
+// 	assert(0);
+// 
+// 	return NULL;
+// }
+
+static List *newlist(const Ref r) {
+	switch(r.code) {
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+	case NODE:
+		break;
+	
+	default:
+		assert(0);
+	}
+
 	List *l = NULL;
 
 	if(freeitems) {
 		DBG(DBGPOOL, "tipping off: %p", (void *)freeitems);
-
+		
 		l = tipoff(&freeitems);
-		assert(l->code == FREE);
-		assert(l->next == l);
+		assert(l->r.code == FREE && l->next == r);
 	}
 	else {
 		l = malloc(sizeof(List));
@@ -72,31 +135,8 @@ List * newlist(const int code, Ref r) {
 		l->next = l;
 	}
 
-	l->code = code;
-
-//	l->next = l;
-
-	switch(code) {
-	case NUMBER:
-	case ATOM:
-	case TYPE:
-		l->u.number = r.number;
-		return l;
-
-	case NODE:
-		if(r.node) {
-			l->u.node = r.node;
-		}
-		else {
-			l->u.node = newnode();
-		}
-
-		return l;
-	}
-
-	assert(0);
-
-	return NULL;
+	l->ref = r;
+	return l;
 }
 
 List * append(List *const k, List *const l) {
