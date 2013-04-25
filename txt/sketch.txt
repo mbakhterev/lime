@@ -1554,3 +1554,13 @@ FIn - это что? Ссылка на узел, или указание на в
 	append(newlist(refnode(T)), append(newlist(refnode(newnode())), ...))
 
 
+						   Thu Apr 25 09:25:28 YEKT 2013
+
+Так. Разумно сделать newnode в стиле LCC, чтобы сразу и sources инициировать, и
+code. Чтобы писать лаконичнее:
+
+	f = newnode(ATOM, RL(refnum(ATOM, 1));
+	s4 = newnode(ATOM, RL(refnum(ATOM, 2));
+	t = newnode(TYPE, RL(refnode(f), refnode(s4)));
+
+	return RL(refnode(f), refnode(s4), refnode(t));

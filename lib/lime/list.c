@@ -127,7 +127,7 @@ static List *newlist(const Ref r) {
 		DBG(DBGPOOL, "tipping off: %p", (void *)freeitems);
 		
 		l = tipoff(&freeitems);
-		assert(l->r.code == FREE && l->next == r);
+		assert(l->ref.code == FREE && l->next == l);
 	}
 	else {
 		l = malloc(sizeof(List));
@@ -179,41 +179,27 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key) {
 
 typedef struct {
 	List *list;
-	unsigned flag;	// clone/erase flag
 } FState;
 
 static int forkitem(List *const k, void *const ptr) {
-// 	List **const lptr = ptr;
-// 	List *l = newlist(k->code, 0);
-
 	FState *const fs = ptr;
 	List *l = NULL;
 
-//	switch(l->code) {
-	switch(k->code) {
+	switch(k->ref.code) {
 	case NUMBER:
 	case ATOM:
 	case TYPE:
-//		l->u.number = k->u.number;
-
-		l = newlist(k->code, refnum(k->u.number));
+		l = newlist(refnum(k->ref.code, k->ref.u.number));
 		break;
 
 	case NODE:
-		assert(k->u.node);
-
-//		l->u.node = k->u.node;
-
-		l = newlist(NODE, refnode(k->u.node));
-
+		assert(k->ref.u.node);
+		l = newlist(refnode(k->ref.u.node));
 		break;
 	
 	case LIST:
-		assert(k->u.list);
-
-//		l->u.list = forklist(k->u.list);
-
-		l = newlist(LIST, reflist(forklist(k->u.list)));
+		assert(k->ref.u.list);
+		l = newlist(reflist(forklist(k->ref.u.list)));
 		break;
 	
 	default:
@@ -226,14 +212,8 @@ static int forkitem(List *const k, void *const ptr) {
 }
 
 List *forklist(const List *const k) {
-//	List *l = NULL;
-
-	FState fs = { .list = NULL, .flag = 0 };
-
+	FState fs = { .list = NULL };
 	forlist((List *)k, forkitem, &fs, 0);
-
-//	return l;
-
 	return fs.list;
 }
 
@@ -248,7 +228,7 @@ static int releaser(List *const l, void *const p) {
 // 		}
 // 	}
 
-	l->code = FREE;
+	l->ref.code = FREE;
 
 	DBG(DBGPOOL, "pooling: %p", l);
 
@@ -261,7 +241,7 @@ static int releaser(List *const l, void *const p) {
 void freelist(List *const l) {
 //	forlist(l, releaser, NULL, 0);
 
-	FState fs = { .list = NULL, .flag = 0 };
+	FState fs = { .list = NULL };
 	forlist(l, releaser, &fs, 0);
 }
 
@@ -294,27 +274,27 @@ static int dumper(List *const l, void *const state) {
 		s->first = l;
 	}
 
-	switch(l->code) {
+	switch(l->ref.code) {
 	case NUMBER:
-		assert(fprintf(f, "%u", l->u.number) > 0);
+		assert(fprintf(f, "%u", l->ref.u.number) > 0);
 		break;
 	
 	case ATOM:
-		assert(fprintf(f, "A:%u", l->u.number) > 0);
+		assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
 		break;
 	
 	case TYPE:
-		assert(fprintf(f, "T:%u", l->u.number) > 0);
+		assert(fprintf(f, "T:%u", l->ref.u.number) > 0);
 		break;
 	
 	case NODE:
-		assert(l->u.node);
-		assert(fprintf(f, "N:%p", (void *)l->u.node) > 0);
+		assert(l->ref.u.node);
+		assert(fprintf(f, "N:%p", (void *)l->ref.u.node) > 0);
 		break;
 	
 	case LIST:
-		assert(l->u.list);
-		dumptostream(l->u.list, f);
+		assert(l->ref.u.list);
+		dumptostream(l->ref.u.list, f);
 		break;
 
 	default:
