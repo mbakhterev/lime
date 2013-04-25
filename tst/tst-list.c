@@ -5,17 +5,17 @@
 #include <assert.h>
 
 static int printer(List *const l, void *const ptr) {
-	switch(l->code) {
+	switch(l->ref.code) {
 	case NUMBER:
-		printf("N: %u\n", l->u.number);
+		printf("N: %u\n", l->ref.u.number);
 		break; 
 
 	case ATOM:
-		printf("A: %u\n", l->u.number);
+		printf("A: %u\n", l->ref.u.number);
 		break; 
 
 	case TYPE:
-		printf("A: %u\n", l->u.number);
+		printf("A: %u\n", l->ref.u.number);
 		break; 
 
 	case NODE:
@@ -23,7 +23,7 @@ static int printer(List *const l, void *const ptr) {
 		break;
 
 	case LIST:
-		forlist(l->u.list, printer, NULL, 0);
+		forlist(l->ref.u.list, printer, NULL, 0);
 
 	default:
 		assert(0);
@@ -33,14 +33,14 @@ static int printer(List *const l, void *const ptr) {
 }
 
 static int checkfree(List *const l, void *const ptr) {
-	assert(l->code == FREE);
+	assert(l->ref.code == FREE);
 	return 0;
 }
 
 int main(int argc, char * argv[]) {
 	List * l = NULL;
 	for(int i = 0; i < 20; i += 1) {
-		List *const k = newlist(NUMBER, refnum(i));
+		List *const k = RL(refnum(NUMBER, i));
 
 //		k->u.number = i;
 

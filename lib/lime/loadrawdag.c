@@ -40,7 +40,7 @@ List *loadrawdag(LoadContext *const ctx) {
 	Array env = makeenvironment();
 	List le;
 	le.next = &le;
-	le.r = refenv(&env);
+	le.ref = refenv(&env);
 
 // 	le.next = &le;
 // 	le.code = ENV;

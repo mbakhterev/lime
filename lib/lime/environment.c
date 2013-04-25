@@ -12,21 +12,21 @@ static int cmplists(const List *const, const List *const);
 // lib/lime/construct.h)
 
 static int iscomparable(const List *const k) {
-	return k->code <= LIST;
+	return k->ref.code <= LIST;
 }
 
 static int cmpitems(const List *const k, const List *const l) {
 	assert(iscomparable(k));
 	assert(iscomparable(l));
 
-	unsigned r = cmpui(k->code, l->code);
+	unsigned r = cmpui(k->ref.code, l->ref.code);
 	if(r) { return r; }
 
-	if(k->code < LIST) {
-		return cmpui(k->u.number, l->u.number);
+	if(k->ref.code < LIST) {
+		return cmpui(k->ref.u.number, l->ref.u.number);
 	}
 
-	return cmplists(k->u.list, l->u.list);
+	return cmplists(k->ref.u.list, l->ref.u.list);
 }
 
 // Для поиска и сортировки важно, чтобы порядок был линейным. Построить его
@@ -83,13 +83,13 @@ typedef struct {
 } LookingState;
 
 static int looker(List *const env, void *const ptr) {
-	assert(env && env->code == ENV);
+	assert(env && env->ref.code == ENV);
 
 	LookingState *const s = ptr;
-	const unsigned k = lookup(env->u.environment, s->key);
+	const unsigned k = lookup(env->ref.u.environment, s->key);
 
 	if(k != -1) {
-		s->result = (const Binding *)env->u.environment->data + k;
+		s->result = (const Binding *)env->ref.u.environment->data + k;
 		return 1;
 	}
 
