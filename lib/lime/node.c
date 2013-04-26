@@ -26,7 +26,10 @@ static Node *tipoffnode(Node **const lptr) {
 }
 
 Node *newnode(const unsigned verb, const List *const attributes) {
-	Node *n;
+	assert(attributes);
+	assert(verb != FREE);
+
+	Node *n = NULL;
 
 	if(freenodes) {
 		n = tipoffnode(&freenodes);

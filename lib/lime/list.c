@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define DBGFE 1
 #define DBGPOOL 2
@@ -325,4 +326,45 @@ char *dumplist(const List *const l) {
 	assert(fputc(0, f) != EOF);
 	fclose(f);
 	return buff;
+}
+
+// Состояние для прохода со счётчиками
+
+typedef struct {
+	Ref *refs;
+
+	// N - ограничение сверху; n - пройдено элементов
+	unsigned N;
+	unsigned n;
+} CState;
+
+static int writer(List *const k, void *const ptr) {
+	CState *const st = ptr;
+
+	if(st->n < st->N) {
+		st->refs[st->n] = k->ref;
+		st->n += 1;
+		return 0;
+	}
+	else {
+		return 1;
+	}
+}
+
+unsigned writerefs(const List *const l, Ref refs[], const unsigned N) {
+	CState st = { .refs = refs, .N = N, .n = 0 };
+	forlist((List *)l, writer, &st, 0);
+
+	assert(N == st.N);
+	assert(N >= st.n);
+
+	if(st.n < N) {
+		refs[st.n].code = FREE;
+
+	 	// Обнуляем весь union
+		memset(&refs[st.n].u, 0, sizeof(refs->u));
+		return st.n + 1;
+	}
+
+	return st.n;
 }

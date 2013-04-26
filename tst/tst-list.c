@@ -66,7 +66,21 @@ int main(int argc, char * argv[]) {
 	printf("m: %s\n", dumplist(m));
 
 	List *const n = forklist(m);
-	printf("n: %s\n", dumplist(n));
+	printf("n: %s\n", c = dumplist(n));
+	free(c);
+
+	Ref R[21];
+	unsigned ncnt = writerefs(n, R, 21);
+	assert(ncnt == 21);
+	printf("R:");
+	for(unsigned i = 0; R[i].code != FREE; i += 1) {
+		assert(R[i].code == NUMBER);
+		printf(" %u", R[i].u.number);
+	}
+	printf("\n");
+
+	List *const o = readrefs(R);
+	printf("o: %s\n", c = dumplist(o));
 
 	return 0;
 }
