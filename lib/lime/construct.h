@@ -68,10 +68,10 @@ extern unsigned loadtoken(Array *const, FILE *const,
 struct NodeTag {
 	union {
 		Node *nextfree;
-		List *sources;
+		List *attributes;
 	} u;
 
-	unsigned code;
+	unsigned verb;
 	
 	// Некая дополнительная информация, которая может быть специально
 	// проинтерпретирована пользователем. Рассчёт на то, что extra -- это
@@ -83,7 +83,7 @@ struct NodeTag {
 	unsigned mark:1;
 };
 
-extern Node *newnode(void);
+extern Node *newnode(const unsigned verb, const List *const attributes);
 extern void freenode(Node *const);
 
 // Списки
@@ -122,18 +122,6 @@ enum { NUMBER, ATOM, TYPE, LIST, NODE, ENV, MAP, FREE = -1 };
 
 struct ListTag {
 	List * next;
-
-// 	union {
-// 		List *list;
-// 		Node *node;
-// 		Array *environment;
-// 		unsigned number;
-// 	} u;
-// 
-// 	Ref u;	
-// 
-// 	int code;
-
 	Ref ref;
 };
 

@@ -25,29 +25,32 @@ static Node *tipoffnode(Node **const lptr) {
 
 }
 
-Node *newnode(void) {
+Node *newnode(const unsigned verb, const List *const attributes) {
 	Node *n;
 
 	if(freenodes) {
 		n = tipoffnode(&freenodes);
-		assert(n->code = FREE && n->mark == 0);
+		assert(n->verb = FREE && n->mark == 0);
 	}
 	else {
 		n = malloc(sizeof(Node));
 		assert(n);
-		n->code = FREE;
+		n->verb = FREE;
 		n->mark = 0;
 	}
 
 	n->u.nextfree = n;
 
+	n->verb = verb;
+	n->u.attributes = (List *)attributes;
+
 	return n;
 }
 
 void freenode(Node *const n) {
-	assert(n && n->code != FREE);
+	assert(n && n->verb != FREE);
 
-	n->code = FREE;
+	n->verb = FREE;
 	n->mark = 0;
 
 	if(freenodes) { } else {

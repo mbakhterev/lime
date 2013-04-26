@@ -1564,3 +1564,5 @@ code. Чтобы писать лаконичнее:
 	t = newnode(TYPE, RL(refnode(f), refnode(s4)));
 
 	return RL(refnode(f), refnode(s4), refnode(t));
+
+
