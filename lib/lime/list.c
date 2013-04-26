@@ -368,3 +368,17 @@ unsigned writerefs(const List *const l, Ref refs[], const unsigned N) {
 
 	return st.n;
 }
+
+static int counter(List *const l, void *const ptr) {
+	CState *const st = ptr;
+	assert(st->n < st->N);
+	st->n += 1;
+	return 0;
+}
+
+unsigned listlen(const List *const l) {
+	CState st = { .refs = NULL, .N = MAXNUM, .n = 0 };
+	forlist((List *)l, counter, &st, 0);
+	assert(st.n < MAXNUM);
+	return st.n;
+}

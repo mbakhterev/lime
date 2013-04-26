@@ -82,5 +82,7 @@ int main(int argc, char * argv[]) {
 	List *const o = readrefs(R);
 	printf("o: %s\n", c = dumplist(o));
 
+	printf("len(o): %u\n", listlen(o));
+
 	return 0;
 }
