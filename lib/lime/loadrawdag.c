@@ -24,36 +24,39 @@ Array keymap(Array *const U,
 	return map;
 }
 
-// Состояния для автомата разбора k-выражения
+// Основной цикл CORE; cf. txt/sketch.txt: Fri Apr 26 19:29:46 YEKT 2013
 
-enum {
-	START, DONE };
+static List *core(LoadContext *const ctx, List *const l) {
+	const int c = skipspaces(ctx->file);
+	switch(c) {
+	case ')':
+		return l;
+
+	case '\'':
+		return node(ctx, l);
+
+	case '(':
+		Array env = makeenvironment();
+		List le;
+		le.next = &le;
+		le.ref = refenv(&env);
+
+		ctx->env = append(ctx->env, &le);
+
+		l = append(l, newlist(reflist(core(ctx))));
+		break;
+	}
+
+	return l;
+}
 
 List *loadrawdag(LoadContext *const ctx) {
 	FILE *const f = ctx->file;
 	int c;
 
 	if((c = fgetc(f)) == '(') { } else {
-		errexpect('(', c);
+		errexpect(c, ES("("));
 	}
-
-	Array env = makeenvironment();
-	List le;
-	le.next = &le;
-	le.ref = refenv(&env);
-
-// 	le.next = &le;
-// 	le.code = ENV;
-// 	le.u.environment = &env;
-
-	ctx->env = append(&le, ctx->env);
-
-	unsigned state = DONE;
-	while(state != DONE) {
-		
-	}
-
-	assert(tipoff(&ctx->env) == &le);
 
 	return NULL;
 }

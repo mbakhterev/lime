@@ -239,7 +239,8 @@ struct LoadContextTag {
 	unsigned keyonly:1;		// допускать узлы только в keymap
 };
 
-extern List *loadrawdag(LoadContext *const);
+extern List *loadrawdag(LoadContext *const,
+	List *const env, List *const nodes, List *const refs);
 
 // Создать согласованную с таблицей атомов keymap по списку атомов в массиве из
 // строк.
