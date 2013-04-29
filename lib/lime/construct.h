@@ -224,14 +224,23 @@ extern unsigned reverse(const Array *const, const unsigned);
 // функцию типа LoadAction для специальной обработки узла. Это необходимо для
 // специальной логики обработки специальных узлов.
 
+// LoadAction, как и вспомогательные функции чтения списка (cf.
+// lib/lime/loadrawdag.c) должны обрабатывать и возвращать два списка: nodes -
+// список узлов в dag-е, и refs - структурированный список ссылок. Поэтому
+
 typedef struct LoadContextTag LoadContext;
-typedef List *(*LoadAction)(LoadContext *const, void *const state);
+typedef struct {
+	List *nodes;
+	List *refs;
+} LoadCurrent;
+
+typedef LoadCurrent (*LoadAction)(LoadContext *const,
+	List *const env, List *const nodes, List *const refs);
 
 struct LoadContextTag {
 	FILE *file;
 	void *state;
 	
-	List *env;			// окружение из имён узлов
 	Array *universe;		// общая таблица атомов
 	Array *keymap;			// ключевые атомы в ней
 	const LoadAction *actions;	// специальные действия
@@ -239,11 +248,10 @@ struct LoadContextTag {
 	unsigned keyonly:1;		// допускать узлы только в keymap
 };
 
-extern List *loadrawdag(LoadContext *const,
-	List *const env, List *const nodes, List *const refs);
+// Подгрузить dag к текущему, заданному nodes, в окружении env
+extern List *loadrawdag(LoadContext *const, List *const env, List *const nodes);
 
-// Создать согласованную с таблицей атомов keymap по списку атомов в массиве из
-// строк.
+// Создать согласованную с таблицей атомов keymap по списку строк
 
 extern Array keymap(Array *const universe,
 	const unsigned hint, const char *const atoms[], const unsigned N);

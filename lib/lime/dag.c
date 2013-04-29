@@ -24,16 +24,17 @@ Array keymap(Array *const U,
 	return map;
 }
 
-// Основной цикл CORE; cf. txt/sketch.txt: Fri Apr 26 19:29:46 YEKT 2013
+// Подробности: txt/sketch.txt: Fri Apr 26 19:29:46 YEKT 2013
 
-static List *core(LoadContext *const ctx, List *const l) {
+static LoadCurrent core(LoadContext *const ctx, LoadCurrent lc) {
 	const int c = skipspaces(ctx->file);
+
 	switch(c) {
 	case ')':
-		return l;
+		return lc;
 
 	case '\'':
-		return node(ctx, l);
+		return node(ctx, lc);
 
 	case '(':
 		Array env = makeenvironment();
@@ -43,7 +44,9 @@ static List *core(LoadContext *const ctx, List *const l) {
 
 		ctx->env = append(ctx->env, &le);
 
-		l = append(l, newlist(reflist(core(ctx))));
+		assert(tipoff(&ctx->env) == &le);
+		freeenvironment(&env);
+
 		break;
 	}
 
