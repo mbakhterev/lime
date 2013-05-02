@@ -1,6 +1,7 @@
 #ifndef UTILHINCLUDED
 #define UTILHINCLUDED
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 #include <err.h>
@@ -44,7 +45,7 @@ extern void *expogrow(void *const buf, const unsigned cnt, const unsigned ilen);
 extern int skipspaces(FILE *const);
 
 #define ES(...) ((const char *[]) { __VA_ARGS__, NULL })
-extern void errexpect(const int have, const char *expecting[]);
+extern void errexpect(const int have, const char *const expecting[]);
 
 
 #endif

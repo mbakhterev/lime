@@ -146,7 +146,7 @@ extern List *readrefs(const Ref refs[]);
 
 // Для упрощения синтаксиса RL - Ref List
 
-#define RL(...) (readrefs(RS(__VA_ARGS__)));
+#define RL(...) (readrefs(RS(__VA_ARGS__)))
 
 // Записывает ссылки из списка (не рекурсивно, и не спускаясь в подсписки) в
 // массив. Записывает не более N элементов, с учётом последнего с кодом FREE.

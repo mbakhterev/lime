@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 
 Array keymap(Array *const U,
 	const unsigned hint, const char *const A[], const unsigned N) {
@@ -28,7 +29,7 @@ Array keymap(Array *const U,
 
 static unsigned loadnum(FILE *const f) {
 	unsigned n;
-	if(fscanf(f, "%u", &n) == 1) { } else
+	if(fscanf(f, "%u", &n) == 1) { } else {
 		ERR("%s", "can't read number");
 	}
 
@@ -38,6 +39,12 @@ static unsigned loadnum(FILE *const f) {
 
 	return n;
 }
+
+static LoadCurrent core(LoadContext *const ctx,
+	List *const, List *const, List *const);
+
+static LoadCurrent node(LoadContext *const,
+	List *const, List *const, List *const);
 
 static LoadCurrent ce(LoadContext *const ctx,
 	List *const env, List *const nodes, List *const refs) {
@@ -55,13 +62,16 @@ static LoadCurrent ce(LoadContext *const ctx,
 
 	errexpect(c, ES(")", ";"));
 
-	return (LoadContext) { .nodes = NULL, .refs = NULL };
+	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
 static LoadCurrent core(LoadContext *const ctx,
 	List *const env, List *const nodes, List *const refs) {
 	assert(env->ref.code == ENV);
 	assert(nodes->ref.code == NODE);
+
+	FILE *const f = ctx->file;
+	assert(f);
 
 	const int c = skipspaces(ctx->file);
 	switch(c) {
@@ -71,7 +81,7 @@ static LoadCurrent core(LoadContext *const ctx,
 	case '\'':
 		return node(ctx, env, nodes, refs);
 
-	case '(':
+	case '(': {
 		Array E = makeenvironment();
 		List le;
 		le.next = &le;
@@ -79,26 +89,53 @@ static LoadCurrent core(LoadContext *const ctx,
 		List *lenv = append(&le, env);
 
 		LoadCurrent lc = core(ctx, lenv, nodes, NULL);
-		lc.refs = append(refs, newlist(reflist(lc.refs)));
+		lc.refs = append(refs, RL(reflist(lc.refs)));
 		
 		assert(tipoff(&lenv) == &le && lenv == env);
-		freeenvironment(&env);
+		freeenvironment(&E);
 
 		return lc;
+	}
 	}
 
 	if(isdigit(c)) {
 		assert(ungetc(c, ctx->file) == c);
-		List *const lrefs = append(refs, newlist(refnum(loadnum(f))));
+
+		List *const lrefs
+			= append(refs, RL(refnum(NUMBER, loadnum(f))));
+
 		return ce(ctx, env, nodes, lrefs);
 	}
 
 	errexpect(c, ES("(", "'", ")", "[0-9]+"));
 
-	return (LoadContext) { .nodes = NULL, .refs = NULL };
+	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
-List *loadrawdag(LoadContext *const ctx) {
+// static LoadCurrent list(LoadContext *const ctx,
+// 	List *const env, List *const nodes, List *const refs) {
+// 	assert(env->ref.code == ENV);
+// 	assert(nodes->ref.code == NODE);
+// 
+// 	const int c = skipspaces(ctx->file);
+// 	switch(c) {
+// 	case '\'':
+// 	case '(':
+// 	case 'x':
+// 		break;
+// 	}
+// 
+// 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
+// }
+
+
+static LoadCurrent node(LoadContext *const ctx,
+	List *const env, List *const nodes, List *const refs) {
+
+	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
+}
+
+List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes) {
 	FILE *const f = ctx->file;
 	int c;
 

@@ -63,15 +63,15 @@ int skipspaces(FILE *const f) {
 	return c;
 }
 
-void errexpect(const int expecting, const int have) {
-	char buffer[32];
-
-	if(have != EOF) {
-		assert(sprintf(buffer, "%c", have) > 0);
-	}
-	else {
-		assert(sprintf(buffer, "EOF") > 0);
-	}
-
-	ERR("parse error: expecting: %c; got: %s", expecting, buffer);
+void errexpect(const int have, const char *const E[]) {
+// 	char buffer[32];
+// 
+// 	if(have != EOF) {
+// 		assert(sprintf(buffer, "%c", have) > 0);
+// 	}
+// 	else {
+// 		assert(sprintf(buffer, "EOF") > 0);
+// 	}
+// 
+// 	ERR("parse error: expecting: %c; got: %s", expecting, buffer);
 }
