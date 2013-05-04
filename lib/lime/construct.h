@@ -242,7 +242,7 @@ struct LoadContextTag {
 	void *state;
 	
 	Array *universe;		// общая таблица атомов
-	Array *keymap;			// ключевые атомы в ней
+	const Array *keymap;		// ключевые атомы в ней
 	const LoadAction *actions;	// специальные действия
 
 	unsigned keyonly:1;		// допускать узлы только в keymap
@@ -258,15 +258,15 @@ extern Array keymap(Array *const universe,
 
 // Некоторые стандартные LoadAction
 
-// 'ANum x = Num -- особенность в том, что Num не является списоком
-// 'TNum -- аналогично
+// 'ANum x = Num	- особенность в том, что Num не является списоком
+// 'TNum		- аналогично
 extern const LoadAction onatomnum;
 extern const LoadAction ontypenum;
 
-// 'ALook x = 01.2."34" -- описание атома не является списоком
+// 'ALook x = 01.2."34" - описание атома не является списоком
 extern const LoadAction onatomlook;
 
-// 'F x = (...) -- список узлов формы должен быть загружен в новом окружении
+// 'F x = (...) - список узлов формы должен быть загружен в новом окружении
 extern const LoadAction onform;
 
 #endif

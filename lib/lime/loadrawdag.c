@@ -27,6 +27,10 @@ Array keymap(Array *const U,
 
 // Подробности: txt/sketch.txt: Fri Apr 26 19:29:46 YEKT 2013
 
+static LoadCurrent LC(List *const nodes, List *const refs) {
+	return (LoadCurrent) { .nodes = nodes, .refs = refs };
+}
+
 static unsigned loadnum(FILE *const f) {
 	unsigned n;
 	if(fscanf(f, "%u", &n) == 1) { } else {
@@ -45,6 +49,51 @@ static LoadCurrent core(LoadContext *const ctx,
 
 static LoadCurrent node(LoadContext *const,
 	List *const, List *const, List *const);
+
+static unsigned isfirstcore(const int c) {
+	switch(c) {
+	case '\'':
+	case '(':
+		return 1;
+	}
+	
+	return isascii(c) && isalnum(c);
+}
+
+static LoadCurrent list(LoadContext *const ctx,
+	List *const env, List *const nodes, List *const refs) {
+	assert(env->ref.code == ENV);
+	assert(env->ref.code == NODE);
+
+	FILE *const f = ctx->file;
+	assert(f);
+
+	const int c = skipspaces(f);
+	switch(c) {
+	case ')':
+		return LC(nodes, refs);
+	}
+
+	if(isfirstcore(c)) {
+		Array E = makeenvironment();
+
+		List *const l = RL(refenv(&E));
+		// lenv - local env
+		List *lenv = append(l, env);
+
+		LoadCurrent const lc = core(ctx, lenv, nodes, NULL);
+
+		assert(tipoff(&lenv) == l && lenv == env);
+		freelist(l);
+		freeenvironment(&E);
+
+		return LC(lc.nodes, append(refs, RL(reflist(lc.refs)));
+	}
+
+	errexpect(c, ES("(", "'", "[0-9]+", "[A-Za-z][0-9A-Za-z]+", ")"))
+
+	return LC(NULL, NULL);
+}
 
 static LoadCurrent ce(LoadContext *const ctx,
 	List *const env, List *const nodes, List *const refs) {
@@ -82,19 +131,6 @@ static LoadCurrent core(LoadContext *const ctx,
 		return node(ctx, env, nodes, refs);
 
 	case '(': {
-		Array E = makeenvironment();
-		List le;
-		le.next = &le;
-		le.ref = refenv(&E);
-		List *lenv = append(&le, env);
-
-		LoadCurrent lc = core(ctx, lenv, nodes, NULL);
-		lc.refs = append(refs, RL(reflist(lc.refs)));
-		
-		assert(tipoff(&lenv) == &le && lenv == env);
-		freeenvironment(&E);
-
-		return lc;
 	}
 	}
 
@@ -142,6 +178,13 @@ List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes) {
 	if((c = fgetc(f)) == '(') { } else {
 		errexpect(c, ES("("));
 	}
+
+	const LoadContext lc = list(ctx, env, nodes, NULL);
+
+	// Список ссылок не нужен
+	freelist(lc.refs);
+
+	return lc.nodes;
 
 	return NULL;
 }
