@@ -67,49 +67,6 @@ extern Ref reflist(List *const l) {
 	return (Ref) { .code = LIST, .u.list = l };
 }
 
-// List * newlist(const int code, Ref r) {
-// 	List *l = NULL;
-// 
-// 	if(freeitems) {
-// 		DBG(DBGPOOL, "tipping off: %p", (void *)freeitems);
-// 
-// 		l = tipoff(&freeitems);
-// 		assert(l->code == FREE);
-// 		assert(l->next == l);
-// 	}
-// 	else {
-// 		l = malloc(sizeof(List));
-// 		assert(l);
-// 		l->next = l;
-// 	}
-// 
-// 	l->code = code;
-// 
-// //	l->next = l;
-// 
-// 	switch(code) {
-// 	case NUMBER:
-// 	case ATOM:
-// 	case TYPE:
-// 		l->u.number = r.number;
-// 		return l;
-// 
-// 	case NODE:
-// 		if(r.node) {
-// 			l->u.node = r.node;
-// 		}
-// 		else {
-// 			l->u.node = newnode();
-// 		}
-// 
-// 		return l;
-// 	}
-// 
-// 	assert(0);
-// 
-// 	return NULL;
-// }
-
 static List *newlist(const Ref r) {
 	switch(r.code) {
 	case NUMBER:
@@ -149,10 +106,14 @@ List *readrefs(const Ref R[]) {
 }
 
 List * append(List *const k, List *const l) {
-	assert(l);
+//	assert(l);
 
 	if(k) { } else {
 		return l;
+	}
+
+	if(l) { } else {
+		return k;
 	}
 
 	List *const h = k->next;
@@ -169,7 +130,12 @@ List * append(List *const k, List *const l) {
 }
 
 int forlist(List *const k, Oneach fn, void *const ptr, const int key) {
-	assert(k);
+//	assert(k);
+
+	if(k) { } else {
+		return key;
+	}
+
 	List *p = k;
 	List *q = k->next;
 	int r;
@@ -227,16 +193,6 @@ List *forklist(const List *const k) {
 }
 
 static int releaser(List *const l, void *const p) {
-//	const FState *const fs = p;
-
-// 	switch(l->code) {
-// 	case NODE:
-// 		if(fs->flag) {
-// 			assert(l->u.node);
-// 			freenode(l->u.node);
-// 		}
-// 	}
-
 	l->ref.code = FREE;
 
 	DBG(DBGPOOL, "pooling: %p", l);
@@ -248,8 +204,6 @@ static int releaser(List *const l, void *const p) {
 }
 
 void freelist(List *const l) {
-//	forlist(l, releaser, NULL, 0);
-
 	FState fs = { .list = NULL };
 	forlist(l, releaser, &fs, 0);
 }

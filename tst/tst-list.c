@@ -84,5 +84,8 @@ int main(int argc, char * argv[]) {
 
 	printf("len(o): %u\n", listlen(o));
 
+	printf("len(NULL): %u; NULL: %s\n", listlen(NULL), c = dumplist(NULL));
+	free(c);
+
 	return 0;
 }

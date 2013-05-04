@@ -50,6 +50,10 @@ static LoadCurrent core(LoadContext *const ctx,
 static LoadCurrent node(LoadContext *const,
 	List *const, List *const, List *const);
 
+static unsigned isascii(const int c) {
+	return (c & 0x7f) == c;
+}
+
 static unsigned isfirstcore(const int c) {
 	switch(c) {
 	case '\'':
@@ -87,10 +91,10 @@ static LoadCurrent list(LoadContext *const ctx,
 		freelist(l);
 		freeenvironment(&E);
 
-		return LC(lc.nodes, append(refs, RL(reflist(lc.refs)));
+		return LC(lc.nodes, append(refs, RL(reflist(lc.refs))));
 	}
 
-	errexpect(c, ES("(", "'", "[0-9]+", "[A-Za-z][0-9A-Za-z]+", ")"))
+	errexpect(c, ES("(", "'", "[0-9]+", "[A-Za-z][0-9A-Za-z]+", ")"));
 
 	return LC(NULL, NULL);
 }
@@ -148,23 +152,6 @@ static LoadCurrent core(LoadContext *const ctx,
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
-// static LoadCurrent list(LoadContext *const ctx,
-// 	List *const env, List *const nodes, List *const refs) {
-// 	assert(env->ref.code == ENV);
-// 	assert(nodes->ref.code == NODE);
-// 
-// 	const int c = skipspaces(ctx->file);
-// 	switch(c) {
-// 	case '\'':
-// 	case '(':
-// 	case 'x':
-// 		break;
-// 	}
-// 
-// 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
-// }
-
-
 static LoadCurrent node(LoadContext *const ctx,
 	List *const env, List *const nodes, List *const refs) {
 
@@ -179,7 +166,7 @@ List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes) {
 		errexpect(c, ES("("));
 	}
 
-	const LoadContext lc = list(ctx, env, nodes, NULL);
+	const LoadCurrent lc = list(ctx, env, nodes, NULL);
 
 	// Список ссылок не нужен
 	freelist(lc.refs);
