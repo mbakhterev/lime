@@ -60,6 +60,17 @@ static int cmplists(const List *const k, const List *const l) {
 	return 1 - (ck == k && cl == l) - ((ck == k && cl != l) << 1);
 }
 
+typedef struct {
+	const List *key;
+	Ref ref;
+
+// 	union {
+// 		Node *node;
+// 		void *generic;
+// 	} u;
+// 	int code;
+} Binding;
+
 static int kcmp(const void *const D, const unsigned i, const void *const key) {
 	return cmplists(((const Binding *)D)[i].key, key);
 }
@@ -72,49 +83,76 @@ Array makeenvironment(void) {
 	return makearray(ENV, sizeof(Binding), icmp, kcmp);
 }
 
-void freeenvironment(Array *const env) {
+void freeenvironment(Array *const env)
+{
 	assert(env->code == ENV);
+
+	Binding *const B = env->data;
+	for(unsigned i = 0; i < env->count; i += 1) {
+		freelist((List *)B[i].key);
+	}
+
 	freearray(env);
 }
 
-typedef struct {
+typedef struct
+{
 	const List *key;
-	const Binding *result;
+	const Array *env;
+	unsigned pos;
 } LookingState;
 
-static int looker(List *const env, void *const ptr) {
+static int looker(List *const env, void *const ptr)
+{
 	assert(env && env->ref.code == ENV);
 
 	LookingState *const s = ptr;
 	const unsigned k = lookup(env->ref.u.environment, s->key);
 
-	if(k != -1) {
-		s->result = (const Binding *)env->ref.u.environment->data + k;
+	if(k != -1)
+	{
+//		s->result = (const Binding *)env->ref.u.environment->data + k;
+
+		s->env = env->ref.u.environment;
+		s->pos = k;
 		return 1;
 	}
 
 	return 0;
 }
 
-const Binding *lookbinding(const List *const env, const List *const key) {
+GDI lookbinding(const List *const env, const List *const key) {
 	LookingState s;
 	s.key = key;
-	s.result = NULL;
+	s.env = NULL;
+	s.pos = -1;
 
 	if(forlist((List *)env, looker, &s, 0) != 0) {
-		return s.result;
+		return (GDI) { .array = s.env, .position = s.pos };
 	}
 
-	assert(s.result == NULL);
+	assert(s.env == NULL && s.pos == -1);
 
-	return NULL;
+	return (GDI) { .array = NULL, .position = -1 };
 }
 
-extern unsigned readbinding(Array *const env, const Binding *const b) {
+GDI readbinding(Array *const env, const Ref ref, const List *const key)
+{
 	assert(env->code == ENV);
 
-	const unsigned k = lookup(env, b->key); 
-	if(k != -1) { return k; }
+	const unsigned k = lookup(env, key); 
+	if(k != -1)
+	{
+		return (GDI) { .array = env, .position = k };
+	}
 
-	return readin(env, b);
+	const Binding b = { .key = forklist(key), .ref = ref };
+	return (GDI) { .array = env, .position = readin(env, &b) };
+}
+
+Ref gditoref(const GDI g)
+{
+	assert(g.array->code == ENV);
+	const Binding *const B = g.array->data;
+	return B[g.position].ref;
 }

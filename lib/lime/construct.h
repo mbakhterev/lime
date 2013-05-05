@@ -28,7 +28,11 @@ struct ArrayTag {
 	int code;
 };
 
-// mk - это make; rl - release
+typedef struct {
+	const Array *array;
+	unsigned position;
+} GDI; // Global Datum Index :)
+
 extern Array makearray(const int code, const unsigned itemlen,
 	const ItemCmp, const KeyCmp);
 
@@ -104,6 +108,7 @@ extern void freenode(Node *const);
 typedef struct {
 	unsigned code;
 	union {
+		void *pointer;
 		List *list;
 		Node *node;
 		Array *environment;
@@ -113,12 +118,13 @@ typedef struct {
 
 // Конструкторы для Ref
 
+extern Ref refptr(void *const);
 extern Ref refnum(const unsigned code, const unsigned);
 extern Ref refenv(Array *const);
 extern Ref reflist(List *const);
 extern Ref refnode(Node *const);
 
-enum { NUMBER, ATOM, TYPE, LIST, NODE, ENV, MAP, FREE = -1 };
+enum { NUMBER, ATOM, TYPE, LIST, NODE, ENV, MAP, PTR, FREE = -1 };
 
 struct ListTag {
 	List * next;
@@ -181,19 +187,23 @@ extern unsigned listlen(const List *const);
 
 // Окружения
 
-typedef struct {
-	const List *key;
-	union {
-		Node *node;
-		void *generic;
-	} u;
-	int code;
-} Binding;
+// typedef struct {
+// 	const List *key;
+// 	Ref ref;
+// 
+// // 	union {
+// // 		Node *node;
+// // 		void *generic;
+// // 	} u;
+// // 	int code;
+// } Binding;
 
 extern Array makeenvironment(void);
 extern void freeenvironment(Array *const);
-extern unsigned readbinding(Array *const, const Binding *const);
-extern const Binding *lookbinding(const List *const env, const List *const key);
+extern GDI readbinding(Array *const, const Ref, const List *const key);
+extern GDI lookbinding(const List *const, const List *const key);
+
+extern Ref gditoref(const GDI);
 
 // Биективное unsigned -> unsigned отображение. Предназначение двойное.
 
