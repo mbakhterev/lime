@@ -69,22 +69,24 @@ extern unsigned loadtoken(Array *const, FILE *const,
 
 // Узлы
 
-struct NodeTag {
-	union {
+struct NodeTag
+{
+	union
+	{
 		Node *nextfree;
 		List *attributes;
 	} u;
 
 	unsigned verb;
 	
-	// Некая дополнительная информация, которая может быть специально
-	// проинтерпретирована пользователем. Рассчёт на то, что extra -- это
-	// индекс в некотором массиве
-	unsigned extra;
-
-	// Отметка о посещении для различных алгоритмов обхода dag-а. Например,
-	// для mark-and-sweep сборщика мусора
-	unsigned mark:1;
+// 	// Некая дополнительная информация, которая может быть специально
+// 	// проинтерпретирована пользователем. Рассчёт на то, что extra -- это
+// 	// индекс в некотором массиве
+// 	unsigned extra;
+// 
+// 	// Отметка о посещении для различных алгоритмов обхода dag-а. Например,
+// 	// для mark-and-sweep сборщика мусора
+// 	unsigned mark:1;
 };
 
 extern Node *newnode(const unsigned verb, const List *const attributes);

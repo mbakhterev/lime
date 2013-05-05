@@ -25,21 +25,25 @@ static Node *tipoffnode(Node **const lptr) {
 
 }
 
-Node *newnode(const unsigned verb, const List *const attributes) {
+Node *newnode(const unsigned verb, const List *const attributes)
+{
 	assert(attributes);
 	assert(verb != FREE);
 
 	Node *n = NULL;
 
-	if(freenodes) {
+	if(freenodes)
+	{
 		n = tipoffnode(&freenodes);
-		assert(n->verb = FREE && n->mark == 0);
+//		assert(n->verb = FREE && n->mark == 0);
+		assert(n->verb == FREE);
 	}
-	else {
+	else
+	{
 		n = malloc(sizeof(Node));
 		assert(n);
 		n->verb = FREE;
-		n->mark = 0;
+//		n->mark = 0;
 	}
 
 	n->u.nextfree = n;
@@ -50,13 +54,15 @@ Node *newnode(const unsigned verb, const List *const attributes) {
 	return n;
 }
 
-void freenode(Node *const n) {
+void freenode(Node *const n)
+{
 	assert(n && n->verb != FREE);
 
 	n->verb = FREE;
-	n->mark = 0;
+//	n->mark = 0;
 
-	if(freenodes) { } else {
+	if(freenodes) { } else
+	{
 		n->u.nextfree = n;
 		freenodes = n;
 		return;

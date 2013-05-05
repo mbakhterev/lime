@@ -5,6 +5,11 @@
 #include <string.h>
 #include <ctype.h>
 
+#define DBGLST 1
+#define DBGLRD 2
+
+#define DBGFLAGS (DBGLST | DBGLRD)
+
 Array keymap(Array *const U,
 	const unsigned hint, const char *const A[], const unsigned N) {
 	assert(U->code == ATOM);
@@ -50,6 +55,9 @@ static LoadCurrent core(LoadContext *const ctx,
 static LoadCurrent node(LoadContext *const,
 	List *const, List *const, List *const);
 
+static LoadCurrent ce(LoadContext *const,
+	List *const, List *const, List *const);
+
 static unsigned isascii(const int c) {
 	return (c & 0x7f) == c;
 }
@@ -64,34 +72,51 @@ static unsigned isfirstcore(const int c) {
 	return isascii(c) && isalnum(c);
 }
 
+// Для list не нужен параметр refs. Список всегда начинается с пустого списка
+// ссылок
+
+// static LoadCurrent list(LoadContext *const ctx,
+// 	List *const env, List *const nodes, List *const refs)
+
 static LoadCurrent list(LoadContext *const ctx,
-	List *const env, List *const nodes, List *const refs) {
-	assert(env->ref.code == ENV);
-	assert(env->ref.code == NODE);
+	List *const env, List *const nodes)
+{
+	DBG(DBGLST, "LIST: ctx: %p", (void *)ctx);
+
+	assert(env == NULL || env->ref.code == ENV);
+	assert(nodes == NULL || nodes->ref.code == NODE);
 
 	FILE *const f = ctx->file;
 	assert(f);
 
+	DBG(DBGLST, "%s", "pre skipping");
+
 	const int c = skipspaces(f);
-	switch(c) {
+	switch(c)
+	{
 	case ')':
-		return LC(nodes, refs);
+		return LC(nodes, NULL);
 	}
 
-	if(isfirstcore(c)) {
+	DBG(DBGLST, "c: %d", c);
+
+	if(isfirstcore(c))
+	{
+		ungetc(c, f);
+
 		Array E = makeenvironment();
 
-		List *const l = RL(refenv(&E));
-		// lenv - local env
-		List *lenv = append(l, env);
+		List l = { .ref = refenv(&E), .next = &l };
+		List *lenv = append(&l, env); // lenv - local env
 
-		LoadCurrent const lc = core(ctx, lenv, nodes, NULL);
+		const LoadCurrent lc = core(ctx, lenv, nodes, NULL);
 
-		assert(tipoff(&lenv) == l && lenv == env);
-		freelist(l);
+		assert(tipoff(&lenv) == &l && lenv == env);
 		freeenvironment(&E);
 
-		return LC(lc.nodes, append(refs, RL(reflist(lc.refs))));
+// 		return LC(lc.nodes, append(refs, RL(reflist(lc.refs))));
+		
+		return lc;
 	}
 
 	errexpect(c, ES("(", "'", "[0-9]+", "[A-Za-z][0-9A-Za-z]+", ")"));
@@ -100,12 +125,14 @@ static LoadCurrent list(LoadContext *const ctx,
 }
 
 static LoadCurrent ce(LoadContext *const ctx,
-	List *const env, List *const nodes, List *const refs) {
-	assert(env->ref.code == ENV);
-	assert(nodes->ref.code == NODE);
+	List *const env, List *const nodes, List *const refs)
+{
+	assert(env && env->ref.code == ENV);
+	assert(nodes == NULL || nodes->ref.code == NODE);
 
 	const int c = skipspaces(ctx->file);
-	switch(c) {
+	switch(c)
+	{
 	case ')':
 		return (LoadCurrent) { .nodes = nodes, .refs = refs };
 	
@@ -119,22 +146,30 @@ static LoadCurrent ce(LoadContext *const ctx,
 }
 
 static LoadCurrent core(LoadContext *const ctx,
-	List *const env, List *const nodes, List *const refs) {
-	assert(env->ref.code == ENV);
-	assert(nodes->ref.code == NODE);
+	List *const env, List *const nodes, List *const refs)
+{
+	assert(env != NULL && env->ref.code == ENV);
+	assert(nodes == NULL || nodes->ref.code == NODE);
 
 	FILE *const f = ctx->file;
 	assert(f);
 
-	const int c = skipspaces(ctx->file);
-	switch(c) {
-	case ')':
-		return (LoadCurrent) { .nodes = nodes, .refs = refs };
+	const int c = skipspaces(f);
+	switch(c)
+	{
+// 	case ')':
+// 		return (LoadCurrent) { .nodes = nodes, .refs = refs };
 
 	case '\'':
 		return node(ctx, env, nodes, refs);
 
-	case '(': {
+	case '(':
+	{
+// 		const LoadCurrent lc = list(ctx, env, nodes, refs);
+// 		return ce(ctx, env, lc.nodes, lc.refs);
+
+		const LoadCurrent lc = list(ctx, env, nodes);
+		return ce(ctx, env, lc.nodes, RL(reflist(lc.refs)));
 	}
 	}
 
@@ -147,26 +182,37 @@ static LoadCurrent core(LoadContext *const ctx,
 		return ce(ctx, env, nodes, lrefs);
 	}
 
-	errexpect(c, ES("(", "'", ")", "[0-9]+"));
+	errexpect(c, ES("(", "'", "[0-9]+"));
 
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
 static LoadCurrent node(LoadContext *const ctx,
-	List *const env, List *const nodes, List *const refs) {
-
+	List *const env, List *const nodes, List *const refs)
+{
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
-List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes) {
+List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes)
+{
 	FILE *const f = ctx->file;
 	int c;
 
-	if((c = fgetc(f)) == '(') { } else {
+	if((c = fgetc(f)) == '(') { } else
+	{
 		errexpect(c, ES("("));
 	}
 
-	const LoadCurrent lc = list(ctx, env, nodes, NULL);
+	DBG(DBGLRD, "pre list; ctx: %p", (void *)ctx);
+
+	const LoadCurrent lc = list(ctx, env, nodes);
+
+	if(DBGFLAGS & DBGLRD)
+	{
+		char *const c = dumplist(lc.refs);
+		DBG(DBGLRD, "refs(%u): %s", listlen(lc.refs), c);
+		free(c);
+	}
 
 	// Список ссылок не нужен
 	freelist(lc.refs);

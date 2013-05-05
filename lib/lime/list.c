@@ -67,12 +67,15 @@ extern Ref reflist(List *const l) {
 	return (Ref) { .code = LIST, .u.list = l };
 }
 
-static List *newlist(const Ref r) {
-	switch(r.code) {
+static List *newlist(const Ref r)
+{
+	switch(r.code)
+	{
 	case NUMBER:
 	case ATOM:
 	case TYPE:
 	case NODE:
+	case LIST:
 		break;
 	
 	default:
@@ -81,13 +84,15 @@ static List *newlist(const Ref r) {
 
 	List *l = NULL;
 
-	if(freeitems) {
+	if(freeitems)
+	{
 		DBG(DBGPOOL, "tipping off: %p", (void *)freeitems);
 		
 		l = tipoff(&freeitems);
 		assert(l->ref.code == FREE && l->next == l);
 	}
-	else {
+	else
+	{
 		l = malloc(sizeof(List));
 		assert(l);
 		l->next = l;
@@ -215,10 +220,13 @@ typedef struct {
 	const List *first;
 } DumpState;
 
-static void dumptostream(List *const l, FILE *const f) {
+static void dumptostream(List *const l, FILE *const f)
+{
 	assert(fputc('(', f) != EOF);
 
-	DumpState s = { .file = f, .first = NULL };
+//	DumpState s = { .file = f, .first = NULL }; WTF?
+
+	DumpState s = { .file = f, .first = l };
 	forlist(l, dumper, &s, 0);
 
 	assert(fputc(')', f) != EOF);
@@ -256,7 +264,8 @@ static int dumper(List *const l, void *const state) {
 		break;
 	
 	case LIST:
-		assert(l->ref.u.list);
+//		assert(l->ref.u.list);
+
 		dumptostream(l->ref.u.list, f);
 		break;
 

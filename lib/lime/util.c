@@ -63,7 +63,8 @@ int skipspaces(FILE *const f) {
 	return c;
 }
 
-void errexpect(const int have, const char *const E[]) {
+void errexpect(const int have, const char *const E[])
+{
 // 	char buffer[32];
 // 
 // 	if(have != EOF) {
@@ -74,4 +75,27 @@ void errexpect(const int have, const char *const E[]) {
 // 	}
 // 
 // 	ERR("parse error: expecting: %c; got: %s", expecting, buffer);
+	
+	char *buf;
+	size_t len;
+	FILE *const f = open_memstream(&buf, &len);
+	assert(f);
+
+	for(unsigned i = 0; E[i]; i += 1)
+	{
+		assert(fprintf(f, " %s", E[i]) > 0);
+	}
+
+	assert(fclose(f) == 0);
+
+	if(have != EOF)
+	{
+		ERR("got %c expecting:%s", have, buf);
+	}
+	else
+	{
+		ERR("got EOF expecting:%s", buf);
+	}
+
+	free(buf);
 }
