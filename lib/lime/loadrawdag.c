@@ -75,9 +75,6 @@ static unsigned isfirstcore(const int c) {
 // Для list не нужен параметр refs. Список всегда начинается с пустого списка
 // ссылок
 
-// static LoadCurrent list(LoadContext *const ctx,
-// 	List *const env, List *const nodes, List *const refs)
-
 static LoadCurrent list(LoadContext *const ctx,
 	List *const env, List *const nodes)
 {
@@ -114,8 +111,6 @@ static LoadCurrent list(LoadContext *const ctx,
 		assert(tipoff(&lenv) == &l && lenv == env);
 		freeenvironment(&E);
 
-// 		return LC(lc.nodes, append(refs, RL(reflist(lc.refs))));
-		
 		return lc;
 	}
 
@@ -157,23 +152,19 @@ static LoadCurrent core(LoadContext *const ctx,
 	const int c = skipspaces(f);
 	switch(c)
 	{
-// 	case ')':
-// 		return (LoadCurrent) { .nodes = nodes, .refs = refs };
-
 	case '\'':
 		return node(ctx, env, nodes, refs);
 
 	case '(':
 	{
-// 		const LoadCurrent lc = list(ctx, env, nodes, refs);
-// 		return ce(ctx, env, lc.nodes, lc.refs);
-
 		const LoadCurrent lc = list(ctx, env, nodes);
-		return ce(ctx, env, lc.nodes, RL(reflist(lc.refs)));
+		return ce(ctx, env, 
+			lc.nodes, append(refs, RL(reflist(lc.refs))));
 	}
 	}
 
-	if(isdigit(c)) {
+	if(isdigit(c))
+	{
 		assert(ungetc(c, ctx->file) == c);
 
 		List *const lrefs
@@ -214,7 +205,7 @@ List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes)
 		free(c);
 	}
 
-	// Список ссылок не нужен
+	// FIXME: Список в виде списка ссылок не нужен
 	freelist(lc.refs);
 
 	return lc.nodes;

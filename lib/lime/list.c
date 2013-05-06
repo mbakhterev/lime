@@ -110,14 +110,15 @@ List *readrefs(const Ref R[]) {
 	return l;
 }
 
-List * append(List *const k, List *const l) {
-//	assert(l);
-
-	if(k) { } else {
+List * append(List *const k, List *const l)
+{
+	if(k) { } else
+	{
 		return l;
 	}
 
-	if(l) { } else {
+	if(l) { } else
+	{
 		return k;
 	}
 
@@ -134,10 +135,10 @@ List * append(List *const k, List *const l) {
 	return l;
 }
 
-int forlist(List *const k, Oneach fn, void *const ptr, const int key) {
-//	assert(k);
-
-	if(k) { } else {
+int forlist(List *const k, Oneach fn, void *const ptr, const int key)
+{
+	if(k) { } else
+	{
 		return key;
 	}
 
@@ -224,28 +225,31 @@ static void dumptostream(List *const l, FILE *const f)
 {
 	assert(fputc('(', f) != EOF);
 
-//	DumpState s = { .file = f, .first = NULL }; WTF?
-
-	DumpState s = { .file = f, .first = l };
+	DumpState s = { .file = f, .first = l != NULL ? l->next : NULL };
 	forlist(l, dumper, &s, 0);
 
 	assert(fputc(')', f) != EOF);
 }
 
-static int dumper(List *const l, void *const state) {
+static int dumper(List *const l, void *const state)
+{
 	DumpState *const s = state;
 	FILE *const f = s->file;
-	unsigned isfinal;
 
-	if(s->first) { 	
-		isfinal = l->next == s->first;
-	}
-	else {
-		isfinal = 0;
-		s->first = l;
-	}
+// 	unsigned isfinal;
+// 
+// 	if(s->first) { 	
+// 		isfinal = l->next == s->first;
+// 	}
+// 	else {
+// 		isfinal = 0;
+// 		s->first = l;
+// 	}
 
-	switch(l->ref.code) {
+	const unsigned isfinal = l->next == s->first;
+
+	switch(l->ref.code)
+	{
 	case NUMBER:
 		assert(fprintf(f, "%u", l->ref.u.number) > 0);
 		break;
@@ -264,8 +268,6 @@ static int dumper(List *const l, void *const state) {
 		break;
 	
 	case LIST:
-//		assert(l->ref.u.list);
-
 		dumptostream(l->ref.u.list, f);
 		break;
 
@@ -273,7 +275,8 @@ static int dumper(List *const l, void *const state) {
 		assert(0);
 	}
 
-	if(!isfinal) {
+	if(!isfinal)
+	{
 		assert(fputc(' ', f) != EOF);
 	}
 
