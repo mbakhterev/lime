@@ -264,7 +264,10 @@ static int dumper(List *const l, void *const state)
 	
 	case NODE:
 		assert(l->ref.u.node);
-		assert(fprintf(f, "N:%p", (void *)l->ref.u.node) > 0);
+
+		assert(fprintf(f, "N:%p:%u",
+			(void *)l->ref.u.node, l->ref.u.node->verb) > 0);
+
 		break;
 	
 	case LIST:

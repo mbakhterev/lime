@@ -27,7 +27,7 @@ static Node *tipoffnode(Node **const lptr) {
 
 Node *newnode(const unsigned verb, const List *const attributes)
 {
-	assert(attributes);
+//	assert(attributes);
 	assert(verb != FREE);
 
 	Node *n = NULL;

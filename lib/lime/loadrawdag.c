@@ -52,8 +52,10 @@ static unsigned loadnum(FILE *const f) {
 static LoadCurrent core(LoadContext *const ctx,
 	List *const, List *const, List *const);
 
-static LoadCurrent node(LoadContext *const,
-	List *const, List *const, List *const);
+// Обработка узла не требует текущего накопленного сипска ссылок. Накопленные
+// ссылки при обработке будут добавлены в node.u.attributes
+
+static LoadCurrent node(LoadContext *const, List *const, List *const);
 
 static LoadCurrent ce(LoadContext *const,
 	List *const, List *const, List *const);
@@ -152,8 +154,21 @@ static LoadCurrent core(LoadContext *const ctx,
 	const int c = skipspaces(f);
 	switch(c)
 	{
-	case '\'':
-		return node(ctx, env, nodes, refs);
+	case '\'': {
+		// Обработка узла может добавить только новый узел. Список
+		// ссылок должен представлять собой один элемент со ссылокой на
+		// узел.
+
+		const LoadCurrent lc = node(ctx, env, nodes);
+
+		List *const l = lc.refs;
+		assert(l->ref.code == NODE && l->next == l);
+
+		return ce(ctx, env, lc.nodes, append(refs, l));
+
+//		return node(ctx, env, nodes, refs);
+
+	}
 
 	case '(':
 	{
@@ -178,10 +193,29 @@ static LoadCurrent core(LoadContext *const ctx,
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
-static LoadCurrent node(LoadContext *const ctx,
-	List *const env, List *const nodes, List *const refs)
+static LoadCurrent node(
+	LoadContext *const ctx, List *const env, List *const nodes)
 {
-	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
+	Array *const U = ctx->universe;
+	FILE *const f = ctx->file;
+
+	assert(f);
+	assert(U);
+
+	const int c = fgetc(f);
+	if(isascii(c) && isalpha(c))
+	{
+		ungetc(c, f);
+	}
+	else
+	{
+		errexpect(c, ES("[A-Za-z]"));
+	}
+
+	List *const l
+		= RL(refnode(newnode(loadtoken(U, f, 0, "[0-9A-Za-z]"), NULL)));
+	
+	return LC(append(nodes, RL(refnode(l->ref.u.node))), l);
 }
 
 List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes)
