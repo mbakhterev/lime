@@ -23,6 +23,11 @@ int cmpui(const unsigned a, const unsigned b) {
 	return 1 - (a == b) - ((a < b) << 1);
 }
 
+int cmpptr(const void *const a, const void *const b)
+{
+	return 1 - (a == b) - ((a < b) << 1);
+}
+
 static unsigned clp2(unsigned n) {
 	assert(sizeof(unsigned) == 4);
 

@@ -224,8 +224,15 @@ extern Array makeuimap(void);
 extern void freeuimap(Array *const);
 
 extern unsigned uimap(Array *const, const unsigned);
-extern unsigned direct(const Array *const, const unsigned);
-extern unsigned reverse(const Array *const, const unsigned);
+extern unsigned uidirect(const Array *const, const unsigned);
+extern unsigned uireverse(const Array *const, const unsigned);
+
+extern Array makeptrmap(void);
+extern void freeptrmap(Array *const);
+
+extern unsigned ptrmap(Array *const, const void *const);
+extern unsigned ptrreverse(const Array *const, const void *const);
+extern const void *const ptrdirect(const Array *const, const unsigned);
 
 // Семантические функции
 

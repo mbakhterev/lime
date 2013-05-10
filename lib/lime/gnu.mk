@@ -10,6 +10,7 @@ lmsrc = \
 	list.c		\
 	environment.c	\
 	uimap.c		\
+	ptrmap.c	\
 	loadrawdag.c
 
 lmobj = $(call c2o,$(bitspath),$(lmsrc))

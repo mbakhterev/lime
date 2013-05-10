@@ -31,6 +31,7 @@ extern const char * unitname;
 extern unsigned middle(const unsigned l, const unsigned r);
 
 extern int cmpui(const unsigned, const unsigned);
+extern int cmpptr(const void *const, const void *const);
 
 extern unsigned min(const unsigned, const unsigned);
 

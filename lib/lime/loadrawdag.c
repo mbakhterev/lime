@@ -8,7 +8,9 @@
 #define DBGLST 1
 #define DBGLRD 2
 
-#define DBGFLAGS (DBGLST | DBGLRD)
+// #define DBGFLAGS (DBGLST | DBGLRD)
+
+#define DBGFLAGS 0
 
 Array keymap(Array *const U,
 	const unsigned hint, const char *const A[], const unsigned N) {
