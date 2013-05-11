@@ -48,28 +48,35 @@ void heapsort(const void *const D, unsigned I[],
 	}
 }
 
-unsigned heapsearch(const void *const D,
-	const unsigned I[], const unsigned N, const void *const key,
-	KeyCmp cmp) {
-	if(N) { } else {
+unsigned heapsearch(
+	const void *const D,
+	const unsigned I[], const unsigned N,
+	const void *const key, KeyCmp cmp)
+{
+	if(N) { } else
+	{
 		return -1;
 	}
 
 	unsigned l = 0;
 	unsigned r = N - 1;
 
-	while(l < r) {
+	while(l < r)
+	{
 		const unsigned m = middle(l, r);
 
-		if(cmp(D, I[m], key) < 0) {
+		if(cmp(D, I[m], key) < 0)
+		{
 			l = m + 1;
 		}
-		else {
+		else
+		{
 			r = m;
 		}
 	}
 
-	if(l == r && cmp(D, I[l], key) == 0) {
+	if(l == r && cmp(D, I[l], key) == 0)
+	{
 		return I[l];
 	}
 

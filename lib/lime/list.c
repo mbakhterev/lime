@@ -19,6 +19,12 @@
 
 static List * freeitems = NULL;
 
+List *tip(const List *const l)
+{
+	assert(l);
+	return l->next;
+}
+
 // Откусить первый элемент
 List *tipoff(List **const lptr) {
 	List *const l = *lptr;

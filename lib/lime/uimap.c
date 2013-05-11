@@ -30,15 +30,12 @@ unsigned uimap(Array *const m, const unsigned y)
 	const unsigned k = uireverse(m, y);
 	if(k != -1) { return k; }
 
-//	assert(m->code == MAP);
-
 	return readin(m, &y);
 }
 
 unsigned uidirect(const Array *const m, const unsigned x)
 {
 	assert(m->code == MAP);
-//	assert(x < m->count);
 
 	if(x < m->count)
 	{
@@ -53,6 +50,5 @@ unsigned uireverse(const Array *const m, const unsigned y)
 {
 	assert(m->code == MAP);
 	const unsigned x = lookup(m, &y);
-//	assert(x != -1);
 	return x;
 }

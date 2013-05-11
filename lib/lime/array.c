@@ -56,6 +56,7 @@ unsigned readin(Array *const a, const void *const p) {
 	return count;
 }
 
-unsigned lookup(const Array *const a, const void *const key) {
+unsigned lookup(const Array *const a, const void *const key)
+{
 	return heapsearch(a->data, a->index, a->count, key, a->keycmp);
 }

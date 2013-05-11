@@ -28,7 +28,8 @@ struct ArrayTag {
 	int code;
 };
 
-typedef struct {
+typedef struct
+{
 	const Array *array;
 	unsigned position;
 } GDI; // Global Datum Index :)
@@ -168,6 +169,7 @@ extern unsigned writerefs(const List *const, Ref refs[], const unsigned N);
 
 extern List *append(List *const, List *const);
 extern List *tipoff(List **const);
+extern List *tip(const List *const);
 
 // clone/erase указывают на то, следует ли при копировании/освобождении списка
 // копировать/удалять так же и подструктуры (узлы в случае элемента списка с
@@ -188,17 +190,6 @@ extern int forlist(List *const, Oneach, void *const, const int key);
 extern unsigned listlen(const List *const);
 
 // Окружения
-
-// typedef struct {
-// 	const List *key;
-// 	Ref ref;
-// 
-// // 	union {
-// // 		Node *node;
-// // 		void *generic;
-// // 	} u;
-// // 	int code;
-// } Binding;
 
 extern Array makeenvironment(void);
 extern void freeenvironment(Array *const);

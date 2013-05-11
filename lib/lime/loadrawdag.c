@@ -7,10 +7,12 @@
 
 #define DBGLST 1
 #define DBGLRD 2
+#define DBGNODE 4
 
 // #define DBGFLAGS (DBGLST | DBGLRD)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGLRD | DBGNODE)
+// #define DBGFLAGS 0
 
 Array keymap(Array *const U,
 	const unsigned hint, const char *const A[], const unsigned N) {
@@ -62,8 +64,14 @@ static LoadCurrent node(LoadContext *const, List *const, List *const);
 static LoadCurrent ce(LoadContext *const,
 	List *const, List *const, List *const);
 
-static unsigned isascii(const int c) {
+static unsigned isascii(const int c)
+{
 	return (c & 0x7f) == c;
+}
+
+static unsigned isfirstid(const int c)
+{
+	return isascii(c) && isalpha(c);
 }
 
 static unsigned isfirstcore(const int c) {
@@ -79,8 +87,8 @@ static unsigned isfirstcore(const int c) {
 // Для list не нужен параметр refs. Список всегда начинается с пустого списка
 // ссылок
 
-static LoadCurrent list(LoadContext *const ctx,
-	List *const env, List *const nodes)
+static LoadCurrent list(
+	LoadContext *const ctx, List *const env, List *const nodes)
 {
 	DBG(DBGLST, "LIST: ctx: %p", (void *)ctx);
 
@@ -198,24 +206,77 @@ static LoadCurrent core(LoadContext *const ctx,
 static LoadCurrent node(
 	LoadContext *const ctx, List *const env, List *const nodes)
 {
+	assert(env && env->ref.code == ENV);
+
 	Array *const U = ctx->universe;
 	FILE *const f = ctx->file;
 
 	assert(f);
 	assert(U);
 
-	const int c = fgetc(f);
-	if(isascii(c) && isalpha(c))
+	int c = fgetc(f);
+
+	if(isfirstid(c))
 	{
-		ungetc(c, f);
+		assert(ungetc(c, f) == c);
 	}
 	else
 	{
 		errexpect(c, ES("[A-Za-z]"));
 	}
 
-	List *const l
-		= RL(refnode(newnode(loadtoken(U, f, 0, "[0-9A-Za-z]"), NULL)));
+	const unsigned verb = loadtoken(U, f, 0, "[0-9A-Za-z]");
+	const unsigned key = uireverse(ctx->keymap, verb);
+
+	DBG(DBGNODE, "verb: %u; key: %u", verb, key);
+
+	if(!(ctx->keyonly && key == -1)) { } else
+	{
+		unsigned char *const a
+			= (void *)((Atom *)U->data)[verb];
+
+		const unsigned hint = a[0];
+		a[0] = 0;
+		ERR("non key atom in keyonly mode: %s", atombytes(a));
+		a[0] = hint;
+	}
+
+	Node *const n = newnode(verb, NULL);
+
+	c = skipspaces(f);
+
+	// Если дальше следует метка узла
+	if(isfirstid(c))
+	{
+		assert(ungetc(c, f) == c);
+		const List lid =
+		{
+			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
+			.next = (List *)&lid
+		};
+
+		const GDI ref = lookbinding(env, &lid);
+		if(ref.array == NULL)
+		{
+			assert(ref.position == -1);
+		}
+		else
+		{
+			unsigned char *const a
+				= (void *)((Atom *)U->data)[verb];
+
+			const unsigned hint = a[0];
+			a[0] = 0;
+			ERR("node label is in scope: %s", atombytes(a));
+			a[0] = hint;
+		}
+
+		Array *const E = tip(env)->ref.u.environment;
+
+		readbinding(E, refnode
+	}
+
+	List *const l = RL(refnode(newnode(verb, NULL)));
 	
 	return LC(append(nodes, RL(refnode(l->ref.u.node))), l);
 }

@@ -6,15 +6,17 @@
 unsigned field, item;
 const char *unitname = "test";
 
-int main(const int ac, const char *const av[]) {
+int main(const int ac, const char *const av[])
+{
 	Array U = makeatomtab();
+	Array keys = makeuimap();
 
 	LoadContext lc = 
 	{
 		.file = stdin,
 		.state = NULL,
 		.universe = &U,
-		.keymap = NULL,
+		.keymap = &keys,
 		.actions = NULL,
 		.keyonly = 0
 	};
