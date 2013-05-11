@@ -42,11 +42,11 @@ static LoadCurrent LC(List *const nodes, List *const refs) {
 
 static unsigned loadnum(FILE *const f) {
 	unsigned n;
-	if(fscanf(f, "%u", &n) == 1) { } else {
+	if(fscanf(f, "%u", &n) == 1) {} else {
 		ERR("%s", "can't read number");
 	}
 
-	if(n <= MAXNUM) { } else {
+	if(n <= MAXNUM) {} else {
 		ERR("%u is > %u", n, MAXNUM);
 	}
 
@@ -230,7 +230,7 @@ static LoadCurrent node(
 
 	DBG(DBGNODE, "verb: %u; key: %u", verb, key);
 
-	if(!(ctx->keyonly && key == -1)) { } else
+	if(!(ctx->keyonly && key == -1)) {} else
 	{
 		unsigned char *const a
 			= (void *)((Atom *)U->data)[verb];
@@ -241,21 +241,21 @@ static LoadCurrent node(
 		a[0] = hint;
 	}
 
-	Node *const n = newnode(verb, NULL);
+	GDI ref = { .array = NULL, .position = -1 };
 
-	c = skipspaces(f);
-
+	
 	// Если дальше следует метка узла
-	if(isfirstid(c))
+	if(isfirstid(c = skipspaces(f)))
 	{
 		assert(ungetc(c, f) == c);
+
 		const List lid =
 		{
 			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
 			.next = (List *)&lid
 		};
 
-		const GDI ref = lookbinding(env, &lid);
+		ref = lookbinding(env, &lid);
 		if(ref.array == NULL)
 		{
 			assert(ref.position == -1);
@@ -263,7 +263,7 @@ static LoadCurrent node(
 		else
 		{
 			unsigned char *const a
-				= (void *)((Atom *)U->data)[verb];
+				= (void *)((Atom *)U->data)[lid.ref.u.number];
 
 			const unsigned hint = a[0];
 			a[0] = 0;
@@ -273,12 +273,54 @@ static LoadCurrent node(
 
 		Array *const E = tip(env)->ref.u.environment;
 
-		readbinding(E, refnode
+		// Резервирование места в области видимости
+		ref = readbinding(E, refnode(NULL), &lid);
+
+		// Удостоверяемся в =
+		if((c = skipspaces(f)) == '=') {} else
+		{
+			errexpect(c, ES("="));
+		}
+	}
+	else
+	{
+		assert(ungetc(c, f) == c);
 	}
 
-	List *const l = RL(refnode(newnode(verb, NULL)));
+	// Загрузка атрибутов узла, которые могут быть в специальном формате
+	// (для ключевых узлов)
+
+	LoadCurrent lc = LC(NULL, NULL);
+
+	if(key == -1)
+	{
+		// Стандартная загрузка списка аргументов
+
+		if((c = skipspaces(f)) == '(') {} else
+		{
+			errexpect(c, ES("("));
+		}
+
+		lc = list(ctx, env, nodes);
+	}
+	else
+	{
+		lc = ctx->actions[key](ctx, env, nodes);
+	}
+
+	if(DBGFLAGS & DBGNODE)
+	{
+		char *const ns = dumplist(lc.nodes);
+		char *const rs = dumplist(lc.refs);
+		DBG(DBGNODE, "ns: %s", ns);
+		DBG(DBGNODE, "rs: %s", rs);
+		free(rs);
+		free(ns);
+	}
+
+	List *const l = RL(refnode(newnode(verb, lc.refs)));
 	
-	return LC(append(nodes, RL(refnode(l->ref.u.node))), l);
+	return LC(append(lc.nodes, RL(refnode(l->ref.u.node))), l);
 }
 
 List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes)
@@ -286,7 +328,7 @@ List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes)
 	FILE *const f = ctx->file;
 	int c;
 
-	if((c = fgetc(f)) == '(') { } else
+	if((c = fgetc(f)) == '(') {} else
 	{
 		errexpect(c, ES("("));
 	}

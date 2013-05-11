@@ -244,8 +244,11 @@ typedef struct {
 	List *refs;
 } LoadCurrent;
 
-typedef LoadCurrent (*LoadAction)(LoadContext *const,
-	List *const env, List *const nodes, List *const refs);
+// typedef LoadCurrent (*LoadAction)(LoadContext *const,
+// 	List *const env, List *const nodes, List *const refs);
+
+typedef LoadCurrent (*LoadAction)(
+	LoadContext *const, List *const env, List *const nodes);
 
 struct LoadContextTag {
 	FILE *file;
