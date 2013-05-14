@@ -59,17 +59,19 @@ extern unsigned atomhint(const Atom);
 extern AtomPack atompack(const Atom);
 extern const unsigned char *atombytes(const Atom);
 
+extern AtomPack strpack(const unsigned hint, const char *const str);
+
 extern Array makeatomtab(void);
 extern void freeatomtab(Array *const);
 
-extern unsigned readpack(Array *const, const AtomPack *const);
-extern unsigned lookpack(Array *const, const AtomPack *const);
-extern unsigned loadatom(Array *const, FILE *const);
+extern unsigned readpack(Array *const, const AtomPack);
+extern unsigned lookpack(Array *const, const AtomPack);
 
+extern unsigned loadatom(Array *const, FILE *const);
 extern unsigned loadtoken(Array *const, FILE *const,
 	const unsigned char hint, const char *const format);
 
-extern const Atom *atomat(const Array *const, const unsigned id);
+extern Atom atomat(const Array *const, const unsigned id);
 
 // Узлы
 

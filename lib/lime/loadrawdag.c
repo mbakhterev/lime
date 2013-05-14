@@ -31,14 +31,16 @@ Array keymap(
 
 	for(unsigned i = 0; i < N; i += 1)
 	{
-		const AtomPack ap =
-		{
-			.hint = hint,
-			.bytes = (const unsigned char *)A[i],
-			.length = strlen(A[i])
-		};
+// 		const AtomPack ap =
+// 		{
+// 			.hint = hint,
+// 			.bytes = (const unsigned char *)A[i],
+// 			.length = strlen(A[i])
+// 		};
 
-		uimap(&map, readpack(U, &ap));
+// 		uimap(&map, readpack(U, &ap));
+
+		uimap(&map, readpack(U, strpack(hint, A[i])));
 	}
 
 	return map;
@@ -254,13 +256,16 @@ static LoadCurrent core(
 		{
 			assert(ref.position == -1);
 
-			unsigned char *const a
-				= (void *)((Atom *)U->data)[l.ref.u.number];
+// 			unsigned char *const a
+// 				= (void *)((Atom *)U->data)[l.ref.u.number];
+// 
+// 			const unsigned hint = a[0];
+// 			a[0] = 0;
+// 			ERR("no label in the scope: %s", atombytes(a));
+// 			a[0] = hint;
 
-			const unsigned hint = a[0];
-			a[0] = 0;
-			ERR("no label in the scope: %s", atombytes(a));
-			a[0] = hint;
+			ERR("no label in the scope: %s",
+				atombytes(atomat(U, l.ref.u.number)));
 		}
 
 		const Ref *const r = gditorefcell(ref);
@@ -268,13 +273,16 @@ static LoadCurrent core(
 
 		if(r->u.node) {} else
 		{
-			unsigned char *const a
-				= (void *)((Atom *)U->data)[l.ref.u.number];
+// 			unsigned char *const a
+// 				= (void *)((Atom *)U->data)[l.ref.u.number];
+// 
+// 			const unsigned hint = a[0];
+// 			a[0] = 0;
+// 			ERR("labeled node is not complete: %s", atombytes(a));
+// 			a[0] = hint;
 
-			const unsigned hint = a[0];
-			a[0] = 0;
-			ERR("labeled node is not complete: %s", atombytes(a));
-			a[0] = hint;
+			ERR("labeled node is not complete: %s",
+				atombytes(atomat(U, l.ref.u.number)));
 		}
 
 		return ce(ctx, env,
@@ -286,14 +294,6 @@ static LoadCurrent core(
 
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
-
-// static Ref *gditorefcell(const GDI gdi)
-// {
-// 	assert(gdi.array && gdi.position != -1);
-// 
-// 	Ref *const R = (Ref *)(gdi.array->data);
-// 	return R + gdi.position;
-// }
 
 static LoadCurrent node(
 	LoadContext *const ctx, List *const env, List *const nodes)
@@ -326,13 +326,16 @@ static LoadCurrent node(
 
 	if(!(ctx->keyonly && key == -1)) {} else
 	{
-		unsigned char *const a
-			= (void *)((Atom *)U->data)[verb];
+// 		unsigned char *const a
+// 			= (void *)((Atom *)U->data)[verb];
+// 
+// 		const unsigned hint = a[0];
+// 		a[0] = 0;
+// 		ERR("non key atom in keyonly mode: %s", atombytes(a));
+// 		a[0] = hint;
 
-		const unsigned hint = a[0];
-		a[0] = 0;
-		ERR("non key atom in keyonly mode: %s", atombytes(a));
-		a[0] = hint;
+		ERR("non key atom in keyonly mode: %s",
+			atombytes(atomat(U, verb)));
 	}
 
 	GDI ref = { .array = NULL, .position = -1 };
@@ -361,13 +364,16 @@ static LoadCurrent node(
 		}
 		else
 		{
-			unsigned char *const a
-				= (void *)((Atom *)U->data)[lid.ref.u.number];
-
-			const unsigned hint = a[0];
-			a[0] = 0;
-			ERR("node label is in scope: %s", atombytes(a));
-			a[0] = hint;
+// 			unsigned char *const a
+// 				= (void *)((Atom *)U->data)[lid.ref.u.number];
+// 
+// 			const unsigned hint = a[0];
+// 			a[0] = 0;
+// 			ERR("node label is in scope: %s", atombytes(a));
+// 			a[0] = hint;
+			
+			ERR("node label is in scope: %s",
+				atombytes(atomat(U, lid.ref.u.number)));
 		}
 
 		Array *const E = tip(env)->ref.u.environment;

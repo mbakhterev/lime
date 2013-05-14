@@ -179,33 +179,35 @@ unsigned loadatom(Array *const t, FILE *const f) {
 	return grabpack(t, &ap);
 }
 
-unsigned lookpack(Array *const t, const AtomPack *const ap) {
+unsigned lookpack(Array *const t, const AtomPack ap)
+{
 	assert(t->code == ATOM);
-
-	assert(ap->bytes && ap->length <= MAXLEN && ap->hint <= MAXHINT);
+	assert(ap.bytes && ap.length <= MAXLEN && ap.hint <= MAXHINT);
 
 	DBG(DBGLOOK, "t->count: %u", t->count);
 
-	return lookup(t, ap);
+	return lookup(t, &ap);
 }
 
-unsigned readpack(Array *const t, const AtomPack *const ap) {
+unsigned readpack(Array *const t, const AtomPack ap)
+{
 	assert(t->code == ATOM);
 
 	const unsigned k = lookpack(t, ap);
 	if(k != -1) { return k; }
 
-	const unsigned len = ap->length;
+	const unsigned len = ap.length;
 	unsigned char *const tmp = malloc(atomstorelen(len));	
-	memcpy(tmp, ap->bytes, len);
+	memcpy(tmp, ap.bytes, len);
 
-	const AtomPack a = { .bytes = tmp, .hint = ap->hint, .length = len };
+	const AtomPack a = { .bytes = tmp, .hint = ap.hint, .length = len };
 
 	return grabpack(t, &a);
 }
 
 unsigned loadtoken(Array *const t, FILE *const f,
-	const unsigned char hint, const char *const format) {
+	const unsigned char hint, const char *const format)
+{
 	assert(t->code == ATOM);
 
 	assert(strlen(format) <= 32);
@@ -224,22 +226,25 @@ unsigned loadtoken(Array *const t, FILE *const f,
 	unsigned char *tmp = expogrow(NULL, CHUNKLEN, chunkcnt);
 	chunkcnt += 1;
 
-	while(scanf(fmt, tmp + loaded, &l) == 1) {
+	while(scanf(fmt, tmp + loaded, &l) == 1)
+	{
 		loaded += l;
-		if(loaded + CHUNKLEN >= chunkcnt * CHUNKLEN) {
+		if(loaded + CHUNKLEN >= chunkcnt * CHUNKLEN)
+		{
 			tmp = expogrow(tmp, CHUNKLEN, chunkcnt);
 			chunkcnt += 1;
 		}
 	}
 
-	if(loaded > 0) { } else {
+	if(loaded > 0) {} else
+	{
 		ERR("can't detect token. format: %s", fmt);
 	}
 
 	DBG(DBGLDT, "tmp: %s", tmp);
 
 	AtomPack ap = { .bytes = tmp, .length = loaded, .hint = hint };
-	if((l = lookpack(t, &ap)) != -1) {
+	if((l = lookpack(t, ap)) != -1) {
 		free(tmp);
 		return l;
 	}
@@ -251,4 +256,28 @@ unsigned loadtoken(Array *const t, FILE *const f,
 	ap.bytes = p;
 
 	return grabpack(t, &ap);
+}
+
+Atom atomat(const Array *const A, const unsigned id)
+{
+	assert(A->code == ATOM);
+	assert(id < A->count);
+	return ((const Atom *const)A->data)[id];
+}
+
+AtomPack strpack(const unsigned hint, const char *const str)
+{
+
+	assert(hint < MAXHINT);
+	assert(str);
+
+	size_t len = strlen(str);
+	assert(len < MAXLEN);
+
+	return (AtomPack)
+	{
+		.length = len,
+		.bytes = (const unsigned char *)str,
+		.hint = hint
+	};
 }
