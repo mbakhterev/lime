@@ -4,7 +4,10 @@
 #include <assert.h>
 
 #define DBGFREE	1
-#define DBGFLAGS (DBGFREE)
+
+//#define DBGFLAGS (DBGFREE)
+
+#define DBGFLAGS 0
 
 static int cmplists(const List *const, const List *const);
 

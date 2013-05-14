@@ -14,8 +14,10 @@
 // #define DBGFLAGS (DBGLST | DBGLRD)
 // #define DBGFLAGS (DBGLRD | DBGNODE)
 // #define DBGFLAGS 0
-#define DBGFLAGS 0x1f
+// #define DBGFLAGS 0x1f
 // #define DBGFLAGS (DBGNODE)
+
+#define DBGFLAGS (DBGLRD)
 
 Array keymap(
 	Array *const U,
