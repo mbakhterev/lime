@@ -72,11 +72,17 @@ void freeatomtab(Array *const t) {
 	freearray(t);
 }
 
-unsigned atomhint(const Atom a) {
+// Структура атома: byte \0 hint length. length - это длина массива байтов, без
+// дополнительного \0, который нужен для удобства работы со всяческими
+// printf-ами.
+
+unsigned atomhint(const Atom a)
+{
 	return ((const unsigned char *)a)[0];
 }
 
-unsigned atomlen(const Atom a) {
+unsigned atomlen(const Atom a)
+{
 	unsigned n;
 	readrune((const unsigned char *)a + 1, &n);
 
@@ -85,8 +91,10 @@ unsigned atomlen(const Atom a) {
 	return n;
 }
 
-const unsigned char * atombytes(const Atom a) {
-	return (const unsigned char *)a - atomlen(a);
+const unsigned char * atombytes(const Atom a)
+{
+	// - 1 -- это поправка на дополнительный \0
+	return (const unsigned char *)a - atomlen(a) - 1;
 }
 
 AtomPack atompack(const Atom a) {
@@ -97,24 +105,28 @@ AtomPack atompack(const Atom a) {
 	};
 }
 
-static unsigned atomstorelen(const unsigned len) {
+static unsigned atomstorelen(const unsigned len)
+{
 	// Объём необходимой для хранения атома памяти:
-	//	len + 1(hint) + runelen(len).
+	//	len + 1(\0) + 1(hint) + runelen(len).
 
-	return len + 1 + runelen(len);
+	return len + 1 + 1 + runelen(len);
 }
 
-
-static unsigned grabpack(Array *const t, const AtomPack *const ap) {
+static unsigned grabpack(Array *const t, const AtomPack *const ap)
+{
 	// Формируем атом
 	const unsigned len = ap->length;
 	const unsigned hint = ap->hint;
-	unsigned char *const a = (unsigned char *)ap->bytes + len;
+
+	// С поправкой на дополнительный \0
+	unsigned char *const a = (unsigned char *)ap->bytes + len + 1;
+
 	writerune(a + 1, len);
 	
-	a[0] = 0;
-	DBG(DBGGT, "atom: %s", atombytes(a));
 	a[0] = hint;
+	a[-1] = 0;
+	DBG(DBGGT, "atom: %s", atombytes(a));
 
 	return readin(t, &a);
 }

@@ -47,7 +47,8 @@ extern void *itemat(const Array *const, const unsigned);
 
 typedef const unsigned char *Atom;
 
-typedef struct {
+typedef struct
+{
 	const unsigned char *bytes;
 	unsigned length;
 	unsigned char hint;
@@ -67,6 +68,8 @@ extern unsigned loadatom(Array *const, FILE *const);
 
 extern unsigned loadtoken(Array *const, FILE *const,
 	const unsigned char hint, const char *const format);
+
+extern const Atom *atomat(const Array *const, const unsigned id);
 
 // Узлы
 

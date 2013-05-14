@@ -25,7 +25,6 @@ int main(int argc, char * argv[]) {
 	for(unsigned i = 0; i < t.count; i += 1) {
 		unsigned char *const a = *(unsigned char **)itemat(&t, I[i]);
 		const unsigned hint = a[0];
-		a[0] = 0;
 		printf("%02x.%u.\"%s\"\n", hint, atomlen(a), atombytes(a));
 	}
 
