@@ -59,9 +59,11 @@ void *expogrow(void *const buf, const unsigned ilen, const unsigned cnt) {
 	return p;
 }
 
-int skipspaces(FILE *const f) {
+int skipspaces(FILE *const f)
+{
 	int c;
-	while(isspace(c = fgetc(f))) {
+	while(isspace(c = fgetc(f)))
+	{
 		item += c == '\n';
 	}
 

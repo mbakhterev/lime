@@ -3,6 +3,9 @@
 
 #include <assert.h>
 
+#define DBGFREE	1
+#define DBGFLAGS (DBGFREE)
+
 static int cmplists(const List *const, const List *const);
 
 // Сравнение элементов списка. Без лукавых мудростей: сравниваются только узлы с
@@ -60,15 +63,10 @@ static int cmplists(const List *const k, const List *const l) {
 	return 1 - (ck == k && cl == l) - ((ck == k && cl != l) << 1);
 }
 
-typedef struct {
+typedef struct
+{
 	const List *key;
 	Ref ref;
-
-// 	union {
-// 		Node *node;
-// 		void *generic;
-// 	} u;
-// 	int code;
 } Binding;
 
 static int kcmp(const void *const D, const unsigned i, const void *const key) {
@@ -87,9 +85,13 @@ void freeenvironment(Array *const env)
 {
 	assert(env->code == ENV);
 
+	DBG(DBGFREE, "env->count: %u", env->count);
+
 	Binding *const B = env->data;
-	for(unsigned i = 0; i < env->count; i += 1) {
+	for(unsigned i = 0; i < env->count; i += 1)
+	{
 		freelist((List *)B[i].key);
+		DBG(DBGFREE, "i: %u", i);
 	}
 
 	freearray(env);
@@ -152,7 +154,22 @@ GDI readbinding(Array *const env, const Ref ref, const List *const key)
 
 Ref gditoref(const GDI g)
 {
-	assert(g.array->code == ENV);
+	assert(g.array && g.array->code == ENV);
+	assert(g.position != -1);
 	const Binding *const B = g.array->data;
 	return B[g.position].ref;
+}
+
+// LOG: Вместе с тем, как конструируются узлы (cf. lib/lime/loadrawdag.c:node),
+// это важный момент вообще для процесса программирования (правда, не очень
+// понятно, как именно важный). Важность в том, что мы должны иметь возможность
+// передать обратно некие данные, записав их в заранее подготовленную ячейку в
+// некоторой структуре данных. Позиция ячейки вычисляема по аргументам функции
+
+Ref *gditorefcell(const GDI g)
+{
+	assert(g.array && g.array->code == ENV);
+	assert(g.position != -1);
+	Binding *const B = g.array->data;
+	return &B[g.position].ref;
 }

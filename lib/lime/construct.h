@@ -79,15 +79,6 @@ struct NodeTag
 	} u;
 
 	unsigned verb;
-	
-// 	// Некая дополнительная информация, которая может быть специально
-// 	// проинтерпретирована пользователем. Рассчёт на то, что extra -- это
-// 	// индекс в некотором массиве
-// 	unsigned extra;
-// 
-// 	// Отметка о посещении для различных алгоритмов обхода dag-а. Например,
-// 	// для mark-and-sweep сборщика мусора
-// 	unsigned mark:1;
 };
 
 extern Node *newnode(const unsigned verb, const List *const attributes);
@@ -197,6 +188,7 @@ extern GDI readbinding(Array *const, const Ref, const List *const key);
 extern GDI lookbinding(const List *const, const List *const key);
 
 extern Ref gditoref(const GDI);
+extern Ref *gditorefcell(const GDI);
 
 // Биективное unsigned -> unsigned отображение. Предназначение двойное.
 

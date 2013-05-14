@@ -5,28 +5,36 @@
 #include <string.h>
 #include <ctype.h>
 
-#define DBGLST 1
-#define DBGLRD 2
-#define DBGNODE 4
+#define DBGLST	0x01
+#define DBGLRD	0x02
+#define DBGNODE	0x04
+#define DBGCORE	0x08
+#define DBGCE	0x10
 
 // #define DBGFLAGS (DBGLST | DBGLRD)
-
-#define DBGFLAGS (DBGLRD | DBGNODE)
+// #define DBGFLAGS (DBGLRD | DBGNODE)
 // #define DBGFLAGS 0
+#define DBGFLAGS 0x1f
+// #define DBGFLAGS (DBGNODE)
 
-Array keymap(Array *const U,
-	const unsigned hint, const char *const A[], const unsigned N) {
+Array keymap(
+	Array *const U,
+	const unsigned hint, const char *const A[], const unsigned N)
+{
 	assert(U->code == ATOM);
 	assert(N <= MAXNUM);
 	assert(N <= MAXHINT);
 
 	Array map = makeuimap();
 
-	for(unsigned i = 0; i < N; i += 1) {
-		const AtomPack ap = {
+	for(unsigned i = 0; i < N; i += 1)
+	{
+		const AtomPack ap =
+		{
 			.hint = hint,
 			.bytes = (const unsigned char *)A[i],
-			.length = strlen(A[i]) };
+			.length = strlen(A[i])
+		};
 
 		uimap(&map, readpack(U, &ap));
 	}
@@ -53,8 +61,8 @@ static unsigned loadnum(FILE *const f) {
 	return n;
 }
 
-static LoadCurrent core(LoadContext *const ctx,
-	List *const, List *const, List *const);
+static LoadCurrent core(
+	LoadContext *const ctx, List *const, List *const, List *const);
 
 // Обработка узла не требует текущего накопленного сипска ссылок. Накопленные
 // ссылки при обработке будут добавлены в node.u.attributes
@@ -74,8 +82,10 @@ static unsigned isfirstid(const int c)
 	return isascii(c) && isalpha(c);
 }
 
-static unsigned isfirstcore(const int c) {
-	switch(c) {
+static unsigned isfirstcore(const int c)
+{
+	switch(c)
+	{
 	case '\'':
 	case '(':
 		return 1;
@@ -104,6 +114,7 @@ static LoadCurrent list(
 	switch(c)
 	{
 	case ')':
+		DBG(DBGLST, "%s", "-> END");
 		return LC(nodes, NULL);
 	}
 
@@ -111,17 +122,26 @@ static LoadCurrent list(
 
 	if(isfirstcore(c))
 	{
-		ungetc(c, f);
+		assert(ungetc(c, f) == c);
 
 		Array E = makeenvironment();
 
 		List l = { .ref = refenv(&E), .next = &l };
 		List *lenv = append(&l, env); // lenv - local env
 
+		DBG(DBGLST,
+			"-> ENV(CORE). env: %p; lenv %p; E: %p",
+			(void *)env, (void *)lenv, (void *)&E);
+
 		const LoadCurrent lc = core(ctx, lenv, nodes, NULL);
 
 		assert(tipoff(&lenv) == &l && lenv == env);
+
+		DBG(DBGLST, "freeing E: %p", (void *)&E);
+
 		freeenvironment(&E);
+
+		DBG(DBGLST, "released E: %p", (void *)&E); 
 
 		return lc;
 	}
@@ -131,19 +151,27 @@ static LoadCurrent list(
 	return LC(NULL, NULL);
 }
 
-static LoadCurrent ce(LoadContext *const ctx,
+static LoadCurrent ce(
+	LoadContext *const ctx,
 	List *const env, List *const nodes, List *const refs)
 {
+	DBG(DBGCE, "%s", "");
+
 	assert(env && env->ref.code == ENV);
 	assert(nodes == NULL || nodes->ref.code == NODE);
 
+	DBG(DBGCE, "%s", "skipping");
 	const int c = skipspaces(ctx->file);
+	DBG(DBGCE, "%s", "skipped");
+
 	switch(c)
 	{
 	case ')':
+		DBG(DBGCE, "%s", "-> END");
 		return (LoadCurrent) { .nodes = nodes, .refs = refs };
 	
 	case ';':
+		DBG(DBGCE, "%s", "-> CORE");
 		return core(ctx, env, nodes, refs);
 	}
 
@@ -152,50 +180,104 @@ static LoadCurrent ce(LoadContext *const ctx,
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
-static LoadCurrent core(LoadContext *const ctx,
+static LoadCurrent core(
+	LoadContext *const ctx,
 	List *const env, List *const nodes, List *const refs)
 {
+	DBG(DBGCORE, "%s", "");
+
 	assert(env != NULL && env->ref.code == ENV);
 	assert(nodes == NULL || nodes->ref.code == NODE);
 
 	FILE *const f = ctx->file;
+	Array *const U = ctx->universe;
+
 	assert(f);
+	assert(U);
 
 	const int c = skipspaces(f);
 	switch(c)
 	{
-	case '\'': {
+	case '\'':
+	{
 		// Обработка узла может добавить только новый узел. Список
 		// ссылок должен представлять собой один элемент со ссылокой на
 		// узел.
 
+		DBG(DBGCORE, "%s", "-> NODE");
 		const LoadCurrent lc = node(ctx, env, nodes);
 
 		List *const l = lc.refs;
 		assert(l->ref.code == NODE && l->next == l);
 
+		DBG(DBGCORE, "%s", "-> CE");
 		return ce(ctx, env, lc.nodes, append(refs, l));
-
-//		return node(ctx, env, nodes, refs);
-
 	}
 
 	case '(':
 	{
+		DBG(DBGCORE, "%s", "-> LIST");
 		const LoadCurrent lc = list(ctx, env, nodes);
-		return ce(ctx, env, 
-			lc.nodes, append(refs, RL(reflist(lc.refs))));
+
+		DBG(DBGCORE, "%s", "-> CE");
+		return ce(
+			ctx, env, lc.nodes, append(refs, RL(reflist(lc.refs))));
 	}
 	}
 
 	if(isdigit(c))
 	{
-		assert(ungetc(c, ctx->file) == c);
+		assert(ungetc(c, f) == c);
 
 		List *const lrefs
 			= append(refs, RL(refnum(NUMBER, loadnum(f))));
 
+		DBG(DBGCORE, "-> %u -> CE", lrefs->ref.u.number);
 		return ce(ctx, env, nodes, lrefs);
+	}
+
+	if(isfirstid(c))
+	{
+		assert(ungetc(c, f) == c);
+
+		const List l =
+		{
+			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
+			.next = (List *)&l
+		};
+
+		const GDI ref = lookbinding(env, &l);
+
+		if(ref.array) {} else
+		{
+			assert(ref.position == -1);
+
+			unsigned char *const a
+				= (void *)((Atom *)U->data)[l.ref.u.number];
+
+			const unsigned hint = a[0];
+			a[0] = 0;
+			ERR("no label in the scope: %s", atombytes(a));
+			a[0] = hint;
+		}
+
+		const Ref *const r = gditorefcell(ref);
+		assert(r->code == NODE);
+
+		if(r->u.node) {} else
+		{
+			unsigned char *const a
+				= (void *)((Atom *)U->data)[l.ref.u.number];
+
+			const unsigned hint = a[0];
+			a[0] = 0;
+			ERR("labeled node is not complete: %s", atombytes(a));
+			a[0] = hint;
+		}
+
+		return ce(ctx, env,
+			nodes, append(refs, RL(refnode(r->u.node))));
+		
 	}
 
 	errexpect(c, ES("(", "'", "[0-9]+"));
@@ -203,9 +285,19 @@ static LoadCurrent core(LoadContext *const ctx,
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
+// static Ref *gditorefcell(const GDI gdi)
+// {
+// 	assert(gdi.array && gdi.position != -1);
+// 
+// 	Ref *const R = (Ref *)(gdi.array->data);
+// 	return R + gdi.position;
+// }
+
 static LoadCurrent node(
 	LoadContext *const ctx, List *const env, List *const nodes)
 {
+	DBG(DBGNODE, "%s", "");
+
 	assert(env && env->ref.code == ENV);
 
 	Array *const U = ctx->universe;
@@ -243,12 +335,17 @@ static LoadCurrent node(
 
 	GDI ref = { .array = NULL, .position = -1 };
 
+	// Надо получить следующий символ и, так получается, в любом случае
+	// вернуть его обратно
+
+	c = skipspaces(f);
+	assert(ungetc(c, f) == c);
+
+	DBG(DBGNODE, "cc: %c", c);
 	
 	// Если дальше следует метка узла
-	if(isfirstid(c = skipspaces(f)))
+	if(isfirstid(c))
 	{
-		assert(ungetc(c, f) == c);
-
 		const List lid =
 		{
 			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
@@ -281,10 +378,6 @@ static LoadCurrent node(
 		{
 			errexpect(c, ES("="));
 		}
-	}
-	else
-	{
-		assert(ungetc(c, f) == c);
 	}
 
 	// Загрузка атрибутов узла, которые могут быть в специальном формате
@@ -319,6 +412,14 @@ static LoadCurrent node(
 	}
 
 	List *const l = RL(refnode(newnode(verb, lc.refs)));
+
+	// Узел создан, и если под него зарезервирована метка в окружении, надо
+	// бы его туда добавить
+
+	if(ref.array)
+	{
+		gditorefcell(ref)->u.node = l->ref.u.node;
+	}
 	
 	return LC(append(lc.nodes, RL(refnode(l->ref.u.node))), l);
 }
@@ -335,10 +436,13 @@ List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes)
 
 	DBG(DBGLRD, "pre list; ctx: %p", (void *)ctx);
 
+	DBG(DBGLRD, "%s", "-> LIST");
 	const LoadCurrent lc = list(ctx, env, nodes);
 
 	if(DBGFLAGS & DBGLRD)
 	{
+		DBG(DBGLRD, "%s", "dumping");
+
 		char *const c = dumplist(lc.refs);
 		DBG(DBGLRD, "refs(%u): %s", listlen(lc.refs), c);
 		free(c);
