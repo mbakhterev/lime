@@ -11,7 +11,8 @@ lmsrc = \
 	environment.c	\
 	uimap.c		\
 	ptrmap.c	\
-	loadrawdag.c
+	loadrawdag.c	\
+	loadcontext.c
 
 lmobj = $(call c2o,$(bitspath),$(lmsrc))
 

@@ -66,15 +66,15 @@ static unsigned loadnum(FILE *const f) {
 }
 
 static LoadCurrent core(
-	LoadContext *const ctx, List *const, List *const, List *const);
+	const LoadContext *const ctx, List *const, List *const, List *const);
 
 // Обработка узла не требует текущего накопленного сипска ссылок. Накопленные
 // ссылки при обработке будут добавлены в node.u.attributes
 
-static LoadCurrent node(LoadContext *const, List *const, List *const);
+static LoadCurrent node(const LoadContext *const, List *const, List *const);
 
-static LoadCurrent ce(LoadContext *const,
-	List *const, List *const, List *const);
+static LoadCurrent ce(
+	const LoadContext *const, List *const, List *const, List *const);
 
 static unsigned isascii(const int c)
 {
@@ -102,7 +102,7 @@ static unsigned isfirstcore(const int c)
 // ссылок
 
 static LoadCurrent list(
-	LoadContext *const ctx, List *const env, List *const nodes)
+	const LoadContext *const ctx, List *const env, List *const nodes)
 {
 	DBG(DBGLST, "LIST: ctx: %p", (void *)ctx);
 
@@ -156,7 +156,7 @@ static LoadCurrent list(
 }
 
 static LoadCurrent ce(
-	LoadContext *const ctx,
+	const LoadContext *const ctx,
 	List *const env, List *const nodes, List *const refs)
 {
 	DBG(DBGCE, "%s", "");
@@ -185,7 +185,7 @@ static LoadCurrent ce(
 }
 
 static LoadCurrent core(
-	LoadContext *const ctx,
+	const LoadContext *const ctx,
 	List *const env, List *const nodes, List *const refs)
 {
 	DBG(DBGCORE, "%s", "");
@@ -296,7 +296,7 @@ static LoadCurrent core(
 }
 
 static LoadCurrent node(
-	LoadContext *const ctx, List *const env, List *const nodes)
+	const LoadContext *const ctx, List *const env, List *const nodes)
 {
 	DBG(DBGNODE, "%s", "");
 
@@ -432,7 +432,8 @@ static LoadCurrent node(
 	return LC(append(lc.nodes, RL(refnode(l->ref.u.node))), l);
 }
 
-List *loadrawdag(LoadContext *const ctx, List *const env, List *const nodes)
+List *loadrawdag(
+	const LoadContext *const ctx, List *const env, List *const nodes)
 {
 	FILE *const f = ctx->file;
 	int c;

@@ -9,19 +9,25 @@ const char *unitname = "test";
 int main(const int ac, const char *const av[])
 {
 	Array U = makeatomtab();
-	Array keys = makeuimap();
 
-	LoadContext lc = 
-	{
-		.file = stdin,
-		.state = NULL,
-		.universe = &U,
-		.keymap = &keys,
-		.actions = NULL,
-		.keyonly = 0
-	};
+//	Array keys = makeuimap();
+
+// 	LoadContext lc = 
+// 	{
+// 		.file = stdin,
+// 		.state = NULL,
+// 		.universe = &U,
+// 		.keymap = &keys,
+// 		.actions = NULL,
+// 		.keyonly = 0
+// 	};
+
+	const LoadContext lc = gencontext(stdin, &U);
 
 	List *const l = loadrawdag(&lc, NULL, NULL);
+
+	freeuimap((Array *)lc.keymap);
+	free((void *)lc.keymap);
 
 	printf("loaded\n");
 

@@ -236,18 +236,18 @@ extern const void *const ptrdirect(const Array *const, const unsigned);
 // список узлов в dag-е, и refs - структурированный список ссылок. Поэтому
 
 typedef struct LoadContextTag LoadContext;
-typedef struct {
+
+typedef struct
+{
 	List *nodes;
 	List *refs;
 } LoadCurrent;
 
-// typedef LoadCurrent (*LoadAction)(LoadContext *const,
-// 	List *const env, List *const nodes, List *const refs);
-
 typedef LoadCurrent (*LoadAction)(
-	LoadContext *const, List *const env, List *const nodes);
+	const LoadContext *const, List *const env, List *const nodes);
 
-struct LoadContextTag {
+struct LoadContextTag
+{
 	FILE *file;
 	void *state;
 	
@@ -259,25 +259,36 @@ struct LoadContextTag {
 };
 
 // Подгрузить dag к текущему, заданному nodes, в окружении env
-extern List *loadrawdag(LoadContext *const, List *const env, List *const nodes);
+
+extern List *loadrawdag(
+	const LoadContext *const, List *const env, List *const nodes);
 
 // Создать согласованную с таблицей атомов keymap по списку строк
 
 extern Array keymap(Array *const universe,
 	const unsigned hint, const char *const atoms[], const unsigned N);
 
-// Некоторые стандартные LoadAction
+// Инициирует контекст загрузки для генератора кода. После использования
+// следует освободить keymap:
+//	LoadContext lc = gencontext(f, U);
+//	...
+//	freeuimap((Array *)lc.keymap);
+//	free((void *)lc.keymap);
 
-// 'ANum x = Num	- особенность в том, что Num не является списоком
-// 'TNum		- аналогично
-extern const LoadAction onatomnum;
-extern const LoadAction ontypenum;
+extern LoadContext gencontext(FILE *const f, Array *const universe);
 
-// 'ALook x = 01.2."34" - описание атома не является списоком
-extern const LoadAction onatomlook;
-
-// 'F x = (...) - список узлов формы должен быть загружен в новом окружении
-extern const LoadAction onform;
+// // Некоторые стандартные LoadAction
+// 
+// // 'ANum x = Num	- особенность в том, что Num не является списоком
+// // 'TNum		- аналогично
+// extern const LoadAction onatomnum;
+// extern const LoadAction ontypenum;
+// 
+// // 'ALook x = 01.2."34" - описание атома не является списоком
+// extern const LoadAction onatomlook;
+// 
+// // 'F x = (...) - список узлов формы должен быть загружен в новом окружении
+// extern const LoadAction onform;
 
 #endif
 
