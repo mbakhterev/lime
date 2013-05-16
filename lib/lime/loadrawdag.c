@@ -31,15 +31,6 @@ Array keymap(
 
 	for(unsigned i = 0; i < N; i += 1)
 	{
-// 		const AtomPack ap =
-// 		{
-// 			.hint = hint,
-// 			.bytes = (const unsigned char *)A[i],
-// 			.length = strlen(A[i])
-// 		};
-
-// 		uimap(&map, readpack(U, &ap));
-
 		uimap(&map, readpack(U, strpack(hint, A[i])));
 	}
 
@@ -256,14 +247,6 @@ static LoadCurrent core(
 		{
 			assert(ref.position == -1);
 
-// 			unsigned char *const a
-// 				= (void *)((Atom *)U->data)[l.ref.u.number];
-// 
-// 			const unsigned hint = a[0];
-// 			a[0] = 0;
-// 			ERR("no label in the scope: %s", atombytes(a));
-// 			a[0] = hint;
-
 			ERR("no label in the scope: %s",
 				atombytes(atomat(U, l.ref.u.number)));
 		}
@@ -273,14 +256,6 @@ static LoadCurrent core(
 
 		if(r->u.node) {} else
 		{
-// 			unsigned char *const a
-// 				= (void *)((Atom *)U->data)[l.ref.u.number];
-// 
-// 			const unsigned hint = a[0];
-// 			a[0] = 0;
-// 			ERR("labeled node is not complete: %s", atombytes(a));
-// 			a[0] = hint;
-
 			ERR("labeled node is not complete: %s",
 				atombytes(atomat(U, l.ref.u.number)));
 		}
@@ -326,14 +301,6 @@ static LoadCurrent node(
 
 	if(!(ctx->keyonly && key == -1)) {} else
 	{
-// 		unsigned char *const a
-// 			= (void *)((Atom *)U->data)[verb];
-// 
-// 		const unsigned hint = a[0];
-// 		a[0] = 0;
-// 		ERR("non key atom in keyonly mode: %s", atombytes(a));
-// 		a[0] = hint;
-
 		ERR("non key atom in keyonly mode: %s",
 			atombytes(atomat(U, verb)));
 	}
@@ -364,14 +331,6 @@ static LoadCurrent node(
 		}
 		else
 		{
-// 			unsigned char *const a
-// 				= (void *)((Atom *)U->data)[lid.ref.u.number];
-// 
-// 			const unsigned hint = a[0];
-// 			a[0] = 0;
-// 			ERR("node label is in scope: %s", atombytes(a));
-// 			a[0] = hint;
-			
 			ERR("node label is in scope: %s",
 				atombytes(atomat(U, lid.ref.u.number)));
 		}
@@ -438,7 +397,7 @@ List *loadrawdag(
 	FILE *const f = ctx->file;
 	int c;
 
-	if((c = fgetc(f)) == '(') {} else
+	if((c = skipspaces(f)) == '(') {} else
 	{
 		errexpect(c, ES("("));
 	}
