@@ -59,12 +59,49 @@ void *expogrow(void *const buf, const unsigned ilen, const unsigned cnt) {
 	return p;
 }
 
+static void skipcomment(FILE *const f)
+{
+	int c;
+	while((c = fgetc(f)) != '\n' && c != EOF) {}
+	item += c == '\n';
+}
+
 int skipspaces(FILE *const f)
 {
 	int c;
-	while(isspace(c = fgetc(f)))
+	unsigned notdone = 1;
+	while(notdone)
 	{
-		item += c == '\n';
+		while(isspace(c = fgetc(f)))
+		{
+			item += c == '\n';
+		}
+
+		switch(c)
+		{
+		case '/':
+		{
+			switch(fgetc(f))
+			{
+			case '/':
+				skipcomment(f);
+				break;
+
+			case EOF:
+				notdone = 0;
+				break;
+
+			default:
+				assert(fseek(f, -1, SEEK_CUR) == 0);
+				notdone = 0;
+				
+			}
+
+			break;
+		}
+		default:
+			notdone = 0;
+		}
 	}
 
 	return c;
@@ -72,17 +109,6 @@ int skipspaces(FILE *const f)
 
 void errexpect(const int have, const char *const E[])
 {
-// 	char buffer[32];
-// 
-// 	if(have != EOF) {
-// 		assert(sprintf(buffer, "%c", have) > 0);
-// 	}
-// 	else {
-// 		assert(sprintf(buffer, "EOF") > 0);
-// 	}
-// 
-// 	ERR("parse error: expecting: %c; got: %s", expecting, buffer);
-	
 	char *buf;
 	size_t len;
 	FILE *const f = open_memstream(&buf, &len);

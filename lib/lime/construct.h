@@ -278,9 +278,12 @@ extern Array keymap(Array *const universe,
 extern LoadContext gencontext(FILE *const f, Array *const universe);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
-// uimap-отображением nonroots
+// uimap-отображением nonroots. dagargs описывает узлы, в атрибутах которых
+// записаны dag-и (формы или линейные участки такие). dagrecs описывает те узлы
+// с подграфами в атрибутах, к которым следует рекурсивно применить gcnodes.
 
 extern List *gcnodes(List **const dag, const Array *const nonroots);
+//	const Array *const dagargs, const Array *const dagdives);
 
 extern List *evalatoms(List **const dag, const Array *const subdags);
 
