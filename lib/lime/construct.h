@@ -277,18 +277,11 @@ extern Array keymap(Array *const universe,
 
 extern LoadContext gencontext(FILE *const f, Array *const universe);
 
-// // Некоторые стандартные LoadAction
-// 
-// // 'ANum x = Num	- особенность в том, что Num не является списоком
-// // 'TNum		- аналогично
-// extern const LoadAction onatomnum;
-// extern const LoadAction ontypenum;
-// 
-// // 'ALook x = 01.2."34" - описание атома не является списоком
-// extern const LoadAction onatomlook;
-// 
-// // 'F x = (...) - список узлов формы должен быть загружен в новом окружении
-// extern const LoadAction onform;
+// Сборка мусорных не корневых узлов. Не корневые узлы определяются
+// uimap-отображением nonroots
+
+extern List *gcnodes(List **const dag, const Array *const nonroots);
+
+extern List *evalatoms(List **const dag, const Array *const subdags);
 
 #endif
-

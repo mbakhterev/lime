@@ -6,13 +6,14 @@ lmsrc = \
 	heap.c		\
 	array.c		\
 	atomtab.c	\
-	node.c		\
 	list.c		\
 	environment.c	\
 	uimap.c		\
 	ptrmap.c	\
 	loadrawdag.c	\
-	loadcontext.c
+	loadcontext.c	\
+	dag.c		\
+	eval.c
 
 lmobj = $(call c2o,$(bitspath),$(lmsrc))
 
