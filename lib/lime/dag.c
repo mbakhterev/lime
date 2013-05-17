@@ -125,6 +125,20 @@ static int expandone(List *const l, void *const state)
 
 static int rebuildone(List *const l, void *const state)
 {
+	assert(l && l->ref.code == NODE);
+
+	GCState *const st = state;
+	assert(st);
+
+	const Node *const n = l->ref.u.node;
+	assert(n);
+
+	if(ptrreverse(&st->marks, n) != -1)
+	{
+		l->next = l;
+		st->L = append(st->L, l);
+	}
+
 	return 0;
 }
 
@@ -141,7 +155,6 @@ List *gcnodes(List **const dptr, const Array *const nonroots)
 
 	forlist(l, rootone, &st, 0);
 
-
 	while(st.L)
 	{
 		List *const k = tipoff(&st.L);
@@ -150,6 +163,8 @@ List *gcnodes(List **const dptr, const Array *const nonroots)
 		// это ссылка на узел
 
 		forlist(k->ref.u.node->u.attributes, expandone, &st, 0);
+
+		freelist(k);
 	}
 
 	forlist(l, rebuildone, &st, 0);
@@ -157,5 +172,4 @@ List *gcnodes(List **const dptr, const Array *const nonroots)
 	freeptrmap(&st.marks);
 
 	return (*dptr = st.L);
-
 }
