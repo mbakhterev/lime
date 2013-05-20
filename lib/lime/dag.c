@@ -125,7 +125,11 @@ static int expandone(List *const l, void *const state)
 
 static int rebuildone(List *const l, void *const state)
 {
+	// Проверяем и отцепляем звено от списка. Оно будет либо добавлено в
+	// список новый, либо удалено
+
 	assert(l && l->ref.code == NODE);
+	l->next = l;
 
 	GCState *const st = state;
 	assert(st);
@@ -135,14 +139,19 @@ static int rebuildone(List *const l, void *const state)
 
 	if(ptrreverse(&st->marks, n) != -1)
 	{
-		l->next = l;
 		st->L = append(st->L, l);
+		return 0;
 	}
+
+	freelist(l);
 
 	return 0;
 }
 
-List *gcnodes(List **const dptr, const Array *const nonroots)
+List *gcnodes(
+	List **const dptr,
+	const Array *const dagmap, const Array *const divemap,
+	const Array *const nonroots)
 {
 	GCState st =
 	{

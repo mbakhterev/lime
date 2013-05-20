@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
 	const Array nonroots = keymap(&U, 0, nonrootstr, 2);
 
-	List *k = gcnodes(&l, &nonroots);
+	List *k = gcnodes(&l, NULL, NULL, &nonroots);
 
 	printf("len(l): %u; len(k): %u\n", listlen(l), listlen(k));
 

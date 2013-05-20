@@ -263,7 +263,8 @@ struct LoadContextTag
 extern List *loadrawdag(
 	const LoadContext *const, List *const env, List *const nodes);
 
-// Создать согласованную с таблицей атомов keymap по списку строк
+// Создать согласованную с таблицей атомов keymap по списку строк. Список строк,
+// оканчивающийся NULL
 
 extern Array keymap(Array *const universe,
 	const unsigned hint, const char *const atoms[], const unsigned N);
@@ -278,13 +279,24 @@ extern Array keymap(Array *const universe,
 extern LoadContext gencontext(FILE *const f, Array *const universe);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
-// uimap-отображением nonroots. dagargs описывает узлы, в атрибутах которых
-// записаны dag-и (формы или линейные участки такие). dagrecs описывает те узлы
-// с подграфами в атрибутах, к которым следует рекурсивно применить gcnodes.
+// uimap-отображением nonroots.
 
-extern List *gcnodes(List **const dag, const Array *const nonroots);
-//	const Array *const dagargs, const Array *const dagdives);
+// Общее в интерфейсе функций, работающий с dag-ами. dagmap описывает узлы, в
+// атрибутах которых записаны dag-и (формы или линейные участки такие). divemap
+// описывает те узлы с подграфами в атрибутах, к которым следует рекурсивно
+// применить gcnodes. Условие того, что алгоритм не пойдёт вглубь dag-а: узел
+// записан в (dagmap / dagnodes). Алгоритм пойдёт вглубь dag-а, если узел
+// попадает в (dagmap * dagnodes)
 
-extern List *evalatoms(List **const dag, const Array *const subdags);
+extern void freedag(List *const dag, const Array *const dagmap);
+
+extern List *gcnodes(
+	List **const dag,
+	const Array *const dagmap, const Array *const divemap,
+	const Array *const nonroots);
+
+extern List *evalatoms(
+	List **const dag,
+	const Array *const dagmap, const Array *const divemap);
 
 #endif
