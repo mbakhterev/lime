@@ -19,14 +19,9 @@ int main(int argc, char *argv[])
 
 	printf("len(l): %u\n", listlen(l));
 
-	const char *const nonrootstr[] =
-	{
-		"X", "Y"
-	};
+ 	const Array nonroots = keymap(&U, 0, ES("X", "Y"));
 
-	const Array nonroots = keymap(&U, 0, nonrootstr, 2);
-
-	List *k = gcnodes(&l, NULL, NULL, &nonroots);
+	List *k = gcnodes(&l, NULL, &nonroots);
 
 	printf("len(l): %u; len(k): %u\n", listlen(l), listlen(k));
 

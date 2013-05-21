@@ -15,7 +15,8 @@ static LoadCurrent onatom(
 
 static const char *const genverbs[] =
 {
-	"A"
+	"A",
+	NULL
 };
 
 static const LoadAction genactions[] =
@@ -49,7 +50,7 @@ LoadContext gencontext(FILE *const f, Array *const U)
 {
 	Array *const km = malloc(sizeof(Array));
 	assert(km);
-	*km = keymap(U, 0, genverbs, sizeof(genverbs) / sizeof(char *const));
+	*km = keymap(U, 0, genverbs);
 
 	return (LoadContext)
 	{

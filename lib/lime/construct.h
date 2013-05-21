@@ -267,7 +267,7 @@ extern List *loadrawdag(
 // оканчивающийся NULL
 
 extern Array keymap(Array *const universe,
-	const unsigned hint, const char *const atoms[], const unsigned N);
+	const unsigned hint, const char *const atoms[]);
 
 // Инициирует контекст загрузки для генератора кода. После использования
 // следует освободить keymap:
@@ -285,15 +285,15 @@ extern LoadContext gencontext(FILE *const f, Array *const universe);
 // атрибутах которых записаны dag-и (формы или линейные участки такие). divemap
 // описывает те узлы с подграфами в атрибутах, к которым следует рекурсивно
 // применить gcnodes. Условие того, что алгоритм не пойдёт вглубь dag-а: узел
-// записан в (dagmap / dagnodes). Алгоритм пойдёт вглубь dag-а, если узел
-// попадает в (dagmap * dagnodes)
+// записан в (dagmap / divedag). Алгоритм пойдёт вглубь dag-а, если узел
+// попадает в (dagmap * divedag). Если аргумент опущен, значит он
+// подразумевается равным универсуму.
 
 extern void freedag(List *const dag, const Array *const dagmap);
 
 extern List *gcnodes(
 	List **const dag,
-	const Array *const dagmap, const Array *const divemap,
-	const Array *const nonroots);
+	const Array *const dagmap, const Array *const nonroots);
 
 extern List *evalatoms(
 	List **const dag,

@@ -21,18 +21,19 @@
 
 Array keymap(
 	Array *const U,
-	const unsigned hint, const char *const A[], const unsigned N)
+	const unsigned hint, const char *const A[])
 {
 	assert(U->code == ATOM);
-	assert(N <= MAXNUM);
-	assert(N <= MAXHINT);
+	assert(hint <= MAXHINT);
 
 	Array map = makeuimap();
 
-	for(unsigned i = 0; i < N; i += 1)
+	unsigned i;
+	for(i = 0; i < MAXNUM && A[i] != NULL; i += 1)
 	{
 		uimap(&map, readpack(U, strpack(hint, A[i])));
 	}
+	assert(i < MAXNUM);
 
 	return map;
 }

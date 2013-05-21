@@ -16,10 +16,6 @@ extern const char * unitname;
 	err(EXIT_FAILURE, "%s(%u:%u) error: " fmt, \
 		unitname, item, field, __VA_ARGS__)
 
-// 	error(EXIT_FAILURE, errno, "%s(%u:%u) error: " fmt, \
-// 		unitname, item, field, __VA_ARGS__)
-
-
 #define DBG(f, fmt, ...) \
 	(void)((f & DBGFLAGS) \
 		&& fprintf(stderr, \

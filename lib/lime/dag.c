@@ -73,8 +73,14 @@ typedef struct
 {
 	List *L;
 	const Array *nonroots;
+	const Array *dagmap;
 	Array marks;
 } GCState;
+
+static unsigned inmap(const Array *const map, const unsigned i)
+{
+	return map && uireverse(map, i) != -1;
+}
 
 static int rootone(List *const l, void *const state)
 {
@@ -86,7 +92,9 @@ static int rootone(List *const l, void *const state)
 	const Node *const n = l->ref.u.node;
 	assert(n);
 
-	if(uireverse(st->nonroots, n->verb) == -1)
+// 	if(st->nonroots == NULL || uireverse(st->nonroots, n->verb) == -1)
+	
+	if(!inmap(st->nonroots, n->verb))
 	{
 		ptrmap(&st->marks, n);
 		st->L = append(st->L, RL(refnode((Node *)n)));
@@ -94,7 +102,6 @@ static int rootone(List *const l, void *const state)
 
 	return 0;
 }
-
 
 static int expandone(List *const l, void *const state)
 {
@@ -134,24 +141,30 @@ static int rebuildone(List *const l, void *const state)
 	GCState *const st = state;
 	assert(st);
 
-	const Node *const n = l->ref.u.node;
+	Node *const n = l->ref.u.node;
 	assert(n);
 
 	if(ptrreverse(&st->marks, n) != -1)
 	{
 		st->L = append(st->L, l);
+		if(inmap(st->dagmap, n->verb))
+		{
+			gcnodes(&n->u.attributes, st->dagmap, st->nonroots);
+		}
+
 		return 0;
 	}
-
-	freelist(l);
+	else
+	{
+		freedag(l, st->dagmap);
+	}
 
 	return 0;
 }
 
 List *gcnodes(
 	List **const dptr,
-	const Array *const dagmap, const Array *const divemap,
-	const Array *const nonroots)
+	const Array *const dagmap, const Array *const nonroots)
 {
 	GCState st =
 	{
@@ -181,4 +194,33 @@ List *gcnodes(
 	freeptrmap(&st.marks);
 
 	return (*dptr = st.L);
+}
+
+static int freeone(List *const l, void *const dagmap)
+{
+	assert(l);
+	assert(l->ref.code == NODE);
+
+	Node *const n = l->ref.u.node;
+
+// 	if(dagmap == NULL || uimap(dagmap, n->verb) == -1)
+
+	if(!inmap(dagmap, n->verb))
+	{
+		freelist(n->u.attributes);
+	}
+	else
+	{
+		freedag(n->u.attributes, dagmap);
+	}
+
+	freenode(n);
+
+	return 0;
+}
+
+void freedag(List *const dag, const Array *const dagmap)
+{
+	forlist(dag, freeone, (void *)dagmap, 0);
+	freelist(dag);
 }
