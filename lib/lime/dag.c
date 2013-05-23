@@ -151,8 +151,6 @@ static int rebuildone(List *const l, void *const state)
 		{
 			gcnodes(&n->u.attributes, st->dagmap, st->nonroots);
 		}
-
-		return 0;
 	}
 	else
 	{

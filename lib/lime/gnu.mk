@@ -15,7 +15,13 @@ lmsrc = \
 	dag.c		\
 	eval.c
 
-lmobj = $(call c2o,$(bitspath),$(lmsrc))
+lminc = \
+	$(I)/lime/construct.h	\
+	$(I)/lime/util.h
+
+lmobj = $(call c2o,$(lmbits),$(lmsrc))
+
+liblime: $(L)/liblime.a $(lminc)
 
 $(L)/liblime.a: $(lmobj)
 

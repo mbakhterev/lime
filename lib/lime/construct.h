@@ -263,6 +263,9 @@ struct LoadContextTag
 extern List *loadrawdag(
 	const LoadContext *const, List *const env, List *const nodes);
 
+extern void dumpdag(
+	const LoadContext *const, List *const dag, const unsigned tabs);
+
 // Создать согласованную с таблицей атомов keymap по списку строк. Список строк,
 // оканчивающийся NULL
 
@@ -290,6 +293,10 @@ extern LoadContext gencontext(FILE *const f, Array *const universe);
 // подразумевается равным универсуму.
 
 extern void freedag(List *const dag, const Array *const dagmap);
+
+// extern const char *dumpdag(
+// 	FILE *const, const unsigned indent, const Array *const universe,
+// 	List *const dag, const Array *const dagmap);
 
 extern List *gcnodes(
 	List **const dag,

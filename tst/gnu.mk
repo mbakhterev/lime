@@ -13,6 +13,7 @@ tstobj = $(call c2o,$(tstbits),$(tstsrc))
 
 lib = $(L)/liblime.a
 
+tst: cflags += -I $(I)
 tst: \
 	$(T)/tst-rune		\
 	$(T)/tst-array		\
