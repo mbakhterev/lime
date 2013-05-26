@@ -111,8 +111,7 @@ void errexpect(const int have, const char *const E[])
 {
 	char *buf;
 	size_t len;
-	FILE *const f = open_memstream(&buf, &len);
-	assert(f);
+	FILE *const f = newmemstream(&buf, &len);
 
 	for(unsigned i = 0; E[i]; i += 1)
 	{
@@ -131,4 +130,12 @@ void errexpect(const int have, const char *const E[])
 	}
 
 	free(buf);
+}
+
+FILE *newmemstream(char **const ptr, size_t *const szptr)
+{
+	FILE *f = open_memstream(ptr, szptr);
+	assert(f);
+
+	return f;
 }

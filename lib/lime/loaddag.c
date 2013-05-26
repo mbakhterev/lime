@@ -58,15 +58,15 @@ static unsigned loadnum(FILE *const f) {
 }
 
 static LoadCurrent core(
-	const LoadContext *const ctx, List *const, List *const, List *const);
+	const LDContext *const ctx, List *const, List *const, List *const);
 
 // Обработка узла не требует текущего накопленного сипска ссылок. Накопленные
 // ссылки при обработке будут добавлены в node.u.attributes
 
-static LoadCurrent node(const LoadContext *const, List *const, List *const);
+static LoadCurrent node(const LDContext *const, List *const, List *const);
 
 static LoadCurrent ce(
-	const LoadContext *const, List *const, List *const, List *const);
+	const LDContext *const, List *const, List *const, List *const);
 
 static unsigned isascii(const int c)
 {
@@ -94,7 +94,7 @@ static unsigned isfirstcore(const int c)
 // ссылок
 
 static LoadCurrent list(
-	const LoadContext *const ctx, List *const env, List *const nodes)
+	const LDContext *const ctx, List *const env, List *const nodes)
 {
 	DBG(DBGLST, "LIST: ctx: %p", (void *)ctx);
 
@@ -148,7 +148,7 @@ static LoadCurrent list(
 }
 
 static LoadCurrent ce(
-	const LoadContext *const ctx,
+	const LDContext *const ctx,
 	List *const env, List *const nodes, List *const refs)
 {
 	DBG(DBGCE, "%s", "");
@@ -177,7 +177,7 @@ static LoadCurrent ce(
 }
 
 static LoadCurrent core(
-	const LoadContext *const ctx,
+	const LDContext *const ctx,
 	List *const env, List *const nodes, List *const refs)
 {
 	DBG(DBGCORE, "%s", "");
@@ -271,8 +271,22 @@ static LoadCurrent core(
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
+static LoadCurrent onstdnode(
+	const LDContext *const ctx, List *const env, List *const nodes)
+{
+	FILE *f = ctx->file;
+
+	int c;
+	if((c = skipspaces(f)) == '(') {} else
+	{
+		errexpect(c, ES("("));
+	}
+
+	return list(ctx, env, nodes);
+}
+
 static LoadCurrent node(
-	const LoadContext *const ctx, List *const env, List *const nodes)
+	const LDContext *const ctx, List *const env, List *const nodes)
 {
 	DBG(DBGNODE, "%s", "");
 
@@ -351,23 +365,28 @@ static LoadCurrent node(
 	// Загрузка атрибутов узла, которые могут быть в специальном формате
 	// (для ключевых узлов)
 
-	LoadCurrent lc = LC(NULL, NULL);
+// 	LoadCurrent lc = LC(NULL, NULL);
+// 
+// 	if(key == -1)
+// 	{
+// 		// Стандартная загрузка списка аргументов
+// 
+// // 		if((c = skipspaces(f)) == '(') {} else
+// // 		{
+// // 			errexpect(c, ES("("));
+// // 		}
+// // 
+// // 		lc = list(ctx, env, nodes);
+// 
+// 		lc = onstdnode(ctx, env, nodes);
+// 	}
+// 	else
+// 	{
+// 		lc = ctx->onload[key](ctx, env, nodes);
+// 	}
 
-	if(key == -1)
-	{
-		// Стандартная загрузка списка аргументов
-
-		if((c = skipspaces(f)) == '(') {} else
-		{
-			errexpect(c, ES("("));
-		}
-
-		lc = list(ctx, env, nodes);
-	}
-	else
-	{
-		lc = ctx->actions[key](ctx, env, nodes);
-	}
+	const LoadCurrent lc
+		= (key == -1 ? onstdnode : ctx->onload[key])(ctx, env, nodes);
 
 	if(DBGFLAGS & DBGNODE)
 	{
@@ -392,8 +411,8 @@ static LoadCurrent node(
 	return LC(append(lc.nodes, RL(refnode(l->ref.u.node))), l);
 }
 
-List *loadrawdag(
-	const LoadContext *const ctx, List *const env, List *const nodes)
+List *loaddag(
+	const LDContext *const ctx, List *const env, List *const nodes)
 {
 	FILE *const f = ctx->file;
 	int c;

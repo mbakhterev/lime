@@ -10,9 +10,9 @@ int main(const int ac, const char *const av[])
 {
 	Array U = makeatomtab();
 
-	const LoadContext lc = gencontext(stdin, &U);
+	const LDContext lc = gencontext(stdin, &U);
 
-	List *const l = loadrawdag(&lc, NULL, NULL);
+	List *const l = loaddag(&lc, NULL, NULL);
 
 	freeuimap((Array *)lc.keymap);
 	free((void *)lc.keymap);

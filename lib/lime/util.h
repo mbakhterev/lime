@@ -44,5 +44,7 @@ extern int skipspaces(FILE *const);
 #define ES(...) ((const char *[]) { __VA_ARGS__, NULL })
 extern void errexpect(const int have, const char *const expecting[]);
 
+extern FILE *newmemstream(char **const ptr, size_t *const size);
+
 
 #endif

@@ -10,8 +10,9 @@ lmsrc = \
 	environment.c	\
 	uimap.c		\
 	ptrmap.c	\
-	loadrawdag.c	\
-	loadcontext.c	\
+	loaddag.c	\
+	dumpdag.c	\
+	ldcontext.c	\
 	dag.c		\
 	eval.c
 

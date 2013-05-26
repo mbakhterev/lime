@@ -7,7 +7,7 @@ tstsrc = \
 	tst-loadtoken.c	\
 	tst-heapsort.c	\
 	tst-list.c	\
-	tst-loadrawdag.c
+	tst-loaddag.c
 
 tstobj = $(call c2o,$(tstbits),$(tstsrc))
 
@@ -23,7 +23,7 @@ tst: \
 	$(T)/gen-atomtab	\
 	$(T)/tst-atomtab.sh	\
 	$(T)/tst-list		\
-	$(T)/tst-loadrawdag	\
+	$(T)/tst-loaddag	\
 	$(T)/tst-gcnodes
 
 $(T)/tst-rune: $(tstbits)/tst-rune.o $(lib)
@@ -36,7 +36,7 @@ $(T)/gen-atomtab: $(tstbits)/gen-atomtab.o $(lib)
 $(T)/tst-atomtab.sh: tst/tst-atomtab.sh
 
 $(T)/tst-list: $(tstbits)/tst-list.o $(lib)
-$(T)/tst-loadrawdag: $(tstbits)/tst-loadrawdag.o $(lib)
+$(T)/tst-loaddag: $(tstbits)/tst-loaddag.o $(lib)
 $(T)/tst-gcnodes: $(tstbits)/tst-gcnodes.o $(lib)
 
 include $(call o2d,$(tstobj))

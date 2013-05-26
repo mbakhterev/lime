@@ -10,9 +10,9 @@ const char *unitname = "stdin";
 int main(int argc, char *argv[])
 {
 	Array U = makeatomtab();
-	const LoadContext lc = gencontext(stdin, &U);
+	const LDContext lc = gencontext(stdin, &U);
 
-	List *l = loadrawdag(&lc, NULL, NULL);
+	List *l = loaddag(&lc, NULL, NULL);
 
 	freeuimap((Array *)lc.keymap);
 	free((void *)lc.keymap);
