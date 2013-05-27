@@ -10,7 +10,7 @@ dep = $(cc)
 
 lnk = gcc -pipe
 lflags =
-loptimization = -flto -Wl,-s -O3 -march=native -mtune=native
+loptimization = -flto -fuse-linker-plugin -Wl,-s -O3 -march=native -mtune=native
 ldebug = -g -flto
 
 ar = ar
