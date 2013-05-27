@@ -207,7 +207,7 @@ List *forklist(const List *const k) {
 static int releaser(List *const l, void *const p) {
 	l->ref.code = FREE;
 
-	DBG(DBGPOOL, "pooling: %p", l);
+	DBG(DBGPOOL, "pooling: %p", (void *)l);
 
 	l->next = l;
 	freeitems = append(freeitems, l);
