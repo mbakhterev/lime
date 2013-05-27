@@ -295,7 +295,7 @@ static int dumper(List *const l, void *const state)
 char *dumplist(const List *const l) {
 	char *buff = NULL;
 	size_t length = 0;
-	FILE *f = open_memstream(&buff, &length);
+	FILE *f = newmemstream(&buff, &length);
 	assert(f);
 	dumptostream((List *)l, f);
 	assert(fputc(0, f) != EOF);
