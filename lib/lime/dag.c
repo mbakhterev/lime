@@ -57,7 +57,7 @@ void freenode(Node *const n)
 
 	n->verb = FREE;
 
-	if(freenodes) { } else
+	if(freenodes == NULL)
 	{
 		n->u.nextfree = n;
 		freenodes = n;
@@ -92,8 +92,6 @@ static int rootone(List *const l, void *const state)
 	const Node *const n = l->ref.u.node;
 	assert(n);
 
-// 	if(st->nonroots == NULL || uireverse(st->nonroots, n->verb) == -1)
-	
 	if(!inmap(st->nonroots, n->verb))
 	{
 		ptrmap(&st->marks, n);
@@ -200,8 +198,6 @@ static int freeone(List *const l, void *const dagmap)
 	assert(l->ref.code == NODE);
 
 	Node *const n = l->ref.u.node;
-
-// 	if(dagmap == NULL || uimap(dagmap, n->verb) == -1)
 
 	if(!inmap(dagmap, n->verb))
 	{

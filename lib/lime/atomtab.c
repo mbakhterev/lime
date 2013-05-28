@@ -23,7 +23,8 @@
 
 #define DBGFLAGS 0
 
-static int kcmp(const void *const D, const unsigned i, const void *const key) {
+static int kcmp(const void *const D, const unsigned i, const void *const key)
+{
 	const Atom a = ((Atom *)D)[i];
 	const AtomPack *const ap = key;
 
@@ -34,14 +35,17 @@ static int kcmp(const void *const D, const unsigned i, const void *const key) {
 	// Сначала порядок по оттенку. Из области отличных от hint окрасок
 	// двоичный поиск выйдет быстро, поэтому return в менее вероятной
 	// else-ветке
+
 	const unsigned ah = *a;
-	if(ah == hint) { } else {
+	if(ah != hint)
+	{
 		return 1 - ((ah < hint) << 1);
 	}
 
 	const unsigned al = atomlen(a);
 	const int t = memcmp(atombytes(a), buff, min(al, len));
-	if(t) {
+	if(t)
+	{
 		return t;
 	}
 
@@ -131,25 +135,29 @@ static unsigned grabpack(Array *const t, const AtomPack *const ap)
 	return readin(t, &a);
 }
 
-unsigned loadatom(Array *const t, FILE *const f) {
+unsigned loadatom(Array *const t, FILE *const f)
+{
 	assert(t->code == ATOM);
 
 	int n;
 	unsigned k;
 	unsigned l;
 
-	if(fscanf(f, "%2x.%u", &k, &l) == 2) { } else {
+	if(fscanf(f, "%2x.%u", &k, &l) != 2)
+	{
 		ERR("%s", "can't detect hint.length");
 	}
 
 	const unsigned len = l;
 	const unsigned hint = k;
 
-	if(hint <= MAXHINT && len <= MAXLEN) { } else {
+	if(hint > MAXHINT || len > MAXLEN)
+	{
 		ERR("hint.length is out of limit 0x%x.0x%x", MAXHINT, MAXLEN);
 	}
 
-	if(fscanf(f, ".\"%n", &n) == 0 && n == 2) { } else {
+	if(fscanf(f, ".\"%n", &n) != 0 || n != 2)
+	{
 		ERR("%s", "can't detect .\"-leading");
 	}
 
@@ -159,17 +167,20 @@ unsigned loadatom(Array *const t, FILE *const f) {
 	unsigned char *const tmp = malloc(l);
 	assert(tmp);
 
-	if(fread(tmp, 1, len, f) == len) { } else {
+	if(fread(tmp, 1, len, f) != len)
+	{
 		ERR("can't load %u bytes", len);
 	}
 
-	if(fscanf(f, "\"%n", &n) == 0 && n == 1) { } else {
+	if(fscanf(f, "\"%n", &n) != 0 || n != 1)
+	{
 		ERR("%s", "can't detect \"-finishing");
 	}
 
 	const AtomPack ap = { .bytes = tmp, .length = len, .hint = hint };
 
-	if((k = lookup(t, &ap)) != -1) {
+	if((k = lookup(t, &ap)) != -1)
+	{
 		free(tmp);
 		return k;
 	}
@@ -236,7 +247,7 @@ unsigned loadtoken(Array *const t, FILE *const f,
 		}
 	}
 
-	if(loaded > 0) {} else
+	if(loaded <= 0)
 	{
 		ERR("can't detect token. format: %s", fmt);
 	}
@@ -244,7 +255,8 @@ unsigned loadtoken(Array *const t, FILE *const f,
 	DBG(DBGLDT, "tmp: %s", tmp);
 
 	AtomPack ap = { .bytes = tmp, .length = loaded, .hint = hint };
-	if((l = lookpack(t, ap)) != -1) {
+	if((l = lookpack(t, ap)) != -1)
+	{
 		free(tmp);
 		return l;
 	}
@@ -267,7 +279,6 @@ Atom atomat(const Array *const A, const unsigned id)
 
 AtomPack strpack(const unsigned hint, const char *const str)
 {
-
 	assert(hint < MAXHINT);
 	assert(str);
 

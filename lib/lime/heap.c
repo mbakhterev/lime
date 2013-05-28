@@ -53,7 +53,7 @@ unsigned heapsearch(
 	const unsigned I[], const unsigned N,
 	const void *const key, KeyCmp cmp)
 {
-	if(N) { } else
+	if(N == 0)
 	{
 		return -1;
 	}

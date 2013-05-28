@@ -44,13 +44,16 @@ static LoadCurrent LC(List *const nodes, List *const refs) {
 	return (LoadCurrent) { .nodes = nodes, .refs = refs };
 }
 
-static unsigned loadnum(FILE *const f) {
+static unsigned loadnum(FILE *const f)
+{
 	unsigned n;
-	if(fscanf(f, "%u", &n) == 1) {} else {
+	if(fscanf(f, "%u", &n) != 1)
+	{
 		ERR("%s", "can't read number");
 	}
 
-	if(n <= MAXNUM) {} else {
+	if(n > MAXNUM)
+	{
 		ERR("%u is > %u", n, MAXNUM);
 	}
 
@@ -244,7 +247,7 @@ static LoadCurrent core(
 
 		const GDI ref = lookbinding(env, &l);
 
-		if(ref.array) {} else
+		if(ref.array == NULL)
 		{
 			assert(ref.position == -1);
 
@@ -255,7 +258,7 @@ static LoadCurrent core(
 		const Ref *const r = gditorefcell(ref);
 		assert(r->code == NODE);
 
-		if(r->u.node) {} else
+		if(r->u.node == NULL)
 		{
 			ERR("labeled node is not complete: %s",
 				atombytes(atomat(U, l.ref.u.number)));
@@ -277,7 +280,7 @@ static LoadCurrent onstdnode(
 	FILE *f = ctx->file;
 
 	int c;
-	if((c = skipspaces(f)) == '(') {} else
+	if((c = skipspaces(f)) != '(')
 	{
 		errexpect(c, ES("("));
 	}
@@ -314,7 +317,7 @@ static LoadCurrent node(
 
 	DBG(DBGNODE, "verb: %u; key: %u", verb, key);
 
-	if(!(ctx->keyonly && key == -1)) {} else
+	if(ctx->keyonly && key == -1)
 	{
 		ERR("non key atom in keyonly mode: %s",
 			atombytes(atomat(U, verb)));
@@ -356,7 +359,7 @@ static LoadCurrent node(
 		ref = readbinding(E, refnode(NULL), &lid);
 
 		// Удостоверяемся в =
-		if((c = skipspaces(f)) == '=') {} else
+		if((c = skipspaces(f)) != '=')
 		{
 			errexpect(c, ES("="));
 		}
@@ -364,26 +367,6 @@ static LoadCurrent node(
 
 	// Загрузка атрибутов узла, которые могут быть в специальном формате
 	// (для ключевых узлов)
-
-// 	LoadCurrent lc = LC(NULL, NULL);
-// 
-// 	if(key == -1)
-// 	{
-// 		// Стандартная загрузка списка аргументов
-// 
-// // 		if((c = skipspaces(f)) == '(') {} else
-// // 		{
-// // 			errexpect(c, ES("("));
-// // 		}
-// // 
-// // 		lc = list(ctx, env, nodes);
-// 
-// 		lc = onstdnode(ctx, env, nodes);
-// 	}
-// 	else
-// 	{
-// 		lc = ctx->onload[key](ctx, env, nodes);
-// 	}
 
 	const LoadCurrent lc
 		= (key == -1 ? onstdnode : ctx->onload[key])(ctx, env, nodes);
@@ -417,7 +400,7 @@ List *loaddag(
 	FILE *const f = ctx->file;
 	int c;
 
-	if((c = skipspaces(f)) == '(') {} else
+	if((c = skipspaces(f)) != '(')
 	{
 		errexpect(c, ES("("));
 	}

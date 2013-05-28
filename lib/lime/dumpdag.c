@@ -18,7 +18,7 @@ static const char *tabstr(const unsigned tabs)
 
 typedef struct
 {
-	const LDContext *ctx;
+//	const LDContext *ctx;
 	FILE *f;
 	const char *tabstr;
 	const List *first;
@@ -29,7 +29,8 @@ typedef struct
 static int mapone(List *const l, void *const ptr)
 {
 	assert(l && l->ref.code == NODE);
-	DState *const st = ptr;
+	assert(ptr);
+	DState *const st = ((LDContext *)ptr)->state;
 	assert(st);
 
 	assert(st->nodes.count == ptrmap(&st->nodes, l->ref.u.node));
@@ -37,36 +38,38 @@ static int mapone(List *const l, void *const ptr)
 	return 0;
 }
 
-static int dumpone(List *const l, void *const ptr)
+static void onstddump(const LDContext *const ctx, List *const dag)
 {
-	const DState *const st = ptr;
-	assert(st && st->f && st->ctx && st->ctx->universe);
-	const Array *const U = st->ctx->universe;	
-	
-	assert(l && l->ref.code == NODE);
-	const Node *const n = l->ref.u.node;
-	assert(n);	
-
-	assert(0 < fprintf(st->f,
-		"\n%s\t'%s\tn%u\t= ",
-		st->tabstr,
-		atombytes(atomat(U, n->verb)),
-		ptrreverse(&st->nodes, n)));
-
-	if(uireverse(st->ctx->keymap, n->verb) != -1)
-	{
-	}
-	else
-	{
-	}
-
-	if(l != st->first)
-	{
-		assert(fputc(';', st->f) == ';');
-	}
-
-	return 0;
 }
+
+// static int dumpone(List *const l, void *const ptr)
+// {
+// 	const DState *const st = ptr;
+// 	assert(st && st->f && st->ctx && st->ctx->universe);
+// 	const Array *const U = st->ctx->universe;	
+// 	
+// 	assert(l && l->ref.code == NODE);
+// 	const Node *const n = l->ref.u.node;
+// 	assert(n);	
+// 
+// 	assert(0 < fprintf(st->f,
+// 		"\n%s\t'%s\tn%u\t= ",
+// 		st->tabstr,
+// 		atombytes(atomat(U, n->verb)),
+// 		ptrreverse(&st->nodes, n)));
+// 
+// 	const unsigned key = uireverse(st->ctx->keymap, n->verb);
+// 
+// 	(key == -1 ? onstddump : st->ctx->ondump[key])(
+// 		st->ctx, st->f, n->u.attributes, st->tabs);
+// 
+// 	if(l != st->first)
+// 	{
+// 		assert(fputc(';', st->f) == ';');
+// 	}
+// 
+// 	return 0;
+// }
 
 const char *dumpdag(
 	const LDContext *const ctx, List *const dag, const unsigned tabs)
@@ -78,21 +81,51 @@ const char *dumpdag(
 	{
 		.nodes = makeptrmap(),
 		.f = newmemstream(&buf, &sz),
-		.ctx = ctx,
+//		.ctx = ctx,
 		.tabs = tabs,
 		.tabstr = tabstr(tabs),
 		.first = dag
 	};	
 
-	forlist(dag, mapone, &st, 0);
+	assert(ctx);
+	void *const tmp = ctx->state;
+	((LDContext *)ctx)->state = &st;
+
+	const Array *const U = ctx->universe;
+	assert(U);
+
+	forlist(dag, mapone, (void *)ctx, 0);
 
 	assert(fprintf(st.f, "\n%s(", st.tabstr) > 0);
-	forlist(dag, dumpone, &st, 0);
+
+	for(unsigned i = 0; i < st.nodes.count; i += 1)
+	{
+		const Node *const n = ptrdirect(&st.nodes, i);
+		assert(n);
+
+		assert(0 < fprintf(st.f, "\n%s\t'%s\tn%u\t= ",
+			st.tabstr,
+			atombytes(atomat(U, n->verb)),
+			i));
+
+		const unsigned key = uireverse(ctx->keymap, n->verb);
+
+		(key == -1 ?
+			onstddump : ctx->ondump[key])(ctx, n->u.attributes);
+
+		if(i + 1 < st.nodes.count)
+		{
+			assert(fputc(';', st.f) == ';');
+		}
+	}
+
 	assert(fprintf(st.f, "\n%s)", st.tabstr) > 0);
 
 	free((void *)st.tabstr);
 	fclose(st.f);
 	freeptrmap(&st.nodes);
+
+	((LDContext *)ctx)->state = tmp;
 
 	return buf;
 }

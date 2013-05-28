@@ -118,12 +118,12 @@ List *readrefs(const Ref R[]) {
 
 List * append(List *const k, List *const l)
 {
-	if(k) { } else
+	if(k == NULL)
 	{
 		return l;
 	}
 
-	if(l) { } else
+	if(l == NULL)
 	{
 		return k;
 	}
@@ -143,7 +143,7 @@ List * append(List *const k, List *const l)
 
 int forlist(List *const k, Oneach fn, void *const ptr, const int key)
 {
-	if(k) { } else
+	if(k == NULL)
 	{
 		return key;
 	}

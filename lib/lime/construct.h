@@ -246,7 +246,7 @@ typedef struct
 typedef LoadCurrent (*LoadAction)(
 	const LDContext *const, List *const env, List *const nodes);
 
-typedef void (*DumpAction)(const LDContext *const, const Node *const);
+typedef void (*DumpAction)(const LDContext *const, List *const attributes);
 
 struct LDContext
 {
