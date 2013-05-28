@@ -25,5 +25,10 @@ int main(int argc, char *argv[])
 
 	printf("len(l): %u; len(k): %u\n", listlen(l), listlen(k));
 
+	const char *const d = dumpdag(&lc, k, 0);
+	printf("dag(k):%s\n", d);
+	freedag(k, NULL);
+	free((void *)d);
+
 	return 0;
 }
