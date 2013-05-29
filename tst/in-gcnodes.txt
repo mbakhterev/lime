@@ -9,6 +9,7 @@
 //
 //
 	'Zip z = ();
-	'ZIBa (z)
+	'ZIBa (z);
+	'test (z; x; (y; x); z; 1)
 )
 ///
