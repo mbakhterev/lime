@@ -10,7 +10,7 @@ static LoadCurrent LC(List *const nodes, List *const refs)
 	return (LoadCurrent) { .nodes = nodes, .refs = refs };
 }
 
-static LoadCurrent onatom(
+static LoadCurrent onloadatom(
 	const LDContext *const ctx, List *const env, List *const nodes);
 
 static const char *const genverbs[] =
@@ -21,10 +21,10 @@ static const char *const genverbs[] =
 
 static const LoadAction genactions[] =
 {
-	onatom
+	onloadatom
 };
 
-LoadCurrent onatom(
+LoadCurrent onloadatom(
 	const LDContext *const ctx, List *const env, List *const nodes)
 {
 	FILE *const f = ctx->file;

@@ -9,7 +9,9 @@
 #define DBGSTD 2
 #define DBGATTR 4
 
-#define DBGFLAGS (DBGDAG | DBGSTD | DBGATTR)
+// #define DBGFLAGS (DBGDAG | DBGSTD | DBGATTR)
+
+#define DBGFLAGS 0
 
 static const char *tabstr(const unsigned tabs)
 {
@@ -43,35 +45,6 @@ static int mapone(List *const l, void *const ptr)
 
 	return 0;
 }
-
-// static int dumpone(List *const l, void *const ptr)
-// {
-// 	const DState *const st = ptr;
-// 	assert(st && st->f && st->ctx && st->ctx->universe);
-// 	const Array *const U = st->ctx->universe;	
-// 	
-// 	assert(l && l->ref.code == NODE);
-// 	const Node *const n = l->ref.u.node;
-// 	assert(n);	
-// 
-// 	assert(0 < fprintf(st->f,
-// 		"\n%s\t'%s\tn%u\t= ",
-// 		st->tabstr,
-// 		atombytes(atomat(U, n->verb)),
-// 		ptrreverse(&st->nodes, n)));
-// 
-// 	const unsigned key = uireverse(st->ctx->keymap, n->verb);
-// 
-// 	(key == -1 ? onstddump : st->ctx->ondump[key])(
-// 		st->ctx, st->f, n->u.attributes, st->tabs);
-// 
-// 	if(l != st->first)
-// 	{
-// 		assert(fputc(';', st->f) == ';');
-// 	}
-// 
-// 	return 0;
-// }
 
 typedef struct
 {

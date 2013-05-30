@@ -246,7 +246,16 @@ typedef struct
 typedef LoadCurrent (*LoadAction)(
 	const LDContext *const, List *const env, List *const nodes);
 
-typedef void (*DumpAction)(const LDContext *const, List *const attributes);
+typedef struct
+{
+	FILE *file;
+	const Array *nodes;
+	const char *tabstr;
+	unsigned tabs;
+} DumpCurrent;
+
+typedef void (*DumpAction)(
+	const LDContext *const, const DumpCurrent *const, List *const attributes);
 
 struct LDContext
 {
@@ -276,13 +285,9 @@ extern Array keymap(Array *const universe,
 	const unsigned hint, const char *const atoms[]);
 
 // Инициирует контекст загрузки для генератора кода. После использования
-// следует освободить keymap:
-//	LDContext lc = gencontext(f, U);
-//	...
-//	freeuimap((Array *)lc.keymap);
-//	free((void *)lc.keymap);
 
 extern LDContext gencontext(FILE *const f, Array *const universe);
+extern void freecontext(LDContext *const);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
 // uimap-отображением nonroots.
@@ -296,10 +301,6 @@ extern LDContext gencontext(FILE *const f, Array *const universe);
 // подразумевается равным универсуму.
 
 extern void freedag(List *const dag, const Array *const dagmap);
-
-// extern const char *dumpdag(
-// 	FILE *const, const unsigned indent, const Array *const universe,
-// 	List *const dag, const Array *const dagmap);
 
 extern List *gcnodes(
 	List **const dag,
