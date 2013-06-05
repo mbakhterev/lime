@@ -1,4 +1,5 @@
-lmbits = $(call bitspath)
+lmbits := $(call bitspath)
+# lmnode := $(call nodepath)
 
 lmsrc = \
 	rune.c		\
@@ -23,11 +24,13 @@ lminc = \
 
 lmobj = $(call c2o,$(lmbits),$(lmsrc))
 
-liblime: $(L)/liblime.a $(lminc)
+lmlib: $(L)/liblime.a $(lminc)
 
 $(L)/liblime.a: $(lmobj)
 
 # $(lmbits)/list.o: cflags += -D_XOPEN_SOURCE=700 $(strictfix)
 $(lmbits)/util.o: cflags += -D_XOPEN_SOURCE=700 $(strictfix)
+
+# $(eval $(call headroute,lime,$(lmnode)))
 
 include $(call o2d,$(lmobj))

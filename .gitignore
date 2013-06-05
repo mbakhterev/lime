@@ -8,6 +8,7 @@
 !notify-build
 !foreign-up
 !gnu.mk
+!makefile
 
 !bin
 !bin/dp

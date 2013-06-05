@@ -1,20 +1,22 @@
-tstbits = $(call bitspath)
+lmtstbits = $(call bitspath)
+lmtstnode = $(call nodepath)
 
-tstsrc = \
+lmtstsrc = \
 	tst-rune.c	\
 	tst-array.c	\
 	tst-loadatom.c	\
 	tst-loadtoken.c	\
 	tst-heapsort.c	\
 	tst-list.c	\
-	tst-loaddag.c
+	tst-loaddag.c	\
+	tst-gcnodes.c
 
-tstobj = $(call c2o,$(tstbits),$(tstsrc))
+tstobj = $(call c2o,$(lmtstbits),$(lmtstsrc))
 
-lib = $(L)/liblime.a
+lmlib = $(L)/liblime.a
 
-tst: cflags += -I $(I)
-tst: \
+# lmtst: cflags += -I $(I)
+lmtst: \
 	$(T)/tst-rune		\
 	$(T)/tst-array		\
 	$(T)/tst-heapsort	\
@@ -26,17 +28,17 @@ tst: \
 	$(T)/tst-loaddag	\
 	$(T)/tst-gcnodes
 
-$(T)/tst-rune: $(tstbits)/tst-rune.o $(lib)
-$(T)/tst-array: $(tstbits)/tst-array.o $(lib)
-$(T)/tst-heapsort: $(tstbits)/tst-heapsort.o $(lib)
+$(T)/tst-rune: $(lmtstbits)/tst-rune.o $(lmlib)
+$(T)/tst-array: $(lmtstbits)/tst-array.o $(lmlib)
+$(T)/tst-heapsort: $(lmtstbits)/tst-heapsort.o $(lmlib)
 
-$(T)/tst-loadatom: $(tstbits)/tst-loadatom.o $(lib)
-$(T)/tst-loadtoken: $(tstbits)/tst-loadtoken.o $(lib)
-$(T)/gen-atomtab: $(tstbits)/gen-atomtab.o $(lib)
-$(T)/tst-atomtab.sh: tst/tst-atomtab.sh
+$(T)/tst-loadatom: $(lmtstbits)/tst-loadatom.o $(lmlib)
+$(T)/tst-loadtoken: $(lmtstbits)/tst-loadtoken.o $(lmlib)
+$(T)/gen-atomtab: $(lmtstbits)/gen-atomtab.o $(lmlib)
+$(T)/tst-atomtab.sh: $(lmtstnode)/tst-atomtab.sh
 
-$(T)/tst-list: $(tstbits)/tst-list.o $(lib)
-$(T)/tst-loaddag: $(tstbits)/tst-loaddag.o $(lib)
-$(T)/tst-gcnodes: $(tstbits)/tst-gcnodes.o $(lib)
+$(T)/tst-list: $(lmtstbits)/tst-list.o $(lmlib)
+$(T)/tst-loaddag: $(lmtstbits)/tst-loaddag.o $(lmlib)
+$(T)/tst-gcnodes: $(lmtstbits)/tst-gcnodes.o $(lmlib)
 
 include $(call o2d,$(tstobj))

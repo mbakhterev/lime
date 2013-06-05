@@ -1,10 +1,11 @@
-include toolchain.mk
-include general.mk
+lmrootnode := $(call nodepath)
 
 cstd = c99
-cflags += -I lib/
+cflags += -I $(lmrootnode)/lib/
 
-all: tst liblime
+lime: lmtst lmlib 
 
-include lib/lime/gnu.mk
-include tst/gnu.mk
+$(eval $(call headroute,lime,$(lmrootnode)/lib/lime))
+
+include $(lmrootnode)/lib/lime/gnu.mk
+include $(lmrootnode)/tst/gnu.mk
