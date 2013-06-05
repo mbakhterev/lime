@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+unsigned item = 1;
+unsigned field = 1;
+const char *unitname = NULL;
+
 static int printer(List *const l, void *const ptr) {
 	switch(l->ref.code) {
 	case NUMBER:

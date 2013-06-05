@@ -5,6 +5,10 @@
 #include <lime/heap.h>
 #include <lime/util.h>
 
+unsigned item = 1;
+unsigned field = 1;
+const char *unitname = NULL;
+
 static int cmp(const void *const D, const unsigned i, const unsigned j) {
 	unsigned long x = ((unsigned long *)D)[i];
 	unsigned long y = ((unsigned long *)D)[j];

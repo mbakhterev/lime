@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+unsigned item = 1;
+unsigned field = 1;
+const char *unitname = NULL;
+
 typedef struct {
 	unsigned key;
 	unsigned char b;

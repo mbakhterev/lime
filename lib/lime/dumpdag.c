@@ -143,7 +143,7 @@ static void onstddump(
 	
 //	const DState *const st = ctx->state;
 	
-	DBG(DBGSTD, "f: %p", f);
+	DBG(DBGSTD, "f: %p", (void *)f);
 
 	dumpattrlist(attr, f, dc->nodes);
 }
