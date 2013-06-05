@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
 static LoadCurrent LC(List *const nodes, List *const refs)
 {
@@ -13,15 +14,23 @@ static LoadCurrent LC(List *const nodes, List *const refs)
 static LoadCurrent onloadatom(
 	const LoadContext *const ctx, List *const env, List *const nodes);
 
+static void ondumpatom(
+	const DumpContext *const, const DumpCurrent *const, List *const);
+
 static const char *const genverbs[] =
 {
 	"A",
 	NULL
 };
 
-static const LoadAction genactions[] =
+static const LoadAction genloadactions[] =
 {
 	onloadatom
+};
+
+static const DumpAction gendumpactions[] =
+{
+	ondumpatom
 };
 
 LoadCurrent onloadatom(
@@ -46,7 +55,13 @@ LoadCurrent onloadatom(
 	return LC(nodes, RL(refnum(ATOM, loadatom(U, f))));
 }
 
-LoadContext gencontext(FILE *const f, Array *const U)
+void ondumpatom(
+	const DumpContext *const ctx, const DumpCurrent *const dc,
+	List *const attr)
+{
+}
+
+LoadContext genloadcontext(FILE *const f, Array *const U)
 {
 //	Array *const km = malloc(sizeof(Array));
 //	assert(km);
@@ -59,8 +74,31 @@ LoadContext gencontext(FILE *const f, Array *const U)
 		
 		.universe = U,
 		.keymap = keymap(U, 0, genverbs),
-		.onload = genactions,
+		.onload = genloadactions,
 
 		.keyonly = 0
 	};
+}
+
+void freeloadcontext(LoadContext *const ctx)
+{
+	freeuimap(&ctx->keymap);
+	memset(ctx, 0, sizeof(LoadContext));
+}
+
+DumpContext gendumpcontext(FILE *const f, Array *const U)
+{
+	return (DumpContext)
+	{
+		.file = f,
+		.universe = U,
+		.keymap = keymap(U, 0, genverbs),
+		.ondump = gendumpactions
+	};
+}
+
+void freedumpcontext(DumpContext *const ctx)
+{
+	freeuimap(&ctx->keymap);
+	memset(ctx, 0, sizeof(DumpContext));
 }

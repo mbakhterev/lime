@@ -298,7 +298,7 @@ extern Array keymap(Array *const universe,
 extern LoadContext genloadcontext(FILE *const f, Array *const universe);
 extern void freeloadcontext(LoadContext *const);
 
-extern DumpContext gendumpcontext(FILE *const f, const Array *const universe);
+extern DumpContext gendumpcontext(FILE *const f, Array *const universe);
 extern void freedumpcontext(DumpContext *const);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
