@@ -24,24 +24,28 @@ static const char *tabstr(const unsigned tabs)
 	return s;
 }
 
-typedef struct
-{
-//	const LDContext *ctx;
-	FILE *f;
-	const char *tabstr;
-	const List *first;
-	unsigned tabs;
-	Array nodes;
-} DState;
+// typedef struct
+// {
+// //	const DumpContext *ctx;
+// 	FILE *f;
+// 	const char *tabstr;
+// 	const List *first;
+// 	unsigned tabs;
+// 	Array nodes;
+// } DState;
 
 static int mapone(List *const l, void *const ptr)
 {
 	assert(l && l->ref.code == NODE);
 	assert(ptr);
-	DState *const st = ((LDContext *)ptr)->state;
-	assert(st);
+	Array *const nodes = ptr;
 
-	assert(st->nodes.count == ptrmap(&st->nodes, l->ref.u.node));
+// 	DState *const st = ((DumpContext *)ptr)->state;
+// 	assert(st);
+// 
+// 	assert(st->nodes.count == ptrmap(&st->nodes, l->ref.u.node));
+
+	assert(nodes->count == ptrmap(nodes, l->ref.u.node));
 
 	return 0;
 }
@@ -83,7 +87,8 @@ static int dumpattrone(List *const l, void *const ptr)
 		dumpattrlist(l->ref.u.list, f, st->nodes);
 		break;
 
-	case NODE: {
+	case NODE:
+	{
 		const Node *const n = l->ref.u.node;
 		assert(n);
 		const Array *const map = st->nodes;
@@ -127,75 +132,95 @@ static void dumpattrlist(List *const l, FILE *const f, const Array *const nodes)
 	assert(')' == fputc(')', st.f));
 }
 
-static void onstddump(const LDContext *const ctx, List *const attr)
+static void onstddump(
+	const DumpContext *const ctx, const DumpCurrent *const dc,
+	List *const attr)
 {
 	assert(ctx);
-	assert(ctx->state);
-	
-	const DState *const st = ctx->state;
-	
-	DBG(DBGSTD, "f: %p", st->f);
 
-	dumpattrlist(attr, st->f, &st->nodes);
+	FILE *const f = ctx->file;
+	assert(f);
+	
+//	const DState *const st = ctx->state;
+	
+	DBG(DBGSTD, "f: %p", f);
+
+	dumpattrlist(attr, f, dc->nodes);
 }
 
-const char *dumpdag(
-	const LDContext *const ctx, List *const dag, const unsigned tabs)
+void dumpdag(
+	const DumpContext *const ctx, List *const dag, const unsigned tabs)
 {
-	char *buf = NULL;
-	size_t sz = 0;
+// 	char *buf = NULL;
+// 	size_t sz = 0;
 
-	DState st =
-	{
-		.nodes = makeptrmap(),
-		.f = newmemstream(&buf, &sz),
-//		.ctx = ctx,
-		.tabs = tabs,
-		.tabstr = tabstr(tabs),
-		.first = dag
-	};	
+// 	DState st =
+// 	{
+// 		.nodes = makeptrmap(),
+// 		.f = newmemstream(&buf, &sz),
+// //		.ctx = ctx,
+// 		.tabs = tabs,
+// 		.tabstr = tabstr(tabs),
+// 		.first = dag
+// 	};	
 
-	DBG(DBGDAG, "f: %p", (void *)st.f);
+	DBG(DBGDAG, "f: %p", (void *)ctx->file);
 
 	assert(ctx);
-	void *const tmp = ctx->state;
-	((LDContext *)ctx)->state = &st;
+
+// 	void *const tmp = ctx->state;
+// 	((DumpContext *)ctx)->state = &st;
+
+	FILE *const f = ctx->file;
+	assert(f);
 
 	const Array *const U = ctx->universe;
 	assert(U);
 
-	forlist(dag, mapone, (void *)ctx, 0);
+	Array nodes = makeptrmap();
 
-	assert(fprintf(st.f, "\n%s(", st.tabstr) > 0);
+	forlist(dag, mapone, &nodes, 0);
 
-	for(unsigned i = 0; i < st.nodes.count; i += 1)
+	DumpCurrent dc =
 	{
-		const Node *const n = ptrdirect(&st.nodes, i);
+		.nodes = &nodes,
+		.tabs = tabs,
+		.tabstr = tabstr(tabs)
+	};
+
+	assert(fprintf(f, "\n%s(", dc.tabstr) > 0);
+
+	for(unsigned i = 0; i < nodes.count; i += 1)
+	{
+		const Node *const n = ptrdirect(dc.nodes, i);
 		assert(n);
 
-		assert(0 < fprintf(st.f, "\n%s\t'%s\tn%u\t= ",
-			st.tabstr,
+		assert(0 < fprintf(f, "\n%s\t'%s\tn%u\t= ",
+			dc.tabstr,
 			atombytes(atomat(U, n->verb)),
 			i));
 
-		const unsigned key = uireverse(ctx->keymap, n->verb);
+		const unsigned key = uireverse(&ctx->keymap, n->verb);
 
 		(key == -1 ?
-			onstddump : ctx->ondump[key])(ctx, n->u.attributes);
+			onstddump : ctx->ondump[key])
+				(ctx, &dc, n->u.attributes);
 
-		if(i + 1 < st.nodes.count)
+		if(i + 1 < nodes.count)
 		{
-			assert(fputc(';', st.f) == ';');
+			assert(fputc(';', f) == ';');
 		}
 	}
 
-	assert(fprintf(st.f, "\n%s)", st.tabstr) > 0);
+	assert(fprintf(f, "\n%s)", dc.tabstr) > 0);
 
-	free((void *)st.tabstr);
-	fclose(st.f);
-	freeptrmap(&st.nodes);
+	free((void *)dc.tabstr);
 
-	((LDContext *)ctx)->state = tmp;
+//	fclose(ctx->f);
 
-	return buf;
+	freeptrmap(&nodes);
+
+// 	((DumpContext *)ctx)->state = tmp;
+
+//	return buf;
 }

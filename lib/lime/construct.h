@@ -235,7 +235,7 @@ extern const void *const ptrdirect(const Array *const, const unsigned);
 // lib/lime/loaddag.c) должны обрабатывать и возвращать два списка: nodes -
 // список узлов в dag-е, и refs - структурированный список ссылок. Поэтому
 
-typedef struct LDContext LDContext;
+typedef struct LoadContext LoadContext;
 
 typedef struct
 {
@@ -244,39 +244,48 @@ typedef struct
 } LoadCurrent;
 
 typedef LoadCurrent (*LoadAction)(
-	const LDContext *const, List *const env, List *const nodes);
+	const LoadContext *const, List *const env, List *const nodes);
+
+typedef struct DumpContext DumpContext;
 
 typedef struct
 {
-	FILE *file;
 	const Array *nodes;
+	const List *first;
 	const char *tabstr;
 	unsigned tabs;
 } DumpCurrent;
 
 typedef void (*DumpAction)(
-	const LDContext *const, const DumpCurrent *const, List *const attributes);
+	const DumpContext *const, const DumpCurrent *const, List *const attr);
 
-struct LDContext
+struct LoadContext
 {
 	FILE *file;
-	void *state;
 	
 	Array *universe;		// общая таблица атомов
-	const Array *keymap;		// ключевые атомы в ней
 	const LoadAction *onload;	// специальные действия загрузки
-	const DumpAction *ondump;	// действия вывода
+	Array keymap;			// задающие их ключевые атомы в таблице
 
 	unsigned keyonly:1;		// допускать узлы только в keymap
+};
+
+struct DumpContext
+{
+	FILE *file;
+
+	const Array *universe;
+	const DumpAction *ondump;
+	Array keymap;
 };
 
 // Подгрузить dag к текущему, заданному nodes, в окружении env
 
 extern List *loaddag(
-	const LDContext *const, List *const env, List *const nodes);
+	const LoadContext *const, List *const env, List *const nodes);
 
-extern const char *dumpdag(
-	const LDContext *const, List *const dag, const unsigned tabs);
+extern void dumpdag(
+	const DumpContext *const, List *const dag, const unsigned tabs);
 
 // Создать согласованную с таблицей атомов keymap по списку строк. Список строк,
 // оканчивающийся NULL
@@ -286,8 +295,11 @@ extern Array keymap(Array *const universe,
 
 // Инициирует контекст загрузки для генератора кода. После использования
 
-extern LDContext gencontext(FILE *const f, Array *const universe);
-extern void freecontext(LDContext *const);
+extern LoadContext genloadcontext(FILE *const f, Array *const universe);
+extern void freeloadcontext(LoadContext *const);
+
+extern DumpContext gendumpcontext(FILE *const f, const Array *const universe);
+extern void freedumpcontext(DumpContext *const);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
 // uimap-отображением nonroots.

@@ -11,7 +11,7 @@ static LoadCurrent LC(List *const nodes, List *const refs)
 }
 
 static LoadCurrent onloadatom(
-	const LDContext *const ctx, List *const env, List *const nodes);
+	const LoadContext *const ctx, List *const env, List *const nodes);
 
 static const char *const genverbs[] =
 {
@@ -25,7 +25,7 @@ static const LoadAction genactions[] =
 };
 
 LoadCurrent onloadatom(
-	const LDContext *const ctx, List *const env, List *const nodes)
+	const LoadContext *const ctx, List *const env, List *const nodes)
 {
 	FILE *const f = ctx->file;
 	Array *const U = ctx->universe;
@@ -46,19 +46,19 @@ LoadCurrent onloadatom(
 	return LC(nodes, RL(refnum(ATOM, loadatom(U, f))));
 }
 
-LDContext gencontext(FILE *const f, Array *const U)
+LoadContext gencontext(FILE *const f, Array *const U)
 {
-	Array *const km = malloc(sizeof(Array));
-	assert(km);
-	*km = keymap(U, 0, genverbs);
+//	Array *const km = malloc(sizeof(Array));
+//	assert(km);
 
-	return (LDContext)
+// 	*km = keymap(U, 0, genverbs);
+
+	return (LoadContext)
 	{
 		.file = f,
-		.state = NULL,
 		
 		.universe = U,
-		.keymap = km,
+		.keymap = keymap(U, 0, genverbs),
 		.onload = genactions,
 
 		.keyonly = 0

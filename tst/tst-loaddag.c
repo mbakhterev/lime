@@ -10,12 +10,12 @@ int main(const int ac, const char *const av[])
 {
 	Array U = makeatomtab();
 
-	const LDContext lc = gencontext(stdin, &U);
-
+	const LoadContext lc = genloadcontext(stdin, &U);
 	List *const l = loaddag(&lc, NULL, NULL);
+	freeloadcontext((LoadContext *)&lc);
 
-	freeuimap((Array *)lc.keymap);
-	free((void *)lc.keymap);
+// 	freeuimap((Array *)lc.keymap);
+// 	free((void *)lc.keymap);
 
 	printf("loaded\n");
 
