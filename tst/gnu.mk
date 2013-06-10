@@ -41,4 +41,5 @@ $(T)/tst-list: $(lmtstbits)/tst-list.o $(lmlib)
 $(T)/tst-loaddag: $(lmtstbits)/tst-loaddag.o $(lmlib)
 $(T)/tst-gcnodes: $(lmtstbits)/tst-gcnodes.o $(lmlib)
 
+$(call o2d,$(tstobj)): cflags += -I $(lmrootnode)/lib
 include $(call o2d,$(tstobj))
