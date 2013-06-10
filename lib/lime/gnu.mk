@@ -24,6 +24,7 @@ lminc = \
 
 lmobj = $(call c2o,$(lmbits),$(lmsrc))
 
+.PHONY: lmlib
 lmlib: $(L)/liblime.a $(lminc)
 
 $(L)/liblime.a: $(lmobj)

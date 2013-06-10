@@ -16,6 +16,9 @@ tstobj = $(call c2o,$(lmtstbits),$(lmtstsrc))
 lmlib = $(L)/liblime.a
 
 # lmtst: cflags += -I $(I)
+
+.PHONY: lmtst
+
 lmtst: \
 	$(T)/tst-rune		\
 	$(T)/tst-array		\
