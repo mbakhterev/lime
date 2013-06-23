@@ -23,7 +23,7 @@ typedef struct
 typedef struct
 {
 	const Array *nodes;
-	const List *first;
+//	const List *first;
 	const char *tabstr;
 	unsigned tabs;
 } DumpCurrent;
@@ -33,6 +33,7 @@ typedef struct
 	FILE *f;
 	const List *last;
 	const Array *nodes;
+	const Array *universe;
 } DAState;
 
 static const char *tabstr(const unsigned tabs)
@@ -57,7 +58,9 @@ static int mapone(List *const l, void *const ptr)
 	return 0;
 }
 
-static void dumpattrlist(List *const, FILE *const, const Array *const);
+static void dumpattrlist(
+	List *const, const Array *const,
+	FILE *const, const Array *const);
 
 static int dumpattrone(List *const l, void *const ptr)
 {
@@ -76,15 +79,26 @@ static int dumpattrone(List *const l, void *const ptr)
 		break;
 
 	case ATOM:
-		assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
+	{
+		const Array *const U = st->universe;
+		assert(U);
+		const Atom a = atomat(U, l->ref.u.number);
+		const unsigned len = atomlen(a);
+
+//		assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
+
+		assert(fprintf(f, "'%02x.%u.\"", atomhint(a), len) > 0);
+		assert(fwrite(atombytes(a), 1, len, f) == len);
+		assert(fputc('"', f) == '"');
 		break;
+	}
 
 	case TYPE:
 		assert(fprintf(f, "T:%u", l->ref.u.number) > 0);
 		break;
 
 	case LIST:
-		dumpattrlist(l->ref.u.list, f, st->nodes);
+		dumpattrlist(l->ref.u.list, st->universe, f, st->nodes);
 		break;
 
 	case NODE:
@@ -115,7 +129,9 @@ static int dumpattrone(List *const l, void *const ptr)
 	return 0;
 }
 
-static void dumpattrlist(List *const l, FILE *const f, const Array *const nodes)
+static void dumpattrlist(
+	List *const l, const Array *const U,
+	FILE *const f, const Array *const nodes)
 {
 	assert(f && nodes);
 	DBG(DBGATTR, "f: %p", (void *)f);
@@ -125,6 +141,7 @@ static void dumpattrlist(List *const l, FILE *const f, const Array *const nodes)
 		.f = f,
 		.last = l,
 		.nodes = nodes,
+		.universe = U
 	};
 
 	assert('(' == fputc('(', st.f));
@@ -140,10 +157,13 @@ static void onstddump(
 
 	FILE *const f = ctx->file;
 	assert(f);
+
+	const Array *const U = ctx->universe;
+	assert(U);
 	
 	DBG(DBGSTD, "f: %p", (void *)f);
 
-	dumpattrlist(attr, f, dc->nodes);
+	dumpattrlist(attr, U, f, dc->nodes);
 }
 
 // void dumpdag(
@@ -191,7 +211,7 @@ void dumpdag(
 		const Node *const n = ptrdirect(dc.nodes, i);
 		assert(n);
 
-		assert(0 < fprintf(f, "\n%s\t'%s\tn%u\t= ",
+		assert(0 < fprintf(f, "\n%s\t.%s\tn%u\t= ",
 			dc.tabstr,
 			atombytes(atomat(U, n->verb)),
 			i));

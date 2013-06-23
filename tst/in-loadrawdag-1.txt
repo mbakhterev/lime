@@ -1,13 +1,13 @@
 
 (
-	'R r = (0);
+	.R r = (0);
 	(
-		'Zib z = (1);
-		'A x = 01.10."abcdefghij"
+		.Zib z = (1);
+		.A x = ('01.10."abcdefghij")
 	);
 	(
-		'Z x = (16);
-		'G y = (4; 'G (5); 'R (x; r))
+		.Z x = (16);
+		.G y = (4; .G (5); .R (x; r))
 	);
 
 	r
