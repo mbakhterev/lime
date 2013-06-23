@@ -52,7 +52,7 @@ LoadCurrent onloadatom(
 		errexpect(c, ES("[0-9A-fa-f]"));
 	}
 
-	return LC(nodes, RL(refnum(ATOM, loadatom(U, f))));
+	return LC(nodes, RL(refatom(loadatom(U, f))));
 }
 
 void ondumpatom(

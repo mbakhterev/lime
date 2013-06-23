@@ -13,9 +13,11 @@ lmsrc = \
 	ptrmap.c	\
 	loaddag.c	\
 	dumpdag.c	\
-	ldcontext.c	\
 	dag.c		\
 	eval.c
+
+#	ldcontext.c	\
+
 
 lminc = \
 	$(I)/lime/construct.h	\

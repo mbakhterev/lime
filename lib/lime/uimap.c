@@ -21,12 +21,15 @@ Array makeuimap(void)
 
 void freeuimap(Array *const m)
 {
+	assert(m);
 	assert(m->code == MAP);
 	freearray(m);
 }
 
 unsigned uimap(Array *const m, const unsigned y)
 {
+	assert(m);
+
 	const unsigned k = uireverse(m, y);
 	if(k != -1) { return k; }
 
@@ -35,12 +38,15 @@ unsigned uimap(Array *const m, const unsigned y)
 
 unsigned uidirect(const Array *const m, const unsigned x)
 {
-	assert(m->code == MAP);
-
-	if(x < m->count)
+	if(m)
 	{
-		const unsigned *const U = m->data;
-		return U[x];
+		assert(m->code == MAP);
+
+		if(x < m->count)
+		{
+			const unsigned *const U = m->data;
+			return U[x];
+		}
 	}
 
 	return -1;
@@ -48,7 +54,11 @@ unsigned uidirect(const Array *const m, const unsigned x)
 
 unsigned uireverse(const Array *const m, const unsigned y)
 {
-	assert(m->code == MAP);
-	const unsigned x = lookup(m, &y);
-	return x;
+	if(m)
+	{
+		assert(m->code == MAP);
+		return lookup(m, &y);
+	}
+
+	return -1;
 }

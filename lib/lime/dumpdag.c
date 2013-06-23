@@ -13,6 +13,28 @@
 
 #define DBGFLAGS 0
 
+typedef struct
+{
+	FILE *file;
+	const Array *universe;
+	const Array *dagmap;
+} DumpContext;
+
+typedef struct
+{
+	const Array *nodes;
+	const List *first;
+	const char *tabstr;
+	unsigned tabs;
+} DumpCurrent;
+
+typedef struct
+{
+	FILE *f;
+	const List *last;
+	const Array *nodes;
+} DAState;
+
 static const char *tabstr(const unsigned tabs)
 {
 	char *const s = malloc(tabs + 1);
@@ -24,38 +46,16 @@ static const char *tabstr(const unsigned tabs)
 	return s;
 }
 
-// typedef struct
-// {
-// //	const DumpContext *ctx;
-// 	FILE *f;
-// 	const char *tabstr;
-// 	const List *first;
-// 	unsigned tabs;
-// 	Array nodes;
-// } DState;
-
 static int mapone(List *const l, void *const ptr)
 {
 	assert(l && l->ref.code == NODE);
 	assert(ptr);
 	Array *const nodes = ptr;
 
-// 	DState *const st = ((DumpContext *)ptr)->state;
-// 	assert(st);
-// 
-// 	assert(st->nodes.count == ptrmap(&st->nodes, l->ref.u.node));
-
 	assert(nodes->count == ptrmap(nodes, l->ref.u.node));
 
 	return 0;
 }
-
-typedef struct
-{
-	FILE *f;
-	const List *last;
-	const Array *nodes;
-} DAState;
 
 static void dumpattrlist(List *const, FILE *const, const Array *const);
 
@@ -141,45 +141,41 @@ static void onstddump(
 	FILE *const f = ctx->file;
 	assert(f);
 	
-//	const DState *const st = ctx->state;
-	
 	DBG(DBGSTD, "f: %p", (void *)f);
 
 	dumpattrlist(attr, f, dc->nodes);
 }
 
+// void dumpdag(
+// 	const DumpContext *const ctx, List *const dag, const unsigned tabs)
+
 void dumpdag(
-	const DumpContext *const ctx, List *const dag, const unsigned tabs)
+	FILE *const f, const unsigned tabs, const Array *const U, 
+	const List *const dag, const Array *const dagmap)
 {
-// 	char *buf = NULL;
-// 	size_t sz = 0;
-
-// 	DState st =
-// 	{
-// 		.nodes = makeptrmap(),
-// 		.f = newmemstream(&buf, &sz),
-// //		.ctx = ctx,
-// 		.tabs = tabs,
-// 		.tabstr = tabstr(tabs),
-// 		.first = dag
-// 	};	
-
-	DBG(DBGDAG, "f: %p", (void *)ctx->file);
-
-	assert(ctx);
-
-// 	void *const tmp = ctx->state;
-// 	((DumpContext *)ctx)->state = &st;
-
-	FILE *const f = ctx->file;
 	assert(f);
-
-	const Array *const U = ctx->universe;
 	assert(U);
+
+	const DumpContext ctx =
+	{
+		.file = f,
+		.universe = U,
+		.dagmap = dagmap
+	};
+
+	DBG(DBGDAG, "f: %p", (void *)ctx.file);
+
+//	assert(ctx);
+
+// 	FILE *const f = ctx->file;
+// 	assert(f);
+
+// 	const Array *const U = ctx->universe;
+// 	assert(U);
 
 	Array nodes = makeptrmap();
 
-	forlist(dag, mapone, &nodes, 0);
+	forlist((List *)dag, mapone, &nodes, 0);
 
 	DumpCurrent dc =
 	{
@@ -200,11 +196,13 @@ void dumpdag(
 			atombytes(atomat(U, n->verb)),
 			i));
 
-		const unsigned key = uireverse(&ctx->keymap, n->verb);
+// 		const unsigned key = uireverse(&ctx->keymap, n->verb);
+// 
+// 		(key == -1 ?
+// 			onstddump : ctx->ondump[key])
+// 				(ctx, &dc, n->u.attributes);
 
-		(key == -1 ?
-			onstddump : ctx->ondump[key])
-				(ctx, &dc, n->u.attributes);
+		onstddump(&ctx, &dc, n->u.attributes);
 
 		if(i + 1 < nodes.count)
 		{
@@ -216,11 +214,5 @@ void dumpdag(
 
 	free((void *)dc.tabstr);
 
-//	fclose(ctx->f);
-
 	freeptrmap(&nodes);
-
-// 	((DumpContext *)ctx)->state = tmp;
-
-//	return buf;
 }

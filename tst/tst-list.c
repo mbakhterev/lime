@@ -44,9 +44,7 @@ static int checkfree(List *const l, void *const ptr) {
 int main(int argc, char * argv[]) {
 	List * l = NULL;
 	for(int i = 0; i < 20; i += 1) {
-		List *const k = RL(refnum(NUMBER, i));
-
-//		k->u.number = i;
+		List *const k = RL(refnum(i));
 
 		forlist(k, printer, NULL, 0);
 		l = append(l, k);

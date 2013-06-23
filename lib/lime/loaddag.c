@@ -40,6 +40,19 @@ Array keymap(
 
 // Подробности: txt/sketch.txt: Fri Apr 26 19:29:46 YEKT 2013
 
+typedef struct
+{
+	FILE *file;
+	Array *universe;
+	const Array *dagmap;
+} LoadContext;
+
+typedef struct
+{
+	List *nodes;
+	List *refs;
+} LoadCurrent;
+
 static LoadCurrent LC(List *const nodes, List *const refs) {
 	return (LoadCurrent) { .nodes = nodes, .refs = refs };
 }
@@ -86,6 +99,7 @@ static unsigned isfirstcore(const int c)
 	switch(c)
 	{
 	case '\'':
+	case '.':
 	case '(':
 		return 1;
 	}
@@ -109,6 +123,8 @@ static LoadCurrent list(
 
 	DBG(DBGLST, "%s", "pre skipping");
 
+	// Либо список пустой
+
 	const int c = skipspaces(f);
 	switch(c)
 	{
@@ -118,6 +134,9 @@ static LoadCurrent list(
 	}
 
 	DBG(DBGLST, "c: %d", c);
+
+	// Либо список содержит core-структуру (да-да, немного пафосное
+	// название)
 
 	if(isfirstcore(c))
 	{
@@ -145,7 +164,7 @@ static LoadCurrent list(
 		return lc;
 	}
 
-	errexpect(c, ES("(", "'", "[0-9]+", "[A-Za-z][0-9A-Za-z]+", ")"));
+	errexpect(c, ES("(", ".", "'", "[0-9]+", "[A-Za-z][0-9A-Za-z]+", ")"));
 
 	return LC(NULL, NULL);
 }
@@ -197,7 +216,7 @@ static LoadCurrent core(
 	const int c = skipspaces(f);
 	switch(c)
 	{
-	case '\'':
+	case '.':
 	{
 		// Обработка узла может добавить только новый узел. Список
 		// ссылок должен представлять собой один элемент со ссылокой на
@@ -222,14 +241,20 @@ static LoadCurrent core(
 		return ce(
 			ctx, env, lc.nodes, append(refs, RL(reflist(lc.refs))));
 	}
+
+	case '\'':
+		return ce(ctx, env, nodes,
+			append(refs, RL(refatom(loadatom(U, f)))));
 	}
 
 	if(isdigit(c))
 	{
 		assert(ungetc(c, f) == c);
 
-		List *const lrefs
-			= append(refs, RL(refnum(NUMBER, loadnum(f))));
+//		List *const lrefs
+//			= append(refs, RL(refnum(NUMBER, loadnum(f))));
+
+		List *const lrefs = append(refs, RL(refnum(loadnum(f))));
 
 		DBG(DBGCORE, "-> %u -> CE", lrefs->ref.u.number);
 		return ce(ctx, env, nodes, lrefs);
@@ -241,7 +266,8 @@ static LoadCurrent core(
 
 		const List l =
 		{
-			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
+//			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
+			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
 			.next = (List *)&l
 		};
 
@@ -313,15 +339,16 @@ static LoadCurrent node(
 	}
 
 	const unsigned verb = loadtoken(U, f, 0, "[0-9A-Za-z]");
-	const unsigned key = uireverse(&ctx->keymap, verb);
 
-	DBG(DBGNODE, "verb: %u; key: %u", verb, key);
-
-	if(ctx->keyonly && key == -1)
-	{
-		ERR("non key atom in keyonly mode: %s",
-			atombytes(atomat(U, verb)));
-	}
+// 	const unsigned key = uireverse(&ctx->keymap, verb);
+// 
+// 	DBG(DBGNODE, "verb: %u; key: %u", verb, key);
+// 
+// 	if(ctx->keyonly && key == -1)
+// 	{
+// 		ERR("non key atom in keyonly mode: %s",
+// 			atombytes(atomat(U, verb)));
+// 	}
 
 	GDI ref = { .array = NULL, .position = -1 };
 
@@ -338,7 +365,8 @@ static LoadCurrent node(
 	{
 		const List lid =
 		{
-			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
+//			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
+			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
 			.next = (List *)&lid
 		};
 
@@ -365,11 +393,13 @@ static LoadCurrent node(
 		}
 	}
 
-	// Загрузка атрибутов узла, которые могут быть в специальном формате
-	// (для ключевых узлов)
+// 	// Загрузка атрибутов узла, которые могут быть в специальном формате
+// 	// (для ключевых узлов)
+// 
+// 	const LoadCurrent lc
+// 		= (key == -1 ? onstdnode : ctx->onload[key])(ctx, env, nodes);
 
-	const LoadCurrent lc
-		= (key == -1 ? onstdnode : ctx->onload[key])(ctx, env, nodes);
+	const LoadCurrent lc = onstdnode(ctx, env, nodes);
 
 	if(DBGFLAGS & DBGNODE)
 	{
@@ -394,10 +424,26 @@ static LoadCurrent node(
 	return LC(append(lc.nodes, RL(refnode(l->ref.u.node))), l);
 }
 
+// List *loaddag(
+// 	const LoadContext *const ctx, List *const env, List *const nodes)
 List *loaddag(
-	const LoadContext *const ctx, List *const env, List *const nodes)
+	FILE *const f, Array *const U, const Array *const dagmap)
 {
-	FILE *const f = ctx->file;
+	List *const env = NULL;
+	List *const nodes = NULL;
+
+	assert(f);
+	assert(U);
+
+	const LoadContext ctx =
+	{
+		.file = f,
+		.universe = U,
+		.dagmap = dagmap
+	};
+
+// 	FILE *const f = ctx->file;
+
 	int c;
 
 	if((c = skipspaces(f)) != '(')
@@ -405,10 +451,11 @@ List *loaddag(
 		errexpect(c, ES("("));
 	}
 
-	DBG(DBGLRD, "pre list; ctx: %p", (void *)ctx);
+	DBG(DBGLRD, "pre list; ctx: %p", (void *)&ctx);
 
 	DBG(DBGLRD, "%s", "-> LIST");
-	const LoadCurrent lc = list(ctx, env, nodes);
+ 	const LoadCurrent lc = list(&ctx, env, nodes);
+
 
 	if(DBGFLAGS & DBGLRD)
 	{

@@ -10,14 +10,17 @@ const char *unitname = "stdin";
 int main(int argc, char *argv[])
 {
 	Array U = makeatomtab();
-	LoadContext lc = genloadcontext(stdin, &U);
 
-	List *l = loaddag(&lc, NULL, NULL);
+// 	LoadContext lc = genloadcontext(stdin, &U);
+// 
+// 	List *l = loaddag(&lc, NULL, NULL);
 
 // 	freeuimap((Array *)lc.keymap);
 // 	free((void *)lc.keymap);
 
-	freeloadcontext(&lc);
+	List *l = loaddag(stdin, &U, NULL);
+
+//	freeloadcontext(&lc);
 
 	printf("len(l): %u\n", listlen(l));
 
@@ -30,9 +33,9 @@ int main(int argc, char *argv[])
 	size_t sz = 0;
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
-	DumpContext dc = gendumpcontext(f, &U);
-	dumpdag(&dc, k, 0);
-	freedumpcontext(&dc);
+//	DumpContext dc = gendumpcontext(f, &U);
+	dumpdag(f, 0, &U, k, NULL);
+//	freedumpcontext(&dc);
 	fclose(f);
 
 	printf("dag(k):%s\n", d);

@@ -21,12 +21,15 @@ Array makeptrmap(void)
 
 void freeptrmap(Array *const m)
 {
+	assert(m);
 	assert(m->code == PTR);
 	freearray(m);
 }
 
 unsigned ptrmap(Array *const m, const void *const y)
 {
+	assert(m);
+
 	const unsigned k = ptrreverse(m, y);
 	if(k != -1) { return k; }
 
@@ -35,12 +38,15 @@ unsigned ptrmap(Array *const m, const void *const y)
 
 const void *const ptrdirect(const Array *const m, const unsigned x)
 {
-	assert(m->code == PTR);
-
-	if(x < m->count)
+	if(m)
 	{
-		const void *const *const P = m->data;
-		return P[x];
+		assert(m->code == PTR);
+
+		if(x < m->count)
+		{
+			const void *const *const P = m->data;
+			return P[x];
+		}
 	}
 
 	return NULL;
@@ -48,6 +54,11 @@ const void *const ptrdirect(const Array *const m, const unsigned x)
 
 unsigned ptrreverse(const Array *const m, const void *const y)
 {
-	assert(m->code == PTR);
-	return lookup(m, &y);
+	if(m)
+	{
+		assert(m->code == PTR);
+		return lookup(m, &y);
+	}
+
+	return -1;
 }

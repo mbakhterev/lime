@@ -47,7 +47,7 @@ List *tipoff(List **const lptr) {
 	return n;
 }
 
-extern Ref refnum(const unsigned code, const unsigned n) {
+static Ref refnat(const unsigned code, const unsigned n) {
 	switch(code) {
 	case NUMBER:
 	case ATOM:
@@ -59,6 +59,16 @@ extern Ref refnum(const unsigned code, const unsigned n) {
 	}
 
 	return (Ref) { .code = code, .u.number = n };
+}
+
+extern Ref refnum(const unsigned n)
+{
+	return (Ref) { .code = NUMBER, .u.number = n };
+}
+
+extern Ref refatom(const unsigned n)
+{
+	return (Ref) { .code = ATOM, .u.number = n };
 }
 
 extern Ref refenv(Array *const e) {
@@ -176,7 +186,7 @@ static int forkitem(List *const k, void *const ptr) {
 	case NUMBER:
 	case ATOM:
 	case TYPE:
-		l = newlist(refnum(k->ref.code, k->ref.u.number));
+		l = newlist(refnat(k->ref.code, k->ref.u.number));
 		break;
 
 	case NODE:

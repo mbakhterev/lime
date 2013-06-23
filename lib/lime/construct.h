@@ -117,8 +117,12 @@ typedef struct {
 
 // Конструкторы для Ref
 
+extern Ref refnum(const unsigned);
+extern Ref refatom(const unsigned);
 extern Ref refptr(void *const);
-extern Ref refnum(const unsigned code, const unsigned);
+
+// extern Ref refnum(const unsigned code, const unsigned);
+
 extern Ref refenv(Array *const);
 extern Ref reflist(List *const);
 extern Ref refnode(Node *const);
@@ -224,68 +228,82 @@ extern const void *const ptrdirect(const Array *const, const unsigned);
 
 // Семантические функции
 
-// Обобщённая загрузка dag-а (списка узлов, со списками ссылок на другие узлы в
-// каждом) из файла. Загрузка происходит с узнаванием "ключевых узлов".  Узлы
-// описываются атомами, ключевые заданы специальным uimap. Когда loaddag
-// замечает такой узел, он вызывает соответствующую (по reverse(atomnum))
-// функцию типа LoadAction для специальной обработки узла. Это необходимо для
-// специальной логики обработки специальных узлов.
-
-// LoadAction, как и вспомогательные функции чтения списка (cf.
-// lib/lime/loaddag.c) должны обрабатывать и возвращать два списка: nodes -
-// список узлов в dag-е, и refs - структурированный список ссылок. Поэтому
-
-typedef struct LoadContext LoadContext;
-
-typedef struct
-{
-	List *nodes;
-	List *refs;
-} LoadCurrent;
-
-typedef LoadCurrent (*LoadAction)(
-	const LoadContext *const, List *const env, List *const nodes);
-
-typedef struct DumpContext DumpContext;
-
-typedef struct
-{
-	const Array *nodes;
-	const List *first;
-	const char *tabstr;
-	unsigned tabs;
-} DumpCurrent;
-
-typedef void (*DumpAction)(
-	const DumpContext *const, const DumpCurrent *const, List *const attr);
-
-struct LoadContext
-{
-	FILE *file;
-	
-	Array *universe;		// общая таблица атомов
-	const LoadAction *onload;	// специальные действия загрузки
-	Array keymap;			// задающие их ключевые атомы в таблице
-
-	unsigned keyonly:1;		// допускать узлы только в keymap
-};
-
-struct DumpContext
-{
-	FILE *file;
-
-	const Array *universe;
-	const DumpAction *ondump;
-	Array keymap;
-};
+// // Обобщённая загрузка dag-а (списка узлов, со списками ссылок на другие узлы в
+// // каждом) из файла. Загрузка происходит с узнаванием "ключевых узлов".  Узлы
+// // описываются атомами, ключевые заданы специальным uimap. Когда loaddag
+// // замечает такой узел, он вызывает соответствующую (по reverse(atomnum))
+// // функцию типа LoadAction для специальной обработки узла. Это необходимо для
+// // специальной логики обработки специальных узлов.
+// 
+// // LoadAction, как и вспомогательные функции чтения списка (cf.
+// // lib/lime/loaddag.c) должны обрабатывать и возвращать два списка: nodes -
+// // список узлов в dag-е, и refs - структурированный список ссылок. Поэтому
+// 
+// typedef struct LoadContext LoadContext;
+// 
+// typedef struct
+// {
+// 	List *nodes;
+// 	List *refs;
+// } LoadCurrent;
+// 
+// typedef LoadCurrent (*LoadAction)(
+// 	const LoadContext *const, List *const env, List *const nodes);
+// 
+// typedef struct DumpContext DumpContext;
+// 
+// typedef struct
+// {
+// 	const Array *nodes;
+// 	const List *first;
+// 	const char *tabstr;
+// 	unsigned tabs;
+// } DumpCurrent;
+// 
+// typedef void (*DumpAction)(
+// 	const DumpContext *const, const DumpCurrent *const, List *const attr);
+// 
+// struct LoadContext
+// {
+// 	FILE *file;
+// 	
+// 	Array *universe;		// общая таблица атомов
+// 	const LoadAction *onload;	// специальные действия загрузки
+// 	Array keymap;			// задающие их ключевые атомы в таблице
+// 
+// 	unsigned keyonly:1;		// допускать узлы только в keymap
+// };
+// 
+// struct DumpContext
+// {
+// 	FILE *file;
+// 
+// 	const Array *universe;
+// 	const DumpAction *ondump;
+// 	Array keymap;
+// };
 
 // Подгрузить dag к текущему, заданному nodes, в окружении env
 
+// extern List *loaddag(
+// 	const LoadContext *const, List *const env, List *const nodes);
+
 extern List *loaddag(
-	const LoadContext *const, List *const env, List *const nodes);
+	FILE *const, Array *const universe, const Array *const dagmap);
 
 extern void dumpdag(
-	const DumpContext *const, List *const dag, const unsigned tabs);
+	FILE *const, const unsigned tabs, const Array *const universe,
+	const List *const dag, const Array *const dagmap);
+
+// typedef struct
+// {
+// 	FILE *file;
+// 	const Array *universe;
+// 	Array dagmap;
+// } DumpContext;
+// 
+// extern void dumpdag(
+// 	const DumpContext *const, const List *const dag, const unsigned tabs);
 
 // Создать согласованную с таблицей атомов keymap по списку строк. Список строк,
 // оканчивающийся NULL
@@ -295,11 +313,11 @@ extern Array keymap(Array *const universe,
 
 // Инициирует контекст загрузки для генератора кода. После использования
 
-extern LoadContext genloadcontext(FILE *const f, Array *const universe);
-extern void freeloadcontext(LoadContext *const);
-
-extern DumpContext gendumpcontext(FILE *const f, Array *const universe);
-extern void freedumpcontext(DumpContext *const);
+// extern LoadContext genloadcontext(FILE *const f, Array *const universe);
+// extern void freeloadcontext(LoadContext *const);
+// 
+// extern DumpContext gendumpcontext(FILE *const f, Array *const universe);
+// extern void freedumpcontext(DumpContext *const);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
 // uimap-отображением nonroots.

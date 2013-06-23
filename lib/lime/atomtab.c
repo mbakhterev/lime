@@ -219,8 +219,8 @@ unsigned readpack(Array *const t, const AtomPack ap)
 unsigned loadtoken(Array *const t, FILE *const f,
 	const unsigned char hint, const char *const format)
 {
+	assert(f);
 	assert(t->code == ATOM);
-
 	assert(strlen(format) <= 32);
 
 	// С учётом места под последний '\0'
@@ -237,7 +237,7 @@ unsigned loadtoken(Array *const t, FILE *const f,
 	unsigned char *tmp = expogrow(NULL, CHUNKLEN, chunkcnt);
 	chunkcnt += 1;
 
-	while(scanf(fmt, tmp + loaded, &l) == 1)
+	while(fscanf(f, fmt, tmp + loaded, &l) == 1)
 	{
 		loaded += l;
 		if(loaded + CHUNKLEN >= chunkcnt * CHUNKLEN)
