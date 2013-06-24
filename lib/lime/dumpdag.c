@@ -194,7 +194,6 @@ void dumpdag(
 // 	assert(U);
 
 	Array nodes = makeptrmap();
-
 	forlist((List *)dag, mapone, &nodes, 0);
 
 	DumpCurrent dc =

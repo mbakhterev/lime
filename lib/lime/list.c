@@ -176,13 +176,35 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key)
 
 typedef struct {
 	List *list;
+	const Array *nodemap;
+	const Node *const *nodes;
+	const unsigned bound;
 } FState;
 
-static int forkitem(List *const k, void *const ptr) {
+static void assertmap(
+	const Array *const M, const Node *const N[], const unsigned bnd)
+{
+	if(M)
+	{
+		assert(N);
+	}
+	else
+	{
+		assert(N == NULL && bnd == 0);
+	}
+}
+
+static int forkitem(List *const k, void *const ptr)
+{
+	assert(k);
+
 	FState *const fs = ptr;
+	assert(fs);
+
 	List *l = NULL;
 
-	switch(k->ref.code) {
+	switch(k->ref.code)
+	{
 	case NUMBER:
 	case ATOM:
 	case TYPE:
@@ -190,14 +212,46 @@ static int forkitem(List *const k, void *const ptr) {
 		break;
 
 	case NODE:
-		assert(k->ref.u.node);
-		l = newlist(refnode(k->ref.u.node));
-		break;
+	{
+		const Array *const M = fs->nodemap;
+		const Node *const *const N = fs->nodes;
+		const unsigned bnd = fs->bound;
+
+		assertmap(M, N, bnd);
+
+		const Node *const n = k->ref.u.node;
+//		assert(k->ref.u.node);
+		assert(n);
 	
-	case LIST:
-		assert(k->ref.u.list);
-		l = newlist(reflist(forklist(k->ref.u.list)));
+		if(M)
+		{
+			const unsigned i = ptrreverse(M, n);
+			assert(i < bnd);
+			l = newlist(refnode((Node *)(N[i])));
+		}
+		else
+		{
+// 			l = newlist(refnode(k->ref.u.node));
+			l = newlist(refnode((Node *)n));
+		}
 		break;
+	}
+
+	case LIST:
+	{
+		// FIXME: кажется, тут не должно быть assert, потому что пустые
+		// подсписки существуют. Надо обязательно покрыть тестами.
+		// assert(k->ref.u.list);
+
+		// l = newlist(reflist(forklist(k->ref.u.list)));
+
+		const Array *const M = fs->nodemap;
+		const Node *const *const N = fs->nodes;
+		const unsigned bnd = fs->bound;
+
+		l = newlist(reflist(transforklist(k->ref.u.list, M, N, bnd)));
+		break;
+	}
 	
 	default:
 		assert(0);
@@ -208,8 +262,25 @@ static int forkitem(List *const k, void *const ptr) {
 	return 0;
 }
 
-List *forklist(const List *const k) {
-	FState fs = { .list = NULL };
+List *forklist(const List *const k)
+{
+	return transforklist(k, NULL, NULL, 0);
+}
+
+List *transforklist(
+	const List *const k, const Array *const M,
+	const Node *const N[], const unsigned bnd)
+{
+	assertmap(M, N, bnd);
+
+	FState fs =
+	{
+		.list = NULL,
+		.nodes = N,
+		.bound = bnd,
+		.nodemap = M
+	};
+
 	forlist((List *)k, forkitem, &fs, 0);
 	return fs.list;
 }

@@ -9,7 +9,8 @@ lmtstsrc = \
 	tst-heapsort.c	\
 	tst-list.c	\
 	tst-loaddag.c	\
-	tst-gcnodes.c
+	tst-gcnodes.c	\
+	tst-forkdag.c
 
 tstobj = $(call c2o,$(lmtstbits),$(lmtstsrc))
 
@@ -29,7 +30,8 @@ lmtst: \
 	$(T)/tst-atomtab.sh	\
 	$(T)/tst-list		\
 	$(T)/tst-loaddag	\
-	$(T)/tst-gcnodes
+	$(T)/tst-gcnodes	\
+	$(T)/tst-forkdag
 
 $(T)/tst-rune: $(lmtstbits)/tst-rune.o $(lmlib)
 $(T)/tst-array: $(lmtstbits)/tst-array.o $(lmlib)
@@ -43,6 +45,7 @@ $(T)/tst-atomtab.sh: $(lmtstnode)/tst-atomtab.sh
 $(T)/tst-list: $(lmtstbits)/tst-list.o $(lmlib)
 $(T)/tst-loaddag: $(lmtstbits)/tst-loaddag.o $(lmlib)
 $(T)/tst-gcnodes: $(lmtstbits)/tst-gcnodes.o $(lmlib)
+$(T)/tst-forkdag: $(lmtstbits)/tst-forkdag.o $(lmlib)
 
 $(call o2d,$(tstobj)): cflags += -I $(lmrootnode)/lib
 include $(call o2d,$(tstobj))

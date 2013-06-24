@@ -79,7 +79,8 @@ typedef struct
 
 static unsigned inmap(const Array *const map, const unsigned i)
 {
-	return map && uireverse(map, i) != -1;
+// 	return map && uireverse(map, i) != -1;
+	return uireverse(map, i) != -1;
 }
 
 static int rootone(List *const l, void *const state)
@@ -217,4 +218,56 @@ void freedag(List *const dag, const Array *const dagmap)
 {
 	forlist(dag, freeone, (void *)dagmap, 0);
 	freelist(dag);
+}
+
+// FIXME: может быть, имеет смысл вынести mapone и inmap в extern-функции
+// каких-нибудь dag-утилит. Возможно, они часто будут всплывать
+
+static int mapone(List *const l, void *const ptr)
+{
+	assert(l && l->ref.code == NODE);
+	assert(ptr);
+	Array *const nodes = ptr;
+
+	assert(nodes->count == ptrmap(nodes, l->ref.u.node));
+
+	return 0;
+}
+
+typedef struct
+{
+	const Array *nodemap;
+	const Node *nodes;
+	unsigned bound;
+} FState;
+
+List *forkdag(const List *const dag, const Array *const dm)
+{
+	assert(dag);
+
+	Array M = makeptrmap();
+	forlist((List *)dag, mapone, &M, 0);
+
+	const Node *N[M.count];
+	// Исходные узлы
+	const Node *const *const nsrc = M.data;
+
+	for(unsigned i = 0; i < M.count; i += 1)
+	{
+		const Node *const n = nsrc[i];
+
+		N[i] = newnode(
+			n->verb,
+			uireverse(dm, n->verb) != -1 ?
+				  transforklist(n->u.attributes, &M, N, i)
+				: forkdag(n->u.attributes, dm));
+	}
+
+	List *l = NULL;
+	for(unsigned i = 0; i < M.count; i += 1)
+	{
+		l = append(l, RL(refnode((Node *)N[i])));
+	}
+
+	return l;
 }

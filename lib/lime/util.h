@@ -8,6 +8,7 @@
 
 // Координаты при чтении, для формирования сообщения об ошибке. Устанавливаются
 // извне
+
 extern unsigned item;
 extern unsigned field;
 extern const char * unitname;
@@ -45,6 +46,5 @@ extern int skipspaces(FILE *const);
 extern void errexpect(const int have, const char *const expecting[]);
 
 extern FILE *newmemstream(char **const ptr, size_t *const size);
-
 
 #endif
