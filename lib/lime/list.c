@@ -47,7 +47,7 @@ List *tipoff(List **const lptr) {
 	return n;
 }
 
-static Ref refnat(const unsigned code, const unsigned n) {
+Ref refnat(const unsigned code, const unsigned n) {
 	switch(code) {
 	case NUMBER:
 	case ATOM:
@@ -208,7 +208,8 @@ static int forkitem(List *const k, void *const ptr)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
-		l = newlist(refnat(k->ref.code, k->ref.u.number));
+//		l = newlist(refnat(k->ref.code, k->ref.u.number));
+		l = newlist(k->ref);
 		break;
 
 	case NODE:
@@ -220,8 +221,7 @@ static int forkitem(List *const k, void *const ptr)
 		assertmap(M, N, bnd);
 
 		const Node *const n = k->ref.u.node;
-//		assert(k->ref.u.node);
-		assert(n);
+ 		assert(n);
 	
 		if(M)
 		{
@@ -234,7 +234,8 @@ static int forkitem(List *const k, void *const ptr)
 		else
 		{
 // 			l = newlist(refnode(k->ref.u.node));
-			l = newlist(refnode((Node *)n));
+//			l = newlist(refnode((Node *)n));
+			l = newlist(k->ref);
 		}
 		break;
 	}

@@ -117,11 +117,11 @@ typedef struct {
 
 // Конструкторы для Ref
 
+extern Ref refnat(const unsigned code, const unsigned);
+
 extern Ref refnum(const unsigned);
 extern Ref refatom(const unsigned);
 extern Ref refptr(void *const);
-
-// extern Ref refnum(const unsigned code, const unsigned);
 
 extern Ref refenv(Array *const);
 extern Ref reflist(List *const);
