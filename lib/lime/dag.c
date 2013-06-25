@@ -258,7 +258,7 @@ List *forkdag(const List *const dag, const Array *const dm)
 
 		N[i] = newnode(
 			n->verb,
-			uireverse(dm, n->verb) != -1 ?
+			uireverse(dm, n->verb) == -1 ?
 				  transforklist(n->u.attributes, &M, N, i)
 				: forkdag(n->u.attributes, dm));
 	}
