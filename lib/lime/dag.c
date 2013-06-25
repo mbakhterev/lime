@@ -248,7 +248,10 @@ List *forkdag(const List *const dag, const Array *const dm)
 	Array M = makeptrmap();
 	forlist((List *)dag, mapone, &M, 0);
 
-	const Node *N[M.count];
+// 	const Node *N[M.count];
+	Ref N[M.count + 1];
+	N[M.count] = (Ref) { .code = FREE, .u.node = NULL };
+
 	// Исходные узлы
 	const Node *const *const nsrc = M.data;
 
@@ -256,18 +259,21 @@ List *forkdag(const List *const dag, const Array *const dm)
 	{
 		const Node *const n = nsrc[i];
 
-		N[i] = newnode(
+		N[i].code = NODE;
+		N[i].u.node = newnode(
 			n->verb,
 			uireverse(dm, n->verb) == -1 ?
 				  transforklist(n->u.attributes, &M, N, i)
 				: forkdag(n->u.attributes, dm));
 	}
 
-	List *l = NULL;
-	for(unsigned i = 0; i < M.count; i += 1)
-	{
-		l = append(l, RL(refnode((Node *)N[i])));
-	}
+// 	List *l = NULL;
+// 	for(unsigned i = 0; i < M.count; i += 1)
+// 	{
+// 		l = append(l, RL(refnode((Node *)N[i])));
+// 	}
+// 
+// 	return l;
 
-	return l;
+	return readrefs(N);
 }

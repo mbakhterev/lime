@@ -177,12 +177,12 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key)
 typedef struct {
 	List *list;
 	const Array *nodemap;
-	const Node *const *nodes;
+	const Ref *nodes;
 	const unsigned bound;
 } FState;
 
 static void assertmap(
-	const Array *const M, const Node *const N[], const unsigned bnd)
+	const Array *const M, const Ref N[], const unsigned bnd)
 {
 	if(M)
 	{
@@ -214,7 +214,7 @@ static int forkitem(List *const k, void *const ptr)
 	case NODE:
 	{
 		const Array *const M = fs->nodemap;
-		const Node *const *const N = fs->nodes;
+		const Ref *const N = fs->nodes;
 		const unsigned bnd = fs->bound;
 
 		assertmap(M, N, bnd);
@@ -227,7 +227,9 @@ static int forkitem(List *const k, void *const ptr)
 		{
 			const unsigned i = ptrreverse(M, n);
 			assert(i < bnd);
-			l = newlist(refnode((Node *)(N[i])));
+			assert(N[i].code == NODE && N[i].u.node);
+//			l = newlist(refnode((Node *)(N[i])));
+			l = newlist(N[i]);
 		}
 		else
 		{
@@ -246,7 +248,8 @@ static int forkitem(List *const k, void *const ptr)
 		// l = newlist(reflist(forklist(k->ref.u.list)));
 
 		const Array *const M = fs->nodemap;
-		const Node *const *const N = fs->nodes;
+//		const Node *const *const N = fs->nodes;
+		const Ref *const N = fs->nodes;
 		const unsigned bnd = fs->bound;
 
 		l = newlist(reflist(transforklist(k->ref.u.list, M, N, bnd)));
@@ -269,7 +272,7 @@ List *forklist(const List *const k)
 
 List *transforklist(
 	const List *const k, const Array *const M,
-	const Node *const N[], const unsigned bnd)
+	const Ref N[], const unsigned bnd)
 {
 	assertmap(M, N, bnd);
 

@@ -173,14 +173,14 @@ extern List *tip(const List *const);
 
 // Копирование списка с заменой ссылок на узлы (NODE). Если nodemap - это NULL,
 // то должно быть: nodes == NULL && bound == NULL. И в этом случае получается
-// реализация forklist. nodemap и nodes задают отображение ссылок в исходном
-// списке на новые узлы таким образом: m -> N[ptrreverse(nodemap, m)]. При этом
-// должно выполняться: ptrreverse(nodemap, m) < bound. Условие нужно для
-// контроля корректности в процедуре forkdag.
+// реализация forklist. nodemap (M) и nodes (N) задают отображение ссылок в
+// исходном списке на новые узлы таким образом: m -> N[ptrreverse(M, m)]. При
+// этом должно выполняться: ptrreverse(M, m) < bound. Условие нужно для контроля
+// корректности в процедуре forkdag.
 
 extern List *transforklist(
 	const List *const, const Array *const nodemap,
-	const Node *const nodes[], const unsigned bound);
+	const Ref nodes[], const unsigned bound);
 
 extern List *forklist(const List *const);
 extern void freelist(List *const);
