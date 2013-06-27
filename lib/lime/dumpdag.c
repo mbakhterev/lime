@@ -149,7 +149,7 @@ static void dumpattrlist(
 	assert(')' == fputc(')', st.f));
 }
 
-static void onstddump(
+static void dumpattr(
 	const DumpContext *const ctx, const DumpCurrent *const dc,
 	List *const attr)
 {
@@ -166,8 +166,18 @@ static void onstddump(
 	dumpattrlist(attr, U, f, dc->nodes);
 }
 
-// void dumpdag(
-// 	const DumpContext *const ctx, List *const dag, const unsigned tabs)
+static void dumpsubdag(
+	const DumpContext *const ctx, const DumpCurrent *const dc,
+	List *const dag)
+{
+	const Array *const U = ctx->universe;
+	FILE *const f = ctx->file;
+
+	assert(U);
+	assert(f);
+
+	dumpdag(f, dc->tabs + 1, U, dag, ctx->dagmap);
+}
 
 void dumpdag(
 	FILE *const f, const unsigned tabs, const Array *const U, 
@@ -184,15 +194,6 @@ void dumpdag(
 	};
 
 	DBG(DBGDAG, "f: %p", (void *)ctx.file);
-
-//	assert(ctx);
-
-// 	FILE *const f = ctx->file;
-// 	assert(f);
-
-// 	const Array *const U = ctx->universe;
-// 	assert(U);
-
 	Array nodes = makeptrmap();
 	forlist((List *)dag, mapone, &nodes, 0);
 
@@ -215,13 +216,8 @@ void dumpdag(
 			atombytes(atomat(U, n->verb)),
 			i));
 
-// 		const unsigned key = uireverse(&ctx->keymap, n->verb);
-// 
-// 		(key == -1 ?
-// 			onstddump : ctx->ondump[key])
-// 				(ctx, &dc, n->u.attributes);
-
-		onstddump(&ctx, &dc, n->u.attributes);
+		(uireverse(dagmap, n->verb) == -1 ?
+			dumpattr : dumpsubdag)(&ctx, &dc, n->u.attributes);
 
 		if(i + 1 < nodes.count)
 		{

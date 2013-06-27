@@ -123,7 +123,7 @@ static LoadCurrent list(
 
 	DBG(DBGLST, "%s", "pre skipping");
 
-	// Либо список пустой
+	// Либо список пустой...
 
 	const int c = skipspaces(f);
 	switch(c)
@@ -135,7 +135,7 @@ static LoadCurrent list(
 
 	DBG(DBGLST, "c: %d", c);
 
-	// Либо список содержит core-структуру (да-да, немного пафосное
+	// ... либо список содержит core-структуру (да-да, немного пафосное
 	// название)
 
 	if(isfirstcore(c))
@@ -251,9 +251,6 @@ static LoadCurrent core(
 	{
 		assert(ungetc(c, f) == c);
 
-//		List *const lrefs
-//			= append(refs, RL(refnum(NUMBER, loadnum(f))));
-
 		List *const lrefs = append(refs, RL(refnum(loadnum(f))));
 
 		DBG(DBGCORE, "-> %u -> CE", lrefs->ref.u.number);
@@ -266,7 +263,6 @@ static LoadCurrent core(
 
 		const List l =
 		{
-//			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
 			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
 			.next = (List *)&l
 		};
@@ -300,10 +296,11 @@ static LoadCurrent core(
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
-static LoadCurrent onstdnode(
+static LoadCurrent loadattr(
 	const LoadContext *const ctx, List *const env, List *const nodes)
 {
-	FILE *f = ctx->file;
+	FILE *const f = ctx->file;
+	assert(f);
 
 	int c;
 	if((c = skipspaces(f)) != '(')
@@ -313,6 +310,22 @@ static LoadCurrent onstdnode(
 
 	return list(ctx, env, nodes);
 }
+
+static LoadCurrent loadsubdag(
+	const LoadContext *const ctx, List *const env, List *const nodes)
+{
+	Array *const U = ctx->universe;
+	FILE *const f = ctx->file;
+	
+	assert(U);
+	assert(f);
+
+	// Загрузка под-dag-а не влияет на список узлов dag-а текущего. А список
+	// узлов под-dag-а идёт в LoadCurrent.refs, потому что именно именно
+	// этим полем node (см. ниже NEWNODE) замыкает список атрибутов нового
+	// узла
+
+	return LC(nodes, loaddag(f, U, ctx->dagmap)); }
 
 static LoadCurrent node(
 	const LoadContext *const ctx, List *const env, List *const nodes)
@@ -340,16 +353,6 @@ static LoadCurrent node(
 
 	const unsigned verb = loadtoken(U, f, 0, "[0-9A-Za-z]");
 
-// 	const unsigned key = uireverse(&ctx->keymap, verb);
-// 
-// 	DBG(DBGNODE, "verb: %u; key: %u", verb, key);
-// 
-// 	if(ctx->keyonly && key == -1)
-// 	{
-// 		ERR("non key atom in keyonly mode: %s",
-// 			atombytes(atomat(U, verb)));
-// 	}
-
 	GDI ref = { .array = NULL, .position = -1 };
 
 	// Надо получить следующий символ и, так получается, в любом случае
@@ -365,7 +368,6 @@ static LoadCurrent node(
 	{
 		const List lid =
 		{
-//			.ref = refnum(ATOM, loadtoken(U, f, 0, "[0-9A-Za-z]")),
 			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
 			.next = (List *)&lid
 		};
@@ -393,13 +395,12 @@ static LoadCurrent node(
 		}
 	}
 
-// 	// Загрузка атрибутов узла, которые могут быть в специальном формате
-// 	// (для ключевых узлов)
-// 
-// 	const LoadCurrent lc
-// 		= (key == -1 ? onstdnode : ctx->onload[key])(ctx, env, nodes);
+	// Загрузка атрибутов узла. Которые могут составлять либо список
+	// атрибутов в текущем dag-е, либо под-dag
 
-	const LoadCurrent lc = onstdnode(ctx, env, nodes);
+	const LoadCurrent lc
+		= (uireverse(ctx->dagmap, verb) == -1 ?
+			loadattr : loadsubdag)(ctx, env, nodes);
 
 	if(DBGFLAGS & DBGNODE)
 	{
@@ -424,8 +425,6 @@ static LoadCurrent node(
 	return LC(append(lc.nodes, RL(refnode(l->ref.u.node))), l);
 }
 
-// List *loaddag(
-// 	const LoadContext *const ctx, List *const env, List *const nodes)
 List *loaddag(
 	FILE *const f, Array *const U, const Array *const dagmap)
 {

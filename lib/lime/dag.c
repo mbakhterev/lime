@@ -1,7 +1,12 @@
 #include "construct.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <assert.h>
+
+#define DBGGC	1
+
+#define DBGFLAGS (DBGGC)
 
 static Node *freenodes = NULL;
 
@@ -132,7 +137,7 @@ static int expandone(List *const l, void *const state)
 static int rebuildone(List *const l, void *const state)
 {
 	// Проверяем и отцепляем звено от списка. Оно будет либо добавлено в
-	// список новый, либо удалено
+	// новый список, либо удалено
 
 	assert(l && l->ref.code == NODE);
 	l->next = l;
@@ -148,6 +153,8 @@ static int rebuildone(List *const l, void *const state)
 		st->L = append(st->L, l);
 		if(inmap(st->dagmap, n->verb))
 		{
+			DBG(DBGGC, "gc for node: %u", n->verb);
+
 			gcnodes(&n->u.attributes, st->dagmap, st->nonroots);
 		}
 	}
@@ -259,12 +266,14 @@ List *forkdag(const List *const dag, const Array *const dm)
 	{
 		const Node *const n = nsrc[i];
 
-		N[i].code = NODE;
-		N[i].u.node = newnode(
+// 		N[i].code = NODE;
+// 		N[i].u.node = newnode(
+
+		N[i] = refnode(newnode(		
 			n->verb,
 			uireverse(dm, n->verb) == -1 ?
 				  transforklist(n->u.attributes, &M, N, i)
-				: forkdag(n->u.attributes, dm));
+				: forkdag(n->u.attributes, dm)));
 	}
 
 // 	List *l = NULL;
