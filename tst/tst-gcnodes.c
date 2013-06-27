@@ -10,7 +10,7 @@ const char *unitname = "stdin";
 int main(int argc, char *argv[])
 {
 	Array U = makeatomtab();
-	const Array DM = keymap(&U, 0, ES("Z"));
+	const Array DM = keymap(&U, 0, ES("Z", "ZA", "ZB"));
 
 	List *l = loaddag(stdin, &U, &DM);
 

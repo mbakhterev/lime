@@ -150,6 +150,11 @@ static int rebuildone(List *const l, void *const state)
 
 	if(ptrreverse(&st->marks, n) != -1)
 	{
+		DBG(DBGGC,
+			"keeping: %p:rmap(%u)=%u; map: %p",
+			(void *)n, n->verb, uireverse(st->dagmap, n->verb),
+			(void *)st->dagmap);
+
 		st->L = append(st->L, l);
 		if(inmap(st->dagmap, n->verb))
 		{
@@ -173,6 +178,7 @@ List *gcnodes(
 	GCState st =
 	{
 		.nonroots = nonroots,
+		.dagmap = dagmap,
 		.marks = makeptrmap(),
 		.L = NULL
 	};
@@ -186,9 +192,15 @@ List *gcnodes(
 		List *const k = tipoff(&st.L);
 
 		// Список уже отфильтрован в rootone, поэтому знаем, что k -
-		// это ссылка на узел
+		// это ссылка на узел. Расширять волну на под-графы не следует,
+		// потому что под-графы изолированы по ссылкам
 
-		forlist(k->ref.u.node->u.attributes, expandone, &st, 0);
+		const Node *const n = k->ref.u.node;
+
+		if(!inmap(dagmap, n->verb))
+		{
+			forlist(n->u.attributes, expandone, &st, 0);
+		}
 
 		freelist(k);
 	}
@@ -255,7 +267,6 @@ List *forkdag(const List *const dag, const Array *const dm)
 	Array M = makeptrmap();
 	forlist((List *)dag, mapone, &M, 0);
 
-// 	const Node *N[M.count];
 	Ref N[M.count + 1];
 	N[M.count] = (Ref) { .code = FREE, .u.node = NULL };
 
@@ -266,23 +277,12 @@ List *forkdag(const List *const dag, const Array *const dm)
 	{
 		const Node *const n = nsrc[i];
 
-// 		N[i].code = NODE;
-// 		N[i].u.node = newnode(
-
 		N[i] = refnode(newnode(		
 			n->verb,
 			uireverse(dm, n->verb) == -1 ?
 				  transforklist(n->u.attributes, &M, N, i)
 				: forkdag(n->u.attributes, dm)));
 	}
-
-// 	List *l = NULL;
-// 	for(unsigned i = 0; i < M.count; i += 1)
-// 	{
-// 		l = append(l, RL(refnode((Node *)N[i])));
-// 	}
-// 
-// 	return l;
 
 	return readrefs(N);
 }
