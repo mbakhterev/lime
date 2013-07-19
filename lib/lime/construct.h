@@ -264,16 +264,32 @@ extern Array keymap(Array *const universe,
 // попадает в (dagmap * divedag). Если аргумент опущен, значит он
 // подразумевается равным универсуму.
 
+// Например, зайти во все под-dag-и: walkdag(dag, map, map, walkone);
+
+typedef struct
+{
+	Array dagverbs;
+	Array dive;
+} DagMap;
+
+extern DagMap dagmap(
+	const unsigned hint,
+	const char *const dagverbs[], const char *const dive[]);
+
+extern void freedagmap(DagMap *const);
+
+extern List *forkdag(const List *const dag, const Array *const dagmap);
 extern void freedag(List *const dag, const Array *const dagmap);
 
 extern List *gcnodes(
 	List **const dag,
 	const Array *const dagmap, const Array *const nonroots);
 
-// extern List *evalatoms(
-// 	List **const dag,
-// 	const Array *const dagmap, const Array *const divemap);
+typedef void (*WalkOne)(List *const, void *const);
 
-extern List *forkdag(const List *const dag, const Array *const dagmap);
+extern void walkdag(
+	const List *const dag,
+	const Array *const dagmap, const Array *const divedag,
+	const WalkOne, void *const);
 
-#endif
+#end

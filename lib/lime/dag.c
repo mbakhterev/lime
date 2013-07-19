@@ -6,7 +6,9 @@
 
 #define DBGGC	1
 
-#define DBGFLAGS (DBGGC)
+// #define DBGFLAGS (DBGGC)
+
+#define DBGFLAGS 0
 
 static Node *freenodes = NULL;
 
