@@ -253,20 +253,14 @@ extern void dumpdag(
 extern Array keymap(Array *const universe,
 	const unsigned hint, const char *const atoms[]);
 
-// Общее в интерфейсе функций, работающий с dag-ами. dagmap описывает узлы, в
-// атрибутах которых записаны dag-и (формы или линейные участки такие). divemap
-// описывает те узлы с подграфами в атрибутах, к которым следует рекурсивно
-// применить gcnodes. Условие того, что алгоритм не пойдёт вглубь dag-а: узел
-// записан в (dagmap / divedag). Алгоритм пойдёт вглубь dag-а, если узел
-// попадает в (dagmap * divedag). Если аргумент опущен, значит он
-// подразумевается равным универсуму.
-
-// Например, зайти во все под-dag-и: walkdag(dag, map, map, walkone);
 
 // "Карта" для прохода по графу. В DagMap M оба поля - uimap-ы. M.map содержит
 // verb-ы узлов, атрибутами которых являются подграфы. M.go - описывает узлы,
 // в подграфы которых следует проходить рекурсивно. Некоторые процедуры
 // игнорируют M.go
+
+// Например, зайти во все под-dag-и:
+// 	walkdag(dag, makedagmap(U, 0, verbs, verbs), walkone, ptr);
 
 typedef struct
 {
@@ -279,14 +273,6 @@ extern DagMap makedagmap(
 	const char *const dagverbs[], const char *const dive[]);
 
 extern void freedagmap(DagMap *const);
-
-// // Функция dagmap проверяет узел по карте и возвращает значение с двумя битами:
-// //	бит 0 - узел с подграфом;
-// //	бит 1 - подграф следует пройти.
-// 
-// enum { DMNODE = 0, DMDAG = 1, DMGO = 3 }
-// 
-// extern unsigned dagmap(const DagMap *const, const Node *const);
 
 extern unsigned isdag(const DagMap *const, const unsigned verb);
 extern unsigned isgodag(const DagMap *const, const unsigned verb);
@@ -308,7 +294,11 @@ typedef void (*WalkOne)(List *const, void *const);
 
 extern void walkdag(
 	const List *const dag,
-	const Array *const dagmap, const Array *const divedag,
-	const WalkOne, void *const);
+//	const Array *const dagmap, const Array *const divedag,
+	const DagMap *const, const WalkOne, void *const);
+
+extern List *evallists(
+	Array *const U,
+	List **const dag, const DagMap *const);
 
 #endif
