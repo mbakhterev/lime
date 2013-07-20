@@ -162,9 +162,10 @@ List *evallists(
 	walkdag(*dag, M, dive, rewriteone, (void *)&verbs);
 	freeuimap((Array *)&verbs);
 
-	const Array nonroots = keymap(U, 0, ES("L"));
-	gcnodes(dag, M, &nonroots);
-	freeuimap((Array *)&nonroots);
+// 	FIXME: Нужно прибрать L-узлы
+// 	const Array nonroots = keymap(U, 0, ES("L"));
+// 	gcnodes(dag, M, &nonroots);
+// 	freeuimap((Array *)&nonroots);
 
 	return *dag;
 }

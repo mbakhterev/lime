@@ -10,9 +10,12 @@ const char *unitname = "stdin";
 int main(int argc, char *argv[])
 {
 	Array U = makeatomtab();
-	const Array DM = keymap(&U, 0, ES("Z"));
 
-	List *const l = loaddag(stdin, &U, &DM);
+//	const Array DM = keymap(&U, 0, ES("Z"));
+
+	const DagMap DM = makedagmap(&U, 0, ES("Z"), NULL);
+
+	List *const l = loaddag(stdin, &U, &DM.map);
 	List *const k = forkdag(l, &DM);
 
 	printf("len(l): %u\n", listlen(l));
@@ -21,7 +24,7 @@ int main(int argc, char *argv[])
 	char *d = NULL;
 
 	FILE *f = newmemstream(&d, &sz);
-	dumpdag(f, 0, &U, l, &DM);
+	dumpdag(f, 0, &U, l, &DM.map);
 	fclose(f);
 
 	printf("dag(l):%s\n", d);
@@ -29,7 +32,7 @@ int main(int argc, char *argv[])
 	free((void *)d);
 
 	f = newmemstream(&d, &sz);
-	dumpdag(f, 0, &U, k, &DM);
+	dumpdag(f, 0, &U, k, &DM.map);
 	fclose(f);
 
 	printf("dag(k):%s\n", d);

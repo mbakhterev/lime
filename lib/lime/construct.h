@@ -288,18 +288,21 @@ extern void freedagmap(DagMap *const);
 // 
 // extern unsigned dagmap(const DagMap *const, const Node *const);
 
-extern unsigned isdag(const DagMap *const, const Node *const);
-extern unsigned isgodag(const DagMap *const, const Node *const);
+extern unsigned isdag(const DagMap *const, const unsigned verb);
+extern unsigned isgodag(const DagMap *const, const unsigned verb);
 
-extern List *forkdag(const List *const dag, const Array *const dagmap);
-extern void freedag(List *const dag, const Array *const dagmap);
+// fork и free dag не используют DagMap.go
+
+extern List *forkdag(const List *const dag, const DagMap *const);
+extern void freedag(List *const dag, const DagMap *const);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
 // uimap-отображением nonroots.
 
 extern List *gcnodes(
 	List **const dag,
-	const Array *const dagmap, const Array *const nonroots);
+// 	const Array *const dagmap,
+	const DagMap *const dagmap, const Array *const nonroots);
 
 typedef void (*WalkOne)(List *const, void *const);
 
