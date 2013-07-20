@@ -28,12 +28,15 @@ Array keymap(
 
 	Array map = makeuimap();
 
-	unsigned i;
-	for(i = 0; i < MAXNUM && A[i] != NULL; i += 1)
+	if(A)
 	{
-		uimap(&map, readpack(U, strpack(hint, A[i])));
+		unsigned i;
+		for(i = 0; i < MAXNUM && A[i] != NULL; i += 1)
+		{
+			uimap(&map, readpack(U, strpack(hint, A[i])));
+		}
+		assert(i < MAXNUM);
 	}
-	assert(i < MAXNUM);
 
 	return map;
 }

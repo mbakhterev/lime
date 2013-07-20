@@ -29,7 +29,6 @@ static Node *tipoffnode(Node **const lptr) {
 	}
 
 	return n;
-
 }
 
 Node *newnode(const unsigned verb, const List *const attributes)
@@ -74,6 +73,32 @@ void freenode(Node *const n)
 	freenodes->u.nextfree = n;
 	n->u.nextfree = freenodes;
 	freenodes = n;
+}
+
+DagMap makedagmap(
+	Array *const U, const unsigned hint,
+	const char *const dagverbs[], const char *const goverbs[])
+{
+	return (DagMap) {
+		.map = keymap(U, hint, dagverbs),
+		.go = keymap(U, hint, goverbs)
+	};
+}
+
+void freedagmap(DagMap *const M)
+{
+	freeuimap(&M->go);
+	freeuimap(&M->map);
+}
+
+unsigned isdag(const DagMap *const M, const Node *const n)
+{
+	return uireverse(&M->map, n->verb) != -1;
+}
+
+unsigned isgodag(const DagMap *const M, const Node *const n)
+{
+	return uireverse(&M->go, n->verb) != - 1;
 }
 
 typedef struct
