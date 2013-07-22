@@ -294,7 +294,7 @@ static LoadCurrent core(
 		
 	}
 
-	errexpect(c, ES("(", "'", "[0-9]+"));
+	errexpect(c, ES("(", ".", "'", "[0-9]+", "[A-Za-z][0-9A-Za-z]+"));
 
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
@@ -390,13 +390,15 @@ static LoadCurrent node(
 
 		// Резервирование места в области видимости
 		ref = readbinding(E, refnode(NULL), &lid);
-
-		// Удостоверяемся в =
-		if((c = skipspaces(f)) != '=')
-		{
-			errexpect(c, ES("="));
-		}
 	}
+
+// 	FIXME: ?
+// 	// Удостоверяемся в =
+// 	if((c = skipspaces(f)) != '=')
+// 	{
+// 		errexpect(c, ES("="));
+// 	}
+
 
 	// Загрузка атрибутов узла. Которые могут составлять либо список
 	// атрибутов в текущем dag-е, либо под-dag

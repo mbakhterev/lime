@@ -14,8 +14,10 @@ lmsrc = \
 	loaddag.c	\
 	dumpdag.c	\
 	dag.c		\
-	eval.c
+	walkdag.c	\
+	evallists.c
 
+#	eval.c
 #	ldcontext.c	\
 
 

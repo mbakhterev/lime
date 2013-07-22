@@ -211,7 +211,9 @@ void dumpdag(
 		const Node *const n = ptrdirect(dc.nodes, i);
 		assert(n);
 
-		assert(0 < fprintf(f, "\n%s\t.%s\tn%u\t= ",
+// 		FIXME: ?		
+// 		assert(0 < fprintf(f, "\n%s\t.%s\tn%u\t= ",
+		assert(0 < fprintf(f, "\n%s\t.%s\tn%u\t",
 			dc.tabstr,
 			atombytes(atomat(U, n->verb)),
 			i));
