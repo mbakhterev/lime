@@ -147,7 +147,6 @@ List * append(List *const k, List *const l)
 	l->next = h;
 
 	// конец нового списка - это l;
-
 	return l;
 }
 
@@ -174,11 +173,15 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key)
 
 // FState - fork/free state
 
-typedef struct {
+typedef struct 
+{
 	List *list;
-	const Array *nodemap;
-	const Ref *nodes;
+	const Array *const nodemap;
+	const Ref *const nodes;
 	const unsigned bound;
+	const unsigned from;
+	const unsigned to;
+	unsigned count;
 } FState;
 
 static void assertmap(
@@ -201,6 +204,16 @@ static int forkitem(List *const k, void *const ptr)
 	FState *const fs = ptr;
 	assert(fs);
 
+	// Текущая позиция в списке
+	const unsigned cur = fs->count;
+
+	if(cur < fs->from)
+	{
+		// Не добрались до начала отрезка списка, продолжаем
+		fs->count += 1;
+		return 0;
+	}
+
 	List *l = NULL;
 
 	switch(k->ref.code)
@@ -208,7 +221,6 @@ static int forkitem(List *const k, void *const ptr)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
-//		l = newlist(refnat(k->ref.code, k->ref.u.number));
 		l = newlist(k->ref);
 		break;
 
@@ -228,13 +240,10 @@ static int forkitem(List *const k, void *const ptr)
 			const unsigned i = ptrreverse(M, n);
 			assert(i < bnd);
 			assert(N[i].code == NODE && N[i].u.node);
-//			l = newlist(refnode((Node *)(N[i])));
 			l = newlist(N[i]);
 		}
 		else
 		{
-// 			l = newlist(refnode(k->ref.u.node));
-//			l = newlist(refnode((Node *)n));
 			l = newlist(k->ref);
 		}
 		break;
@@ -242,16 +251,12 @@ static int forkitem(List *const k, void *const ptr)
 
 	case LIST:
 	{
-		// FIXME: кажется, тут не должно быть assert, потому что пустые
-		// подсписки существуют. Надо обязательно покрыть тестами.
-		// assert(k->ref.u.list);
-
-		// l = newlist(reflist(forklist(k->ref.u.list)));
-
 		const Array *const M = fs->nodemap;
-//		const Node *const *const N = fs->nodes;
 		const Ref *const N = fs->nodes;
 		const unsigned bnd = fs->bound;
+
+		// from и to работают для списка верхнего уровня. Под-списки
+		// надо копировать целиком
 
 		l = newlist(reflist(transforklist(k->ref.u.list, M, N, bnd)));
 		break;
@@ -263,8 +268,23 @@ static int forkitem(List *const k, void *const ptr)
 
 	fs->list = append(fs->list, l);
 
-	return 0;
+	if(cur < fs->to)
+	{
+		// Если не добрались до последнего элемента, переходим к
+		// следующему
+
+		fs->count += 1;
+		return 0;
+	}
+
+	// Дошли до последнего
+	return 1;
 }
+
+static List *megafork(
+	const List *const k, const unsigned from, const unsigned to,
+	const Array *const M, const Ref N[], const unsigned bnd,
+	unsigned *const correct);
 
 List *forklist(const List *const k)
 {
@@ -272,17 +292,49 @@ List *forklist(const List *const k)
 }
 
 List *transforklist(
-	const List *const k, const Array *const M,
-	const Ref N[], const unsigned bnd)
+	const List *const k,
+	const Array *const M, const Ref N[], const unsigned bnd)
+{
+	unsigned correct = 0;
+	List *const l = megafork(k, 0, -1, M, N, bnd, &correct);
+	assert(correct);
+
+	return l;
+}
+
+List *megafork(
+	const List *const k, const unsigned from, const unsigned to,
+	const Array *const M, const Ref N[], const unsigned bnd,
+	unsigned *const correct)
 {
 	assertmap(M, N, bnd);
+
+	// Диапазон должен быть задан корректно
+
+	if(from <= to && (to < MAXLEN || to == -1))
+	{
+	}
+	else
+	{
+		*correct = 0;
+		return NULL;
+	}
+
+	// Если k == NULL, то надо вернуть NULL. Но при этом всё будет корректно
+	// только если (from; to) == (0; -1) -- только весь NULL-евой список
+	// можно взять.
+
+	*correct = 1;
 
 	FState fs =
 	{
 		.list = NULL,
+		.nodemap = M,
 		.nodes = N,
 		.bound = bnd,
-		.nodemap = M
+		.from = from,
+		.to = to,
+		.count = 0
 	};
 
 	forlist((List *)k, forkitem, &fs, 0);

@@ -127,9 +127,9 @@ List *evallists(
 	walkdag(*dag, M, rewriteone, (void *)&verbs);
 	freeuimap((Array *)&verbs);
 
-	const Array nonroots = keymap(U, 0, ES("L"));
-	gcnodes(dag, M, &nonroots);
-	freeuimap((Array *)&nonroots);
+// 	const Array nonroots = keymap(U, 0, ES("L"));
+// 	gcnodes(dag, M, &nonroots);
+// 	freeuimap((Array *)&nonroots);
 
 	return *dag;
 }
