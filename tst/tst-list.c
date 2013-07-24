@@ -41,6 +41,20 @@ static int checkfree(List *const l, void *const ptr) {
 	return 0;
 }
 
+static void cutnprint(List *const k, const unsigned from, const unsigned to)
+{
+	const char *const C[2] = { "FAIL", "OK" };
+	char *c = NULL;
+	unsigned correct = 0;
+	List *const l = forklistcut(k, from, to, &correct);
+
+	printf("len(list; (%u; %u)): %u\n(list; (%u; %u)): %s\n%s\n",
+		from, to, listlen(l), from, to, c = dumplist(l), C[correct]);
+	
+	free(c);
+	freelist(l);
+}
+
 int main(int argc, char * argv[]) {
 	List * l = NULL;
 	for(int i = 0; i < 20; i += 1) {
@@ -88,6 +102,12 @@ int main(int argc, char * argv[]) {
 
 	printf("len(NULL): %u; NULL: %s\n", listlen(NULL), c = dumplist(NULL));
 	free(c);
+
+	cutnprint(o, 10, 14);
+	cutnprint(o, 11, 15);
+	cutnprint(o, 8, -1);
+	cutnprint(o, 0, -1);
+	cutnprint(o, -1, -1);
 
 	return 0;
 }

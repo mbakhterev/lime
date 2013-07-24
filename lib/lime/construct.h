@@ -179,10 +179,16 @@ extern List *tip(const List *const);
 // корректности в процедуре forkdag.
 
 extern List *transforklist(
-	const List *const, const Array *const nodemap,
-	const Ref nodes[], const unsigned bound);
+	const List *const,
+	const Array *const nodemap, const Ref nodes[], const unsigned bound);
+
+extern List *forklistcut(
+	const List *const, const unsigned from, const unsigned to,
+	unsigned *const correct);
 
 extern List *forklist(const List *const);
+
+
 extern void freelist(List *const);
 extern char *dumplist(const List *const);
 

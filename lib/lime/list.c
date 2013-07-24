@@ -7,11 +7,12 @@
 
 #define DBGFE 1
 #define DBGPOOL 2
+#define DBGMF 4
 
 // #define DBGFLAGS (DBGFE)
 // #define DBGFLAGS (DBGPOOL)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGMF)
 
 // Будем держать пулл звеньев для списков и пулл узлов. Немного улучшит
 // эффективность. Списки будут кольцевые, поэтому храним только один указатель.
@@ -302,6 +303,13 @@ List *transforklist(
 	return l;
 }
 
+List *forklistcut(
+	const List *const k, const unsigned from, const unsigned to,
+	unsigned *const correct)
+{
+	return megafork(k, from, to, NULL, NULL, 0, correct);
+}
+
 List *megafork(
 	const List *const k, const unsigned from, const unsigned to,
 	const Array *const M, const Ref N[], const unsigned bnd,
@@ -309,7 +317,7 @@ List *megafork(
 {
 	assertmap(M, N, bnd);
 
-	// Диапазон должен быть задан корректно
+	// Диапазон должен быть задан корректно. -1 -- самый большой unsigned
 
 	if(from <= to && (to < MAXLEN || to == -1))
 	{
@@ -320,11 +328,30 @@ List *megafork(
 		return NULL;
 	}
 
+	DBG(DBGMF, "diapason OK: %u -> %u", from, to);
+
 	// Если k == NULL, то надо вернуть NULL. Но при этом всё будет корректно
 	// только если (from; to) == (0; -1) -- только весь NULL-евой список
 	// можно взять.
 
-	*correct = 1;
+	if(k == NULL)
+	{
+		*correct = (from == 0) && (to == -1);
+		return NULL;
+	}
+
+	// Здесь уже некоторая активность
+
+	DBG(DBGMF, "list is sound: %p", (void *)k);
+
+	// Может понадобится вырезать последний элемент из списка. Диапазон уже
+	// проверен и известно, что список не NULL
+
+	if(from == -1)
+	{
+		*correct = 1;
+		return newlist(k->ref);
+	}
 
 	FState fs =
 	{
@@ -337,8 +364,30 @@ List *megafork(
 		.count = 0
 	};
 
-	forlist((List *)k, forkitem, &fs, 0);
-	return fs.list;
+	const unsigned rv = forlist((List *)k, forkitem, &fs, 0);
+
+	// Успешными нужно считать два варианта:
+	// 1.	to == -1 и rv == 0 -- это означает, что пройден весь список.
+	// 2.	count == to и rv == -1 -- это означает, что прошли отрезок.
+
+	DBG(DBGMF, "from: %u; to: %u; count: %u; rv: %u",
+		fs.from, fs.to, fs.count, rv);
+
+	if((fs.to == -1 && rv == 0) || (fs.count == to && rv == 1))
+	{
+		*correct = 1;
+		return fs.list;
+	}
+	else
+	{
+		*correct = 0;
+		freelist(fs.list);
+		return NULL;
+	}
+
+//	return fs.list;
+
+	assert(0);
 }
 
 static int releaser(List *const l, void *const p) {
@@ -378,16 +427,6 @@ static int dumper(List *const l, void *const state)
 {
 	DumpState *const s = state;
 	FILE *const f = s->file;
-
-// 	unsigned isfinal;
-// 
-// 	if(s->first) { 	
-// 		isfinal = l->next == s->first;
-// 	}
-// 	else {
-// 		isfinal = 0;
-// 		s->first = l;
-// 	}
 
 	const unsigned isfinal = l->next == s->first;
 
