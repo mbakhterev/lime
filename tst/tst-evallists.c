@@ -14,12 +14,13 @@ int main(int argc, char *argv[])
 	const DagMap DM
 		= makedagmap(&U, 0, ES("Z", "ZA", "ZB"), ES("Z", "ZA"));
 	
-// 	const Array nonroots
-// 		= keymap(&U, 0, ES("L"));
+	const Array nonroots
+		= keymap(&U, 0, ES("L"));
 
 	List *l = loaddag(stdin, &U, &DM.map);
 
 	evallists(&U, &l, &DM);
+	gcnodes(&l, &DM, &nonroots);
 
 	size_t sz = 0;
 	char *d = NULL;

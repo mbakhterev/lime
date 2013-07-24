@@ -59,6 +59,7 @@ static int rewriteref(List *const l, void *const ptr)
 		switch(key)
 		{
 		case LNODE:
+		case LNTH:
 			freelist(l);
 			r = forklist(n->u.attributes);
 			break;
