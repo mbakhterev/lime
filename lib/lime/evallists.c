@@ -5,10 +5,14 @@
 
 #define DBGRONE	1
 
-#define DBGFLAGS (DBGRONE)
+// #define DBGFLAGS (DBGRONE)
+
+#define DBGFLAGS 0
 
 #define LNODE	0
 #define LNTH	1
+#define FIN	2
+#define TAIL	3
 
 // Expand State - структура для сбора информации о процессе переписывания
 // атрибутов
@@ -83,6 +87,17 @@ static List *rewritelistrefs(List *const l, const Array *const verbs)
 	return st.rewritten;
 }
 
+// static List *deconstructlist(List *const l, const Array *const verbs)
+// {
+// 	// Формат у начального l должен быть верным. Напоминание: -1 -- самое большое unsigned.
+// 
+// 	unsigned ok
+// 		= tip(l)->ref.code == NODE 
+// 			&& uireverse(verbs, tip(l)->ref.u.node->verb);
+// 
+// 	return (void *)(long)ok;
+// }
+
 static void rewriteone(List *const l, void *const ptr)
 {
 	assert(l && l->ref.code == NODE);
@@ -103,6 +118,10 @@ static void rewriteone(List *const l, void *const ptr)
 		break;
 	
 	case LNTH:
+//		n->u.attributes = deconstructlist(n->u.attributes, verbs);
+		break;
+	
+	case FIN:
 		break;
 	
 	default:
@@ -114,6 +133,8 @@ static const char *listverbs[] =
 {
 	[LNODE] = "L",
 	[LNTH] = "LNth",
+	[FIN] = "FIn",
+	[TAIL] = "T",
 	NULL
 };
 
