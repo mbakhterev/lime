@@ -306,6 +306,7 @@ extern void walkdag(
 
 extern List *evallists(
 	Array *const U,
-	List **const dag, const DagMap *const);
+	List **const dag, const DagMap *const,
+	const List *const arguments);
 
 #endif

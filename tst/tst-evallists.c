@@ -15,12 +15,12 @@ int main(int argc, char *argv[])
 		= makedagmap(&U, 0, ES("Z", "ZA", "ZB"), ES("Z", "ZA"));
 	
 	const Array nonroots
-		= keymap(&U, 0, ES("L"));
-// 		= keymap(&U, 0, ES("L", "LNth"));
+// 		= keymap(&U, 0, ES("L"));
+		= keymap(&U, 0, ES("L", "LNth", "FIn"));
 
 	List *l = loaddag(stdin, &U, &DM.map);
 
-	evallists(&U, &l, &DM);
+	evallists(&U, &l, &DM, RL(refnum(1), refnum(2), refnum(3)));
 	gcnodes(&l, &DM, &nonroots);
 
 	size_t sz = 0;

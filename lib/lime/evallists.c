@@ -277,22 +277,32 @@ static int indexone(List *const i, void *const ptr)
 
 static List *deconstructlist(List *const l, const Array *const verbs)
 {
-	// Формат у начального l должен быть верным. Напоминание: -1 -- самое
-	// большое unsigned
+// 	// Формат у начального l должен быть верным. Напоминание: -1 -- самое
+// 	// большое unsigned
+// 
+// 	const unsigned ok
+// 
+// 		// Список не должен быть пустым, а на первом месте должна быть
+// 		// ссылка на узел со списокм: (.L, .LNth, .FIn)
+// 
+// 		 = (l != NULL
+// 			&& tip(l)->ref.code == NODE 
+// 			&& uireverse(verbs, tip(l)->ref.u.node->verb) < TAIL)
+// 
+// 		// На второй позиции должна быть ссылка на список с индексами.
+// 		// Здесь проверяем, что там стоит подсписок
+// 
+// 		&& tip(l)->next->ref.code == LIST;
+
+	const unsigned len = 2;
+	Ref R[len + 1];
+	const unsigned t = writerefs(l, R, len + 1);
 
 	const unsigned ok
-
-		// Список не должен быть пустым, а на первом месте должна быть
-		// ссылка на узел со списокм: (.L, .LNth, .FIn)
-
-		 = (l != NULL
-			&& tip(l)->ref.code == NODE 
-			&& uireverse(verbs, tip(l)->ref.u.node->verb) < TAIL)
-
-		// На второй позиции должна быть ссылка на список с индексами.
-		// Здесь проверяем, что там стоит подсписок
-
-		&& tip(l)->next->ref.code == LIST;
+		 = (t == len + 1 && R[len].code == FREE)
+		&& (R[0].code == NODE
+			&& uireverse(verbs, R[0].u.node->verb) < TAIL)
+		&& (R[1].code == LIST);
 
 	if(!ok)
 	{
@@ -302,25 +312,44 @@ static List *deconstructlist(List *const l, const Array *const verbs)
 	// FIXME: список копируется для упрощения алгоритма выдирания элементов
 	// по индексу из списка, который после очередного шага надо освобождать
 
+// 	DCState st =
+// 	{
+// 		.verbs = verbs,
+// 		.L = forklist(tip(l)->ref.u.node->u.attributes)
+// 	};
+
 	DCState st =
 	{
 		.verbs = verbs,
-		.L = forklist(tip(l)->ref.u.node->u.attributes)
+		.L = forklist(R[0].u.node->u.attributes)
 	};
 
-	forlist(tip(l)->next->ref.u.list, indexone, &st, 0);
+// 	forlist(tip(l)->next->ref.u.list, indexone, &st, 0);
+
+	forlist(R[1].u.list, indexone, &st, 0);
 
 	return st.L;
 }
 
+// Argument state
+
+typedef struct
+{
+	const Array *const verbs;
+	List *const L;
+} AState;
+
 static void rewriteone(List *const l, void *const ptr)
 {
+	assert(ptr);
 	assert(l && l->ref.code == NODE);
+
+	const AState *const st = ptr;
 
 	// В этой функции уже известно, что l содержит ссылку на узел
 	Node *const n = l->ref.u.node;
 
-	const Array *const verbs = ptr;
+	const Array *const verbs = st->verbs;
 	const unsigned key = uireverse(verbs, n->verb);
 
 	DBG(DBGRONE, "%u", n->verb);
@@ -337,6 +366,12 @@ static void rewriteone(List *const l, void *const ptr)
 		break;
 	
 	case FIN:
+		if(n->u.attributes)
+		{
+			ERR("%s", ".FIn node argument list should be NULL");
+		}
+
+		n->u.attributes = st->L;
 		break;
 	
 	default:
@@ -357,11 +392,18 @@ List *evallists(
 	Array *const U,
 	List **const dag,
 // 	const Array *const M, const Array *const dive)
-	const DagMap *const M)
+	const DagMap *const M, const List *const arguments)
 {
 	const Array verbs = keymap(U, 0, listverbs);
 //	walkdag(*dag, M, dive, rewriteone, (void *)&verbs);
-	walkdag(*dag, M, rewriteone, (void *)&verbs);
+
+	const AState st =
+	{
+		.verbs = &verbs,
+		.L = (List *)arguments
+	};
+
+	walkdag(*dag, M, rewriteone, (void *)&st);
 	freeuimap((Array *)&verbs);
 
 // 	const Array nonroots = keymap(U, 0, ES("L"));
