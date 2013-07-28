@@ -6,17 +6,7 @@
 #include <stdio.h>
 #include <limits.h>
 
-// enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
-// 
-// #define mU ((unsigned)-1)
-
-// enum { mU = UINT_MAX, MAXHINT = 255, MAXLEN = mU >> 1, CHUNKLEN =
-// 32 };
-
-static const unsigned mU = (unsigned)-1;
-static const unsigned MAXHINT = 255;
-static const unsigned MAXLEN = mU >> 1;
-static const unsigned CHUNKLEN = 32;
+enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 
 // Имена для основных типов
 

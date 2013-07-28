@@ -11,8 +11,9 @@
 
 // #define DBGFLAGS (DBGFE)
 // #define DBGFLAGS (DBGPOOL)
+// #define DBGFLAGS (DBGMF)
 
-#define DBGFLAGS (DBGMF)
+#define DBGFLAGS 0
 
 // Будем держать пулл звеньев для списков и пулл узлов. Немного улучшит
 // эффективность. Списки будут кольцевые, поэтому храним только один указатель.

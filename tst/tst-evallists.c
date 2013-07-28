@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
 	
 	const Array nonroots
 		= keymap(&U, 0, ES("L"));
+// 		= keymap(&U, 0, ES("L", "LNth"));
 
 	List *l = loaddag(stdin, &U, &DM.map);
 
