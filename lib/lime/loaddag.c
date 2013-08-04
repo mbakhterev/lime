@@ -145,24 +145,36 @@ static LoadCurrent list(
 	{
 		assert(ungetc(c, f) == c);
 
-		Array E = makeenvironment();
+// 		Array E = makeenvironment();
+// 
+// 		List l = { .ref = refenv(&E), .next = &l };
+// 		List *lenv = append(&l, env); // lenv - local env
+// 
+// 		DBG(DBGLST,
+// 			"-> ENV(CORE). env: %p; lenv %p; E: %p",
+// 			(void *)env, (void *)lenv, (void *)&E);
+// 
+// 		const LoadCurrent lc = core(ctx, lenv, nodes, NULL);
+// 
+// 		assert(tipoff(&lenv) == &l && lenv == env);
+// 
+// 		DBG(DBGLST, "freeing E: %p", (void *)&E);
+// 
+// 		freeenvironment(&E);
+// 
+// 		DBG(DBGLST, "released E: %p", (void *)&E); 
 
-		List l = { .ref = refenv(&E), .next = &l };
-		List *lenv = append(&l, env); // lenv - local env
+		List *lenv = pushenvironment(env);
 
 		DBG(DBGLST,
 			"-> ENV(CORE). env: %p; lenv %p; E: %p",
-			(void *)env, (void *)lenv, (void *)&E);
+			(void *)env,
+			(void *)lenv,
+			(void *)lenv->ref.u.environment);
 
 		const LoadCurrent lc = core(ctx, lenv, nodes, NULL);
 
-		assert(tipoff(&lenv) == &l && lenv == env);
-
-		DBG(DBGLST, "freeing E: %p", (void *)&E);
-
-		freeenvironment(&E);
-
-		DBG(DBGLST, "released E: %p", (void *)&E); 
+		assert(popenvironment(lenv) == env);
 
 		return lc;
 	}
@@ -375,21 +387,33 @@ static LoadCurrent node(
 			.next = (List *)&lid
 		};
 
-		ref = lookbinding(env, &lid);
-		if(ref.array == NULL)
-		{
-			assert(ref.position == -1);
-		}
-		else
+// 		ref = lookbinding(env, &lid);
+// 		if(ref.array == NULL)
+// 		{
+// 			assert(ref.position == -1);
+// 		}
+// 		else
+// 		{
+// 			ERR("node label is in scope: %s",
+// 				atombytes(atomat(U, lid.ref.u.number)));
+// 		}
+// 
+// 		Array *const E = tip(env)->ref.u.environment;
+// 
+// 		// Резервирование места в области видимости
+// 
+// 		ref = readbinding(E, refnode(NULL), &lid);
+
+		// Пытаемся зарезервировать новую позицию в окружении. Если не
+		// получается - сообщение об ошибке
+
+		unsigned isfresh = 0;
+		ref = readbinding(env, &lid, refnode(NULL), &isfresh);
+		if(!isfresh)
 		{
 			ERR("node label is in scope: %s",
 				atombytes(atomat(U, lid.ref.u.number)));
 		}
-
-		Array *const E = tip(env)->ref.u.environment;
-
-		// Резервирование места в области видимости
-		ref = readbinding(E, refnode(NULL), &lid);
 	}
 
 // 	FIXME: ?

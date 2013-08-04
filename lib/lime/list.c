@@ -73,7 +73,9 @@ extern Ref refatom(const unsigned n)
 	return (Ref) { .code = ATOM, .u.number = n };
 }
 
-extern Ref refenv(Array *const e) {
+extern Ref refenv(Array *const e)
+{
+	assert(e && e->code == ENV);
 	return (Ref) { .code = ENV, .u.environment = e };
 }
 
@@ -94,6 +96,7 @@ static List *newlist(const Ref r)
 	case TYPE:
 	case NODE:
 	case LIST:
+	case ENV:
 		break;
 	
 	default:

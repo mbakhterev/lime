@@ -80,11 +80,11 @@ static int icmp(const void *const D, const unsigned i, const unsigned j) {
 	return kcmp(D, i, ((const Binding *)D)[j].key);
 }
 
-Array makeenvironment(void) {
+static Array makeenvironment(void) {
 	return makearray(ENV, sizeof(Binding), icmp, kcmp);
 }
 
-void freeenvironment(Array *const env)
+static void freeone(Array *const env)
 {
 	assert(env->code == ENV);
 
@@ -98,6 +98,29 @@ void freeenvironment(Array *const env)
 	}
 
 	freearray(env);
+}
+
+extern List *pushenvironment(List *const env)
+{
+	Array *const new = malloc(sizeof(Array));
+	assert(new);
+	*new = makeenvironment();	
+
+	return append(RL(refenv(new)), env);
+
+}
+
+extern List *popenvironment(List *const env)
+{
+	assert(env != NULL && env->ref.code == ENV);
+
+	List *e = env;
+	List *t = tipoff(&e);
+
+	freeone(t->ref.u.environment);
+	freelist(t);
+
+	return e;
 }
 
 typedef struct
@@ -116,8 +139,6 @@ static int looker(List *const env, void *const ptr)
 
 	if(k != -1)
 	{
-//		s->result = (const Binding *)env->ref.u.environment->data + k;
-
 		s->env = env->ref.u.environment;
 		s->pos = k;
 		return 1;
@@ -126,13 +147,17 @@ static int looker(List *const env, void *const ptr)
 	return 0;
 }
 
-GDI lookbinding(const List *const env, const List *const key) {
+GDI lookbinding(const List *const env, const List *const key)
+{
+	assert(env == NULL || env->ref.code == ENV);
+
 	LookingState s;
 	s.key = key;
 	s.env = NULL;
 	s.pos = -1;
 
-	if(forlist((List *)env, looker, &s, 0) != 0) {
+	if(forlist((List *)env, looker, &s, 0) != 0)
+	{
 		return (GDI) { .array = s.env, .position = s.pos };
 	}
 
@@ -141,18 +166,49 @@ GDI lookbinding(const List *const env, const List *const key) {
 	return (GDI) { .array = NULL, .position = -1 };
 }
 
-GDI readbinding(Array *const env, const Ref ref, const List *const key)
-{
-	assert(env->code == ENV);
+// GDI readbinding(Array *const env, const Ref ref, const List *const key)
+// {
+// 	assert(env->code == ENV);
+// 
+// 	const unsigned k = lookup(env, key); 
+// 	if(k != -1)
+// 	{
+// 		return (GDI) { .array = env, .position = k };
+// 	}
+// 
+// 	const Binding b = { .key = forklist(key), .ref = ref };
+// 	return (GDI) { .array = env, .position = readin(env, &b) };
+// }
 
-	const unsigned k = lookup(env, key); 
-	if(k != -1)
+GDI readbinding(
+	const List *const env,
+	const List *const key, const Ref ref,
+	unsigned *const isfresh)
+{
+	assert(env && env->ref.code == ENV);
+
+	GDI gdi = lookbinding(env, key);
+
+	if(gdi.position != -1)
 	{
-		return (GDI) { .array = env, .position = k };
+		assert(gdi.array);
+		*isfresh = 0;
+		return gdi;
 	}
 
+	assert(gdi.array == NULL);
+
+	Array *const E = tip(env)->ref.u.environment;
+
+	assert(E && E->code == ENV);
+
+	*isfresh = 1;
 	const Binding b = { .key = forklist(key), .ref = ref };
-	return (GDI) { .array = env, .position = readin(env, &b) };
+	return (GDI)
+	{
+		.array = E,
+		.position = readin(E, &b)
+	};
 }
 
 Ref gditoref(const GDI g)

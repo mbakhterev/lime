@@ -189,7 +189,6 @@ extern List *forklistcut(
 
 extern List *forklist(const List *const);
 
-
 extern void freelist(List *const);
 extern char *dumplist(const List *const);
 
@@ -204,9 +203,22 @@ extern unsigned listlen(const List *const);
 
 // Окружения
 
-extern Array makeenvironment(void);
-extern void freeenvironment(Array *const);
-extern GDI readbinding(Array *const, const Ref, const List *const key);
+// extern Array makeenvironment(void);
+// extern void freeenvironment(Array *const);
+// extern GDI readbinding(Array *const, const Ref, const List *const key);
+
+// Для создания нового стека окружений можно выполнить pushenv(NULL)
+
+extern List *pushenvironment(List *const);
+extern List *popenvironment(List *const);
+
+extern void freeenvironment(List *const);
+
+extern GDI readbinding(
+	const List *const,
+	const List *const key, const Ref,
+	unsigned *const isfresh);
+
 extern GDI lookbinding(const List *const, const List *const key);
 
 extern Ref gditoref(const GDI);
