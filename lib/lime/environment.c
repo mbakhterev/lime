@@ -341,7 +341,7 @@ Ref *keytoref(
 	return gditorefcell(allocate(tip(env)->ref.u.environment, key));
 }
 
-const Binding *topbindings(const List *const env, unsigned const *count)
+const Binding *topbindings(const List *const env, unsigned *const count)
 {
 	assert(env && env->ref.code == ENV);
 
@@ -349,5 +349,5 @@ const Binding *topbindings(const List *const env, unsigned const *count)
 	assert(E && E->code == ENV);
 
 	*count = E->count;
-	return (const Bindint *)E->data;
+	return (const Binding *)E->data;
 }
