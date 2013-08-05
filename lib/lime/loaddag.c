@@ -282,7 +282,10 @@ static LoadCurrent core(
 			.next = (List *)&l
 		};
 
-		const GDI ref = lookbinding(env, &l);
+// 		const GDI ref = lookbinding(env, &l);
+		
+		unsigned ontop;
+		const GDI ref = lookbinding(env, &l, &ontop);
 
 		if(ref.array == NULL)
 		{
@@ -387,33 +390,41 @@ static LoadCurrent node(
 			.next = (List *)&lid
 		};
 
-// 		ref = lookbinding(env, &lid);
-// 		if(ref.array == NULL)
-// 		{
-// 			assert(ref.position == -1);
-// 		}
-// 		else
-// 		{
-// 			ERR("node label is in scope: %s",
-// 				atombytes(atomat(U, lid.ref.u.number)));
-// 		}
-// 
+		unsigned ontop;
+		ref = lookbinding(env, &lid, &ontop);
+
+		if(ref.array == NULL)
+		{
+			assert(ref.position == -1);
+		}
+		else
+		{
+			ERR("node label is in scope: %s",
+				atombytes(atomat(U, lid.ref.u.number)));
+		}
+
 // 		Array *const E = tip(env)->ref.u.environment;
 // 
 // 		// Резервирование места в области видимости
 // 
 // 		ref = readbinding(E, refnode(NULL), &lid);
 
-		// Пытаемся зарезервировать новую позицию в окружении. Если не
-		// получается - сообщение об ошибке
+		// Резервирование места в области видимости. На вершине под
+		// таким именем ничего не должно быть
 
-		unsigned isfresh = 0;
-		ref = readbinding(env, &lid, refnode(NULL), &isfresh);
-		if(!isfresh)
-		{
-			ERR("node label is in scope: %s",
-				atombytes(atomat(U, lid.ref.u.number)));
-		}
+		ref = readbinding(env, &lid, refnode(NULL), &ontop);
+		assert(!ontop);
+
+// 		// Пытаемся зарезервировать новую позицию в окружении. Если не
+// 		// получается - сообщение об ошибке
+// 
+// 		unsigned isfresh = 0;
+// 		ref = readbinding(env, &lid, refnode(NULL), &isfresh);
+// 		if(!isfresh)
+// 		{
+// 			ERR("node label is in scope: %s",
+// 				atombytes(atomat(U, lid.ref.u.number)));
+// 		}
 	}
 
 // 	FIXME: ?

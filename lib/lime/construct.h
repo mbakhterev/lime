@@ -219,7 +219,10 @@ extern GDI readbinding(
 	const List *const key, const Ref,
 	unsigned *const isfresh);
 
-extern GDI lookbinding(const List *const, const List *const key);
+extern GDI lookbinding(
+	const List *const,
+	const List *const key,
+	unsigned *const ontop);
 
 extern Ref gditoref(const GDI);
 extern Ref *gditorefcell(const GDI);
