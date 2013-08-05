@@ -66,11 +66,11 @@ static int cmplists(const List *const k, const List *const l) {
 	return 1 - (ck == k && cl == l) - ((ck == k && cl != l) << 1);
 }
 
-typedef struct
-{
-	const List *key;
-	Ref ref;
-} Binding;
+// typedef struct
+// {
+// 	const List *key;
+// 	Ref ref;
+// } Binding;
 
 static int kcmp(const void *const D, const unsigned i, const void *const key) {
 	return cmplists(((const Binding *)D)[i].key, key);
@@ -125,10 +125,13 @@ extern List *popenvironment(List *const env)
 
 typedef struct
 {
-	const List *key;
+	const List *const key;
 	const Array *env;
 	unsigned pos;
+	unsigned depth;
 } LookingState;
+
+enum { NOTFOUND, HITDEPTH, FOUND };
 
 static int looker(List *const env, void *const ptr)
 {
@@ -142,36 +145,74 @@ static int looker(List *const env, void *const ptr)
 	{
 		s->env = env->ref.u.environment;
 		s->pos = k;
-		return 1;
+		return FOUND;
 	}
 
-	return 0;
+	return (s->depth -= 1) ? NOTFOUND : HITDEPTH;
 }
 
-GDI lookbinding(
-	const List *const env,
-	const List *const key,
-	unsigned *const ontop)
+typedef struct
 {
-	assert(ontop);
+	const Array *const array;
+	const unsigned position;
+} GDI;
+
+static GDI lookbinding(
+	const List *const env, const List *const key, const unsigned depth)
+//	unsigned *const ontop)
+{
+// 	assert(ontop);
 	assert(env && env->ref.code == ENV);
 
-	*ontop = 0;
+	assert(depth == 1 || depth == -1);
 
-	LookingState s;
-	s.key = key;
-	s.env = NULL;
-	s.pos = -1;
+// 	*ontop = 0;
 
-	if(forlist((List *)env, looker, &s, 0) != 0)
+	LookingState s =
 	{
-		// На вершине ли стека областей видимости нашлось значение
-		*ontop = (s.env == tip(env)->ref.u.environment);
+		.key = key,
+		.env = NULL,
+		.pos = -1,
+		.depth = depth
+	};
 
+	const int reason = forlist((List *)env, looker, &s, 0);
+// 	if(reason == FOUND)
+// 	{
+// // 		// На вершине ли стека областей видимости нашлось значение
+// // 		*ontop = (s.env == tip(env)->ref.u.environment);
+// 
+// 		// Режим параноика
+// 		assert(s.depth);
+// 
+// 		return (GDI) { .array = s.env, .position = s.pos };
+// 	}
+// 
+// 	assert(reason == NOTFOUND
+// 		&& s.env == NULL && s.pos == -1);
+// 
+// 	assert(reason == HITDEPTH &&
+// 		s.env == NULL && s.pos == -1 && s.depth == 0);
+// 
+// 	return (GDI) { .array = NULL, .position = -1 };
+
+	switch(reason)
+	{
+	case FOUND:
+		assert(s.depth);
 		return (GDI) { .array = s.env, .position = s.pos };
+	
+	case NOTFOUND:
+		assert(s.env == NULL && s.pos == -1);
+		break;
+	
+	case HITDEPTH:
+		assert(s.env == NULL && s.pos == -1 && s.depth == 0);
+		break;
+	
+	default:
+		assert(0);
 	}
-
-	assert(s.env == NULL && s.pos == -1);
 
 	return (GDI) { .array = NULL, .position = -1 };
 }
@@ -190,23 +231,36 @@ GDI lookbinding(
 // 	return (GDI) { .array = env, .position = readin(env, &b) };
 // }
 
-static GDI justreadin(
-	Array *const env,
-	const List *const key, const Ref ref,
-	unsigned *const ontop)
+// static GDI justreadin(
+// 	Array *const env,
+// 	const List *const key, const Ref ref,
+// 	unsigned *const ontop)
+
+// WARNING: allocate должна вызываться только после того, как lookbinding
+// сообщит, что ничего не найдено.
+
+static GDI allocate(
+	Array *const env, const List *const key)
 {
 	assert(env->code == ENV);
-	assert(ontop);
+//	assert(ontop);
 
-	const unsigned k = lookup(env, key);
-	if(k != -1)
+// 	const unsigned k = lookup(env, key);
+// 	if(k != -1)
+// 	{
+// 		*ontop = 1;
+// 		return (GDI) { .array = env, .position = k };
+// 	}
+
+//	*ontop = 0;
+//	const Binding b = { .key = forklist(key), .ref = ref };
+
+	const Binding b =
 	{
-		*ontop = 1;
-		return (GDI) { .array = env, .position = k };
-	}
+		.key = forklist(key),
+		.ref = { .code = FREE, .u.pointer = NULL }
+	};
 
-	*ontop = 0;
-	const Binding b = { .key = forklist(key), .ref = ref };
 	return (GDI) { .array = env, .position = readin(env, &b) };
 }
 
@@ -241,22 +295,22 @@ static GDI justreadin(
 // 	};
 // }
 
-GDI readbinding(
-	const List *const env,
-	const List *const key, const Ref ref,
-	unsigned *const ontop)
-{
-	assert(env && env->ref.code == ENV && env->ref.u.environment);
-	return justreadin(env->ref.u.environment, key, ref, ontop);
-}
+// GDI readbinding(
+// 	const List *const env,
+// 	const List *const key, const Ref ref,
+// 	unsigned *const ontop)
+// {
+// 	assert(env && env->ref.code == ENV && env->ref.u.environment);
+// 	return justreadin(env->ref.u.environment, key, ref, ontop);
+// }
 
-Ref gditoref(const GDI g)
-{
-	assert(g.array && g.array->code == ENV);
-	assert(g.position != -1);
-	const Binding *const B = g.array->data;
-	return B[g.position].ref;
-}
+// Ref gditoref(const GDI g)
+// {
+// 	assert(g.array && g.array->code == ENV);
+// 	assert(g.position != -1);
+// 	const Binding *const B = g.array->data;
+// 	return B[g.position].ref;
+// }
 
 // LOG: Вместе с тем, как конструируются узлы (cf. lib/lime/loaddag.c:node),
 // это важный момент вообще для процесса программирования (правда, не очень
@@ -264,10 +318,36 @@ Ref gditoref(const GDI g)
 // передать обратно некие данные, записав их в заранее подготовленную ячейку в
 // некоторой структуре данных. Позиция ячейки вычисляема по аргументам функции
 
-Ref *gditorefcell(const GDI g)
+static Ref *gditorefcell(const GDI g)
 {
 	assert(g.array && g.array->code == ENV);
-	assert(g.position != -1);
+	assert(g.position != -1 && g.position < g.array->count);
 	Binding *const B = g.array->data;
 	return &B[g.position].ref;
+}
+
+Ref *keytoref(
+	const List *const env, const List *const key, const unsigned depth)
+{
+	const GDI gdi = lookbinding(env, key, depth);
+
+	if(gdi.position != -1)
+	{
+//		assert(gdi.array && gdi.array->code == ENV);
+		return gditorefcell(gdi);
+	}
+
+	// После lookbinding уже известно, что в env находятся ENV
+	return gditorefcell(allocate(tip(env)->ref.u.environment, key));
+}
+
+const Binding *topbindings(const List *const env, unsigned const *count)
+{
+	assert(env && env->ref.code == ENV);
+
+	const Array *const E = tip(env)->ref.u.environment;
+	assert(E && E->code == ENV);
+
+	*count = E->count;
+	return (const Bindint *)E->data;
 }

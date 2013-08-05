@@ -284,18 +284,29 @@ static LoadCurrent core(
 
 // 		const GDI ref = lookbinding(env, &l);
 		
-		unsigned ontop;
-		const GDI ref = lookbinding(env, &l, &ontop);
+// 		unsigned ontop;
+// 		const GDI ref = lookbinding(env, &l, &ontop);
+// 
+// 		if(ref.array == NULL)
+// 		{
+// 			assert(ref.position == -1);
+// 
+// 			ERR("no label in the scope: %s",
+// 				atombytes(atomat(U, l.ref.u.number)));
+// 		}
+// 
+// 		const Ref *const r = gditorefcell(ref);
 
-		if(ref.array == NULL)
+		const Ref *const r = keytoref(env, &l, -1);
+
+		if(r->code == FREE)
 		{
-			assert(ref.position == -1);
+			assert(r->u.pointer == NULL);
 
 			ERR("no label in the scope: %s",
 				atombytes(atomat(U, l.ref.u.number)));
 		}
 
-		const Ref *const r = gditorefcell(ref);
 		assert(r->code == NODE);
 
 		if(r->u.node == NULL)
@@ -371,7 +382,9 @@ static LoadCurrent node(
 
 	const unsigned verb = loadtoken(U, f, 0, "[0-9A-Za-z]");
 
-	GDI ref = { .array = NULL, .position = -1 };
+// 	GDI ref = { .array = NULL, .position = -1 };
+
+	Ref *ref = NULL;
 
 	// Надо получить следующий символ и, так получается, в любом случае
 	// вернуть его обратно
@@ -390,12 +403,19 @@ static LoadCurrent node(
 			.next = (List *)&lid
 		};
 
-		unsigned ontop;
-		ref = lookbinding(env, &lid, &ontop);
+// 		unsigned ontop;
+// 		ref = lookbinding(env, &lid, &ontop);
 
-		if(ref.array == NULL)
+		ref = keytoref(env, &lid, -1);
+
+// 		if(ref.array == NULL)
+// 		{
+// 			assert(ref.position == -1);
+// 		}
+
+		if(ref->code == FREE)
 		{
-			assert(ref.position == -1);
+			assert(ref->u.pointer == NULL);
 		}
 		else
 		{
@@ -412,8 +432,8 @@ static LoadCurrent node(
 		// Резервирование места в области видимости. На вершине под
 		// таким именем ничего не должно быть
 
-		ref = readbinding(env, &lid, refnode(NULL), &ontop);
-		assert(!ontop);
+// 		ref = readbinding(env, &lid, refnode(NULL), &ontop);
+// 		assert(!ontop);
 
 // 		// Пытаемся зарезервировать новую позицию в окружении. Если не
 // 		// получается - сообщение об ошибке
@@ -457,9 +477,14 @@ static LoadCurrent node(
 	// Узел создан, и если под него зарезервирована метка в окружении, надо
 	// бы его туда добавить
 
-	if(ref.array)
+// 	if(ref.array)
+// 	{
+// 		gditorefcell(ref)->u.node = l->ref.u.node;
+// 	}
+
+	if(ref)
 	{
-		gditorefcell(ref)->u.node = l->ref.u.node;
+		*ref = refnode(l->ref.u.node);
 	}
 	
 	return LC(append(lc.nodes, RL(refnode(l->ref.u.node))), l);

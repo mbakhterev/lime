@@ -7,8 +7,9 @@
 #define DBGIDX	2
 
 // #define DBGFLAGS (DBGRONE)
+// #define DBGFLAGS (DBGIDX)
 
-#define DBGFLAGS (DBGIDX)
+#define DBGFLAGS 0
 
 #define LNODE	0U
 #define LNTH	1U

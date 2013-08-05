@@ -1,3 +1,5 @@
+#!/usr/bin/env /usr/bin/bash
+
 set -e
 
 inotifywait -rm --exclude '\.sw?|lto-llvm\.o|\.txt|\.git' -e modify ./ \

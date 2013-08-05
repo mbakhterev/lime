@@ -1,0 +1,3 @@
+#/usr/bin/env /usr/bin/bash
+
+git tag -sm "ЭЦП" 0.dev-sig-$USER-$(date +%Y.%m.%d)

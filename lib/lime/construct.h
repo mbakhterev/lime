@@ -29,11 +29,11 @@ struct ArrayTag {
 	int code;
 };
 
-typedef struct
-{
-	const Array *array;
-	unsigned position;
-} GDI; // Global Datum Index :)
+// typedef struct
+// {
+// 	const Array *array;
+// 	unsigned position;
+// } GDI; // Global Datum Index :)
 
 extern Array makearray(const int code, const unsigned itemlen,
 	const ItemCmp, const KeyCmp);
@@ -214,18 +214,29 @@ extern List *popenvironment(List *const);
 
 extern void freeenvironment(List *const);
 
-extern GDI readbinding(
-	const List *const,
-	const List *const key, const Ref,
-	unsigned *const isfresh);
+// extern GDI readbinding(
+// 	const List *const,
+// 	const List *const key, const Ref,
+// 	unsigned *const isfresh);
+// 
+// extern GDI lookbinding(
+// 	const List *const,
+// 	const List *const key,
+// 	unsigned *const ontop);
+// 
+// extern Ref gditoref(const GDI);
+// extern Ref *gditorefcell(const GDI);
 
-extern GDI lookbinding(
-	const List *const,
-	const List *const key,
-	unsigned *const ontop);
+typedef struct
+{
+	const List *key;
+	Ref ref;
+} Binding;
 
-extern Ref gditoref(const GDI);
-extern Ref *gditorefcell(const GDI);
+extern Ref *keytoref(
+	const List *const env, const List *const key, const unsigned depth);
+
+extern const Binding *topbindings(const List *const, unsigned *const length);
 
 // Биективное unsigned -> unsigned отображение. Предназначение двойное.
 
