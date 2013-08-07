@@ -14,7 +14,7 @@ typedef struct nodetag Node;
 typedef struct listtag List;
 typedef struct arraytag Array;
 typedef struct formtag Form;
-typedef liveformtag LiveForm;
+typedef struct liveformtag LiveForm;
 
 // Индексированные массивы
 
@@ -362,7 +362,7 @@ struct formtag
 // включена в список входов текущего контекста вывода. Поэтому от формы остаётся
 // только сам граф и счётчик для активации
 
-liveformtag
+struct liveformtag
 {
 	const List *const dag;
 	unsigned count;
