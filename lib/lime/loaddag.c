@@ -87,10 +87,12 @@ static LoadCurrent node(const LoadContext *const, List *const, List *const);
 static LoadCurrent ce(
 	const LoadContext *const, List *const, List *const, List *const);
 
+#ifndef isascii
 static unsigned isascii(const int c)
 {
 	return (c & 0x7f) == c;
 }
+#endif
 
 static unsigned isfirstid(const int c)
 {

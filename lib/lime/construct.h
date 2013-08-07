@@ -10,13 +10,15 @@ enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 
 // Имена для основных типов
 
-typedef struct NodeTag Node;
-typedef struct ListTag List;
-typedef struct ArrayTag Array;
+typedef struct node Node;
+typedef struct list List;
+typedef struct array Array;
+typedef struct form Form;
+typedef struct liveform LiveForm;
 
 // Индексированные массивы
 
-struct ArrayTag {
+struct array {
 	KeyCmp keycmp;
 	ItemCmp itemcmp;
 
@@ -76,7 +78,7 @@ extern Atom atomat(const Array *const, const unsigned id);
 
 // Узлы
 
-struct NodeTag
+struct node
 {
 	union
 	{
@@ -112,6 +114,8 @@ typedef struct {
 		List *list;
 		Node *node;
 		Array *environment;
+		Form *form;
+		LiveForm *liveform;
 		unsigned number;
 	} u;
 } Ref;
@@ -128,9 +132,18 @@ extern Ref refenv(Array *const);
 extern Ref reflist(List *const);
 extern Ref refnode(Node *const);
 
-enum { NUMBER, ATOM, TYPE, LIST, NODE, ENV, MAP, PTR, FREE = -1 };
+extern Ref refform(Form *const);
+extern Ref refliveform(LiveForm *const);
 
-struct ListTag {
+enum
+{
+	NUMBER, ATOM, TYPE, LIST, NODE,
+	ENV, MAP, PTR,
+	FORM, LIVEFORM,
+	FREE = -1
+};
+
+struct list {
 	List * next;
 	Ref ref;
 };
@@ -334,5 +347,25 @@ extern List *evallists(
 	Array *const U,
 	List **const dag, const DagMap *const,
 	const List *const arguments);
+
+// Форма, как некий объект. У неё есть сигнатура, определяющая способ
+// встраивания формы в текущий выводимый граф и dag с описанием тела формы. Эти
+// формы живут в окружениях, дожидаясь своего выбрасывания в контекст вывода
+
+struct form
+{
+	const List *const dag;
+	const List *const signature;
+};
+
+// Форма, как некий процессы. Выброшенная в контекст вывода. Сигнатура её
+// включена в список входов текущего контекста вывода. Поэтому от формы остаётся
+// только сам граф и счётчик для активации
+
+struct liveform
+{
+	const List *const dag;
+	unsigned count;
+};
 
 #endif

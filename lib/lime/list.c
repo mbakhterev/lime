@@ -49,7 +49,8 @@ List *tipoff(List **const lptr) {
 	return n;
 }
 
-Ref refnat(const unsigned code, const unsigned n) {
+Ref refnat(const unsigned code, const unsigned n)
+{
 	switch(code) {
 	case NUMBER:
 	case ATOM:
@@ -63,28 +64,40 @@ Ref refnat(const unsigned code, const unsigned n) {
 	return (Ref) { .code = code, .u.number = n };
 }
 
-extern Ref refnum(const unsigned n)
+Ref refnum(const unsigned n)
 {
 	return (Ref) { .code = NUMBER, .u.number = n };
 }
 
-extern Ref refatom(const unsigned n)
+Ref refatom(const unsigned n)
 {
 	return (Ref) { .code = ATOM, .u.number = n };
 }
 
-extern Ref refenv(Array *const e)
+Ref refenv(Array *const e)
 {
 	assert(e && e->code == ENV);
 	return (Ref) { .code = ENV, .u.environment = e };
 }
 
-extern Ref refnode(Node *const n) {
+Ref refnode(Node *const n)
+{
 	return (Ref) { .code = NODE, .u.node = n };
 }
 
-extern Ref reflist(List *const l) {
+Ref reflist(List *const l)
+{
 	return (Ref) { .code = LIST, .u.list = l };
+}
+
+Ref refform(Form *const f)
+{
+	return (Ref) { .code = FORM, .u.form = f };
+}
+
+Ref refliveform(LiveForm *const f)
+{
+	return (Ref) { .code = LIVEFORM, .u.liveform = f };
 }
 
 static List *newlist(const Ref r)
