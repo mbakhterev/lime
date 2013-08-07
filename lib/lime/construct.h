@@ -10,15 +10,15 @@ enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 
 // Имена для основных типов
 
-typedef struct node Node;
-typedef struct list List;
-typedef struct array Array;
-typedef struct form Form;
-typedef struct liveform LiveForm;
+typedef struct nodetag Node;
+typedef struct listtag List;
+typedef struct arraytag Array;
+typedef struct formtag Form;
+typedef liveformtag LiveForm;
 
 // Индексированные массивы
 
-struct array {
+struct arraytag {
 	KeyCmp keycmp;
 	ItemCmp itemcmp;
 
@@ -78,7 +78,7 @@ extern Atom atomat(const Array *const, const unsigned id);
 
 // Узлы
 
-struct node
+struct nodetag
 {
 	union
 	{
@@ -143,7 +143,7 @@ enum
 	FREE = -1
 };
 
-struct list {
+struct listtag {
 	List * next;
 	Ref ref;
 };
@@ -352,7 +352,7 @@ extern List *evallists(
 // встраивания формы в текущий выводимый граф и dag с описанием тела формы. Эти
 // формы живут в окружениях, дожидаясь своего выбрасывания в контекст вывода
 
-struct form
+struct formtag
 {
 	const List *const dag;
 	const List *const signature;
@@ -362,7 +362,7 @@ struct form
 // включена в список входов текущего контекста вывода. Поэтому от формы остаётся
 // только сам граф и счётчик для активации
 
-struct liveform
+liveformtag
 {
 	const List *const dag;
 	unsigned count;
