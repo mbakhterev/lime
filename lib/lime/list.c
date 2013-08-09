@@ -8,12 +8,15 @@
 #define DBGFE 1
 #define DBGPOOL 2
 #define DBGMF 4
+#define DBGFL 8
 
 // #define DBGFLAGS (DBGFE)
 // #define DBGFLAGS (DBGPOOL)
 // #define DBGFLAGS (DBGMF)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGFL)
+
+// #define DBGFLAGS 0
 
 // Будем держать пулл звеньев для списков и пулл узлов. Немного улучшит
 // эффективность. Списки будут кольцевые, поэтому храним только один указатель.
@@ -95,10 +98,10 @@ Ref refform(Form *const f)
 	return (Ref) { .code = FORM, .u.form = f };
 }
 
-Ref refliveform(LiveForm *const f)
-{
-	return (Ref) { .code = LIVEFORM, .u.liveform = f };
-}
+// Ref refliveform(LiveForm *const f)
+// {
+// 	return (Ref) { .code = LIVEFORM, .u.liveform = f };
+// }
 
 static List *newlist(const Ref r)
 {
@@ -549,4 +552,31 @@ unsigned listlen(const List *const l) {
 	forlist((List *)l, counter, &st, 0);
 	assert(st.n < MAXNUM);
 	return st.n;
+}
+
+void formlist(List L[], const Ref R[], const unsigned N)
+{
+	assert(L && R);
+	assert(N < MAXNUM);
+	assert(R[N].code == FREE);
+
+	if(N > 0)
+	{
+
+		// Чтобы на создаваемый список можно было ссылаться по адресу
+		// первого элемента массива L, этот элемент (по семантике)
+		// должен быть последней ссылкой в списке ссылок
+
+		for(unsigned i = 1; i <= N - 1; i += 1)
+		{
+			DBG(DBGFL, "linking: %u -> %u; ref: %u",
+				i - 1, i, R[i - 1].u.number);
+
+			L[i - 1].next = &L[i];
+			L[i].ref = R[i - 1];
+		}
+
+		L[N - 1].next = &L[0];
+		L[0].ref = R[N - 1];
+	}
 }

@@ -109,5 +109,15 @@ int main(int argc, char * argv[]) {
 	cutnprint(o, 0, -1);
 	cutnprint(o, -1, -1);
 
+	DEFLIST(sl, RS(refnum(1), refnum(2), refnum(3), refnum(4)));
+	DEFLIST(tl, RS(refnum(5), reflist((List *)sl)));
+
+	printf("lists on stack done\n");
+
+	char *d = NULL;
+	printf("sl: %s\ntl: %s\n", c = dumplist(sl), d = dumplist(tl));
+	free(c);
+	free(d);
+
 	return 0;
 }

@@ -51,4 +51,4 @@ $(T)/tst-forkdag: $(lmtstbits)/tst-forkdag.o $(lmlib)
 $(T)/tst-evallists: $(lmtstbits)/tst-evallists.o $(lmlib)
 
 $(call o2d,$(tstobj)): cflags += -I $(lmrootnode)/lib
-include $(call o2d,$(tstobj))
+-include $(call o2d,$(tstobj))

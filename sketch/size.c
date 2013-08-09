@@ -7,5 +7,8 @@ int main(int argc, char * argv[]) {
 	unsigned char (* buf)[rand() % 0x1000];
 	unsigned char * x;
 	printf("%zi %zi %zi\n", sizeof(a), sizeof(*buf), sizeof(*x));
+
+	printf("%zi\n", sizeof((const unsigned[]) { [1] = 2, [3] = 4 }));
+
 	return 0;
 }

@@ -63,14 +63,9 @@ static int cmplists(const List *const k, const List *const l) {
 
 	// Если (r == 0), значит какой-то список закончился. Разбираем три
 	// варианта:
+
 	return 1 - (ck == k && cl == l) - ((ck == k && cl != l) << 1);
 }
-
-// typedef struct
-// {
-// 	const List *key;
-// 	Ref ref;
-// } Binding;
 
 static int kcmp(const void *const D, const unsigned i, const void *const key) {
 	return cmplists(((const Binding *)D)[i].key, key);
@@ -98,6 +93,7 @@ static void freeone(Array *const env)
 	}
 
 	freearray(env);
+	free(env);
 }
 
 extern List *pushenvironment(List *const env)
@@ -159,14 +155,9 @@ typedef struct
 
 static GDI lookbinding(
 	const List *const env, const List *const key, const unsigned depth)
-//	unsigned *const ontop)
 {
-// 	assert(ontop);
 	assert(env && env->ref.code == ENV);
-
 	assert(depth == 1 || depth == -1);
-
-// 	*ontop = 0;
 
 	LookingState s =
 	{
@@ -177,24 +168,6 @@ static GDI lookbinding(
 	};
 
 	const int reason = forlist((List *)env, looker, &s, 0);
-// 	if(reason == FOUND)
-// 	{
-// // 		// На вершине ли стека областей видимости нашлось значение
-// // 		*ontop = (s.env == tip(env)->ref.u.environment);
-// 
-// 		// Режим параноика
-// 		assert(s.depth);
-// 
-// 		return (GDI) { .array = s.env, .position = s.pos };
-// 	}
-// 
-// 	assert(reason == NOTFOUND
-// 		&& s.env == NULL && s.pos == -1);
-// 
-// 	assert(reason == HITDEPTH &&
-// 		s.env == NULL && s.pos == -1 && s.depth == 0);
-// 
-// 	return (GDI) { .array = NULL, .position = -1 };
 
 	switch(reason)
 	{
@@ -217,24 +190,6 @@ static GDI lookbinding(
 	return (GDI) { .array = NULL, .position = -1 };
 }
 
-// GDI readbinding(Array *const env, const Ref ref, const List *const key)
-// {
-// 	assert(env->code == ENV);
-// 
-// 	const unsigned k = lookup(env, key); 
-// 	if(k != -1)
-// 	{
-// 		return (GDI) { .array = env, .position = k };
-// 	}
-// 
-// 	const Binding b = { .key = forklist(key), .ref = ref };
-// 	return (GDI) { .array = env, .position = readin(env, &b) };
-// }
-
-// static GDI justreadin(
-// 	Array *const env,
-// 	const List *const key, const Ref ref,
-// 	unsigned *const ontop)
 
 // WARNING: allocate должна вызываться только после того, как lookbinding
 // сообщит, что ничего не найдено.
@@ -243,17 +198,6 @@ static GDI allocate(
 	Array *const env, const List *const key)
 {
 	assert(env->code == ENV);
-//	assert(ontop);
-
-// 	const unsigned k = lookup(env, key);
-// 	if(k != -1)
-// 	{
-// 		*ontop = 1;
-// 		return (GDI) { .array = env, .position = k };
-// 	}
-
-//	*ontop = 0;
-//	const Binding b = { .key = forklist(key), .ref = ref };
 
 	const Binding b =
 	{
@@ -264,53 +208,6 @@ static GDI allocate(
 	return (GDI) { .array = env, .position = readin(env, &b) };
 }
 
-// GDI readbinding(
-// 	const List *const env,
-// 	const List *const key, const Ref ref,
-// 	unsigned *const ontop)
-// {
-// 	assert(env && env->ref.code == ENV);
-// 
-// 	GDI gdi = lookbinding(env, key);
-// 
-// 	if(gdi.position != -1)
-// 	{
-// 		assert(gdi.array);
-// 		*isfresh = 0;
-// 		return gdi;
-// 	}
-// 
-// 	assert(gdi.array == NULL);
-// 
-// 	Array *const E = tip(env)->ref.u.environment;
-// 
-// 	assert(E && E->code == ENV);
-// 
-// 	*isfresh = 1;
-// 	const Binding b = { .key = forklist(key), .ref = ref };
-// 	return (GDI)
-// 	{
-// 		.array = E,
-// 		.position = readin(E, &b)
-// 	};
-// }
-
-// GDI readbinding(
-// 	const List *const env,
-// 	const List *const key, const Ref ref,
-// 	unsigned *const ontop)
-// {
-// 	assert(env && env->ref.code == ENV && env->ref.u.environment);
-// 	return justreadin(env->ref.u.environment, key, ref, ontop);
-// }
-
-// Ref gditoref(const GDI g)
-// {
-// 	assert(g.array && g.array->code == ENV);
-// 	assert(g.position != -1);
-// 	const Binding *const B = g.array->data;
-// 	return B[g.position].ref;
-// }
 
 // LOG: Вместе с тем, как конструируются узлы (cf. lib/lime/loaddag.c:node),
 // это важный момент вообще для процесса программирования (правда, не очень
@@ -333,7 +230,6 @@ Ref *keytoref(
 
 	if(gdi.position != -1)
 	{
-//		assert(gdi.array && gdi.array->code == ENV);
 		return gditorefcell(gdi);
 	}
 
@@ -350,4 +246,12 @@ const Binding *topbindings(const List *const env, unsigned *const count)
 
 	*count = E->count;
 	return (const Binding *)E->data;
+}
+
+void freeenvironment(List *env)
+{
+	while(env)
+	{
+		env = popenvironment(env);
+	}
 }

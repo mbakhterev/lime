@@ -14,7 +14,8 @@ typedef struct nodetag Node;
 typedef struct listtag List;
 typedef struct arraytag Array;
 typedef struct formtag Form;
-typedef struct liveformtag LiveForm;
+
+// typedef struct liveformtag LiveForm;
 
 // Индексированные массивы
 
@@ -115,7 +116,7 @@ typedef struct {
 		Node *node;
 		Array *environment;
 		Form *form;
-		LiveForm *liveform;
+// 		LiveForm *liveform;
 		unsigned number;
 	} u;
 } Ref;
@@ -133,7 +134,7 @@ extern Ref reflist(List *const);
 extern Ref refnode(Node *const);
 
 extern Ref refform(Form *const);
-extern Ref refliveform(LiveForm *const);
+// extern Ref refliveform(LiveForm *const);
 
 enum
 {
@@ -170,6 +171,18 @@ extern List *readrefs(const Ref refs[]);
 // Для упрощения синтаксиса RL - Ref List
 
 #define RL(...) (readrefs(RS(__VA_ARGS__)))
+
+// В работе с Environment-ами могут быть полезны списки в стеке, то есть,
+// массивы из структур List, которые через поле .next связаны в правильный
+// список.
+
+extern void formlist(List listitems[], const Ref refs[], const unsigned len);
+
+// Для упрощения синтаксиса RLS - Ref List on Stack
+
+#define DEFLIST(DLNAME, REFS) \
+	const List DLNAME[sizeof(REFS)/sizeof(Ref) - 1]; \
+	formlist((List *)DLNAME, REFS, sizeof(DLNAME)/sizeof(List))
 
 // Записывает ссылки из списка (не рекурсивно, и не спускаясь в подсписки) в
 // массив. Записывает не более N элементов, с учётом последнего с кодом FREE.
@@ -348,24 +361,54 @@ extern List *evallists(
 	List **const dag, const DagMap *const,
 	const List *const arguments);
 
-// Форма, как некий объект. У неё есть сигнатура, определяющая способ
-// встраивания формы в текущий выводимый граф и dag с описанием тела формы. Эти
-// формы живут в окружениях, дожидаясь своего выбрасывания в контекст вывода
+// Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
+// выводимый граф и dag с описанием тела формы.  Счётчик необходим для
+// отслеживания процесса активации формы. Форма активируется, когда в контексте
+// вывода появляется необходимое количество выходов, соответствующих её
+// сигнатуре. Метка goal отмечает целевые формы
 
 struct formtag
 {
 	const List *const dag;
 	const List *const signature;
+	unsigned counter;
+	const unsigned goal;
 };
 
-// Форма, как некий процессы. Выброшенная в контекст вывода. Сигнатура её
-// включена в список входов текущего контекста вывода. Поэтому от формы остаётся
-// только сам граф и счётчик для активации
+// Структура контекста вывода
 
-struct liveformtag
+typedef struct
 {
-	const List *const dag;
-	unsigned count;
-};
+	// Выведенная в этом контексте часть графа программы. Сюда дописывается
+	// содержимое активированных форм
+
+	List *dag;
+
+	// Ссылки на уже выведенные в контексте узлы графа программы.
+	// Environment из пар ключ (список из чисел, атомов, типов) : значение
+	// (список с указателями на узлы)
+
+	List *outs;
+
+	// Размещённые в контексте формы, которые можно (потенциально)
+	// активировать
+
+	List *forms;
+	
+	// Части сигнатур входов потенциально активных форм. Environment из пар
+	// ключ : значение (ссылка на Form)
+
+	List *ins;
+} Context;
+
+// Контексты собираются в стеки
+
+extern List *pushcontext(List *const ctx);
+extern List *popcontext(List *const ctx);
+
+// Слияние двух контекстов на вершине стека. Тот, что сверху дописывается к
+// тому, что снизу - это описание формирования порядка dag-ов
+
+extern List *mergecontext(List *const ctx);
 
 #endif

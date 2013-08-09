@@ -15,11 +15,8 @@ lmsrc = \
 	dumpdag.c	\
 	dag.c		\
 	walkdag.c	\
-	evallists.c
-
-#	eval.c
-#	ldcontext.c	\
-
+	evallists.c	\
+	context.c
 
 lminc = \
 	$(I)/lime/construct.h	\
@@ -38,4 +35,4 @@ $(lmbits)/util.o: cflags += -D_XOPEN_SOURCE=700 $(strictfix)
 
 # $(eval $(call headroute,lime,$(lmnode)))
 
-include $(call o2d,$(lmobj))
+-include $(call o2d,$(lmobj))
