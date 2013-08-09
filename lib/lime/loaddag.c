@@ -147,25 +147,6 @@ static LoadCurrent list(
 	{
 		assert(ungetc(c, f) == c);
 
-// 		Array E = makeenvironment();
-// 
-// 		List l = { .ref = refenv(&E), .next = &l };
-// 		List *lenv = append(&l, env); // lenv - local env
-// 
-// 		DBG(DBGLST,
-// 			"-> ENV(CORE). env: %p; lenv %p; E: %p",
-// 			(void *)env, (void *)lenv, (void *)&E);
-// 
-// 		const LoadCurrent lc = core(ctx, lenv, nodes, NULL);
-// 
-// 		assert(tipoff(&lenv) == &l && lenv == env);
-// 
-// 		DBG(DBGLST, "freeing E: %p", (void *)&E);
-// 
-// 		freeenvironment(&E);
-// 
-// 		DBG(DBGLST, "released E: %p", (void *)&E); 
-
 		List *lenv = pushenvironment(env);
 
 		DBG(DBGLST,
@@ -278,35 +259,21 @@ static LoadCurrent core(
 	{
 		assert(ungetc(c, f) == c);
 
-		const List l =
-		{
-			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
-			.next = (List *)&l
-		};
-
-// 		const GDI ref = lookbinding(env, &l);
-		
-// 		unsigned ontop;
-// 		const GDI ref = lookbinding(env, &l, &ontop);
-// 
-// 		if(ref.array == NULL)
+// 		const List l =
 // 		{
-// 			assert(ref.position == -1);
-// 
-// 			ERR("no label in the scope: %s",
-// 				atombytes(atomat(U, l.ref.u.number)));
-// 		}
-// 
-// 		const Ref *const r = gditorefcell(ref);
+// 			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
+// 			.next = (List *)&l
+// 		};
 
-		const Ref *const r = keytoref(env, &l, -1);
+		DL(l, RS(refatom(loadtoken(U, f, 0, "[0-9A-Za-z]"))));
+		const Ref *const r = keytoref(env, l, -1);
 
 		if(r->code == FREE)
 		{
 			assert(r->u.pointer == NULL);
 
 			ERR("no label in the scope: %s",
-				atombytes(atomat(U, l.ref.u.number)));
+				atombytes(atomat(U, l->ref.u.number)));
 		}
 
 		assert(r->code == NODE);
@@ -314,7 +281,7 @@ static LoadCurrent core(
 		if(r->u.node == NULL)
 		{
 			ERR("labeled node is not complete: %s",
-				atombytes(atomat(U, l.ref.u.number)));
+				atombytes(atomat(U, l->ref.u.number)));
 		}
 
 		return ce(ctx, env,
@@ -384,8 +351,6 @@ static LoadCurrent node(
 
 	const unsigned verb = loadtoken(U, f, 0, "[0-9A-Za-z]");
 
-// 	GDI ref = { .array = NULL, .position = -1 };
-
 	Ref *ref = NULL;
 
 	// Надо получить следующий символ и, так получается, в любом случае
@@ -397,23 +362,17 @@ static LoadCurrent node(
 	DBG(DBGNODE, "cc: %c", c);
 	
 	// Если дальше следует метка узла
+
 	if(isfirstid(c))
 	{
-		const List lid =
-		{
-			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
-			.next = (List *)&lid
-		};
-
-// 		unsigned ontop;
-// 		ref = lookbinding(env, &lid, &ontop);
-
-		ref = keytoref(env, &lid, -1);
-
-// 		if(ref.array == NULL)
+// 		const List lid =
 // 		{
-// 			assert(ref.position == -1);
-// 		}
+// 			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
+// 			.next = (List *)&lid
+// 		};
+
+		DL(label, RS(refatom(loadtoken(U, f, 0, "[0-9A-Za-z]"))));
+		ref = keytoref(env, label, -1);
 
 		if(ref->code == FREE)
 		{
@@ -422,31 +381,8 @@ static LoadCurrent node(
 		else
 		{
 			ERR("node label is in scope: %s",
-				atombytes(atomat(U, lid.ref.u.number)));
+				atombytes(atomat(U, label->ref.u.number)));
 		}
-
-// 		Array *const E = tip(env)->ref.u.environment;
-// 
-// 		// Резервирование места в области видимости
-// 
-// 		ref = readbinding(E, refnode(NULL), &lid);
-
-		// Резервирование места в области видимости. На вершине под
-		// таким именем ничего не должно быть
-
-// 		ref = readbinding(env, &lid, refnode(NULL), &ontop);
-// 		assert(!ontop);
-
-// 		// Пытаемся зарезервировать новую позицию в окружении. Если не
-// 		// получается - сообщение об ошибке
-// 
-// 		unsigned isfresh = 0;
-// 		ref = readbinding(env, &lid, refnode(NULL), &isfresh);
-// 		if(!isfresh)
-// 		{
-// 			ERR("node label is in scope: %s",
-// 				atombytes(atomat(U, lid.ref.u.number)));
-// 		}
 	}
 
 // 	FIXME: ?
@@ -479,11 +415,6 @@ static LoadCurrent node(
 	// Узел создан, и если под него зарезервирована метка в окружении, надо
 	// бы его туда добавить
 
-// 	if(ref.array)
-// 	{
-// 		gditorefcell(ref)->u.node = l->ref.u.node;
-// 	}
-
 	if(ref)
 	{
 		*ref = refnode(l->ref.u.node);
@@ -507,8 +438,6 @@ List *loaddag(
 		.universe = U,
 		.dagmap = dagmap
 	};
-
-// 	FILE *const f = ctx->file;
 
 	int c;
 

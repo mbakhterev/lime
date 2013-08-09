@@ -180,7 +180,7 @@ extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 
 // Для упрощения синтаксиса RLS - Ref List on Stack
 
-#define DEFLIST(DLNAME, REFS) \
+#define DL(DLNAME, REFS) \
 	const List DLNAME[sizeof(REFS)/sizeof(Ref) - 1]; \
 	formlist((List *)DLNAME, REFS, sizeof(DLNAME)/sizeof(List))
 
