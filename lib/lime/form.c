@@ -24,7 +24,7 @@ static Form *tipoffform(Form **const fptr)
 	return g;
 }
 
-static void freeform(Form *const f)
+void freeform(Form *const f)
 {
 	assert(f);
 

@@ -32,12 +32,6 @@ struct arraytag {
 	int code;
 };
 
-// typedef struct
-// {
-// 	const Array *array;
-// 	unsigned position;
-// } GDI; // Global Datum Index :)
-
 extern Array makearray(const int code, const unsigned itemlen,
 	const ItemCmp, const KeyCmp);
 
@@ -139,7 +133,7 @@ extern Ref refform(Form *const);
 enum
 {
 	NUMBER, ATOM, TYPE, LIST, NODE,
-	ENV, MAP, PTR,
+	ENV, MAP, PTR, CTX,
 	FORM, LIVEFORM,
 	FREE = -1
 };
@@ -384,6 +378,13 @@ struct formtag
 	const unsigned goal;
 };
 
+extern void freeform(Form *const f);
+
+extern Form *newform(
+	const List *const dag, const DagMap *const,
+	const List *const signature);
+
+
 // Структура контекста вывода
 
 typedef struct
@@ -419,6 +420,18 @@ extern List *popcontext(List *const ctx);
 // тому, что снизу - это описание формирования порядка dag-ов
 
 extern List *mergecontext(List *const ctx);
+
+// Выбирает из текущего графа формы и размещает их в соответствии с указаниями
+// публикации: .FPut, .FGPut, .FSPut. Публикация осуществляется в на вершинах
+// двух указанных стеков: областей видимости и контекстов вывода.
+
+// WARN: У формы есть ссылка на карту графа, эта ссылка будет взята из аргумента
+// evalforms
+
+extern void evalforms(
+	Array *const universe,
+	const List *const srcdag, const DagMap *const,
+	const List *const env, const List *const ctx);
 
 #endif
 

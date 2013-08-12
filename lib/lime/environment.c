@@ -89,6 +89,14 @@ static void freeone(Array *const env)
 	for(unsigned i = 0; i < env->count; i += 1)
 	{
 		freelist((List *)B[i].key);
+		
+		switch(B[i].ref.code)
+		{
+		case FORM:
+			freeform(B[i].ref.u.form);
+			break;
+		}
+
 		DBG(DBGFREE, "i: %u", i);
 	}
 
@@ -103,7 +111,6 @@ extern List *pushenvironment(List *const env)
 	*new = makeenvironment();	
 
 	return append(RL(refenv(new)), env);
-
 }
 
 extern List *popenvironment(List *const env)

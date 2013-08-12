@@ -380,7 +380,7 @@ static void rewriteone(List *const l, void *const ptr)
 	}
 }
 
-static const char *listverbs[] =
+static const char *const listverbs[] =
 {
 	[LNODE] = "L",
 	[LNTH] = "LNth",
@@ -392,11 +392,9 @@ static const char *listverbs[] =
 List *evallists(
 	Array *const U,
 	List **const dag,
-// 	const Array *const M, const Array *const dive)
 	const DagMap *const M, const List *const arguments)
 {
 	const Array verbs = keymap(U, 0, listverbs);
-//	walkdag(*dag, M, dive, rewriteone, (void *)&verbs);
 
 	const AState st =
 	{
@@ -406,10 +404,6 @@ List *evallists(
 
 	walkdag(*dag, M, rewriteone, (void *)&st);
 	freeuimap((Array *)&verbs);
-
-// 	const Array nonroots = keymap(U, 0, ES("L"));
-// 	gcnodes(dag, M, &nonroots);
-// 	freeuimap((Array *)&nonroots);
 
 	return *dag;
 }
