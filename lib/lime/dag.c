@@ -49,7 +49,7 @@ Node *newnode(const unsigned verb, const List *const attributes)
 		n->verb = FREE;
 	}
 
-	n->u.nextfree = n;
+// 	n->u.nextfree = n;
 
 	n->verb = verb;
 	n->u.attributes = (List *)attributes;

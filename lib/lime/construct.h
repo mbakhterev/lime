@@ -215,7 +215,11 @@ extern List *forklistcut(
 
 extern List *forklist(const List *const);
 
+// extern void freelist(List *const, void (*killone)(const List *const));
+// extern void killnothing(const List *const);
+
 extern void freelist(List *const);
+
 extern char *dumplist(const List *const);
 
 // Функция forlist применяет другую функцию типа Oneach к каждому элементу
@@ -369,9 +373,14 @@ extern List *evallists(
 
 struct formtag
 {
-	const List *const dag;
+	union
+	{
+		const List *const dag;
+		struct formtag *nextfree;
+	} u;
 	const List *const signature;
-	unsigned counter;
+	const DagMap *const map;
+	unsigned count;
 	const unsigned goal;
 };
 
@@ -412,3 +421,4 @@ extern List *popcontext(List *const ctx);
 extern List *mergecontext(List *const ctx);
 
 #endif
+

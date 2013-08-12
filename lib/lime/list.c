@@ -405,8 +405,6 @@ List *megafork(
 		return NULL;
 	}
 
-//	return fs.list;
-
 	assert(0);
 }
 
@@ -421,7 +419,14 @@ static int releaser(List *const l, void *const p) {
 	return 0;
 }
 
-void freelist(List *const l) {
+// void killnothing(const List *const l)
+// {
+// }
+// 
+// void freelist(List *const l, void (*killone)(const List *const))
+
+void freelist(List *const l)
+{
 	FState fs = { .list = NULL };
 	forlist(l, releaser, &fs, 0);
 }

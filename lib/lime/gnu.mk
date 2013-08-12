@@ -16,7 +16,8 @@ lmsrc = \
 	dag.c		\
 	walkdag.c	\
 	evallists.c	\
-	context.c
+	context.c	\
+	form.c
 
 lminc = \
 	$(I)/lime/construct.h	\
