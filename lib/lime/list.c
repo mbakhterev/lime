@@ -87,6 +87,10 @@ extern Ref reflist(List *const l) {
 	return (Ref) { .code = LIST, .u.list = l };
 }
 
+extern Ref refptr(void *const l) {
+	return (Ref) { .code = PTR, .u.pointer = l };
+}
+
 static List *newlist(const Ref r)
 {
 	switch(r.code)
@@ -97,6 +101,7 @@ static List *newlist(const Ref r)
 	case NODE:
 	case LIST:
 	case ENV:
+	case PTR:
 		break;
 	
 	default:
