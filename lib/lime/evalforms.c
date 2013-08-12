@@ -81,7 +81,12 @@ static void feputeval(
 	*r = (Ref)
 	{
 		.code = FORM,
-		.u.form = newform(R[ADAG].u.node->u.attributes, NULL, NULL)
+
+		.u.form
+			= newform(
+				R[ADAG].u.node->u.attributes,
+				st->map,
+				R[ASIGNATURE].u.list)
 	};
 }
 
