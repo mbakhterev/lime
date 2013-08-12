@@ -2,6 +2,7 @@
 #include "util.h"
 
 #include <assert.h>
+#include <string.h>
 
 static Form *freeforms = NULL;
 
@@ -31,16 +32,22 @@ void freeform(Form *const f)
 	freelist((List *)f->signature);
 	freedag((List *)f->u.dag, f->map);
 
-// 	f->signature = NULL;
-// 	f->count = FREE;
+//	*f = (Form)
+// 	{
+// 		.signature = NULL,
+// 		.map = NULL,
+// 		.goal = 0,
+// 		.count = FREE
+// 	};
 
-	*f = (Form)
-	{
-		.signature = NULL,
-		.map = NULL,
-		.goal = 0,
-		.count = FREE
-	};
+// FIXME: hackaround GCC. конструкция заменяет вышестоящую
+
+	memcpy(f,
+		&(Form) {
+			.signature = NULL,
+			.map = NULL,
+			.goal = 0,
+			.count = FREE }, sizeof(Form));
 
 	if(freeforms == NULL)
 	{
@@ -86,14 +93,24 @@ Form *newform(
 		assert(f);
 	}
 
-	*f = (Form)
-	{
+// 	*f = (Form)
+// 	{
+// 		.u.dag = forkdag(dag, map),
+// 		.signature = forklist(signature),
+// 		.map = map,
+// 		.count = 0,
+// 		.goal = 0
+// 	};
+
+// FIXME: hackaround GCC. конструкция заменяет вышестоящую
+
+	memcpy(f,
+		&(Form) {
 		.u.dag = forkdag(dag, map),
 		.signature = forklist(signature),
 		.map = map,
 		.count = 0,
-		.goal = 0
-	};
+		.goal = 0 }, sizeof(Form));
 
 	return f;
 }
