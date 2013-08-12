@@ -11,9 +11,9 @@
 static const char *const formverbs[] =
 {
 	[FNODE] = "F",
-	[FPUT] = ".FPut",
-	[FGPUT] = ".FGPut",
-	[FEPUT] = ".FEPut"
+	[FPUT] = "FPut",
+	[FGPUT] = "FGPut",
+	[FEPUT] = "FEPut"
 };
 
 // EState - Evaluation State
