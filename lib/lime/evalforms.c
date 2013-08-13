@@ -13,7 +13,8 @@ static const char *const formverbs[] =
 	[FNODE] = "F",
 	[FPUT] = "FPut",
 	[FGPUT] = "FGPut",
-	[FEPUT] = "FEPut"
+	[FEPUT] = "FEPut",
+	NULL
 };
 
 // EState - Evaluation State
@@ -116,7 +117,7 @@ void evalforms(
 	const List *const env, const List *const ctx)
 {
 	assert(env && env->ref.code == ENV);
-	assert(ctx && ctx->ref.code == CTX);
+//	assert(ctx && ctx->ref.code == CTX);
 
 	const Array verbs = keymap(U, 0, formverbs);
 

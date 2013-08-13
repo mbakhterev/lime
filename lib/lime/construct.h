@@ -215,6 +215,8 @@ extern List *forklist(const List *const);
 extern void freelist(List *const);
 
 extern char *dumplist(const List *const);
+extern void unidumplist(
+	FILE *const, const Array *const universe, const List *const list);
 
 // Функция forlist применяет другую функцию типа Oneach к каждому элементу
 // списка, пока последняя возвращает значение, равное key. foreach устроена так,
@@ -238,18 +240,8 @@ extern List *popenvironment(List *const);
 
 extern void freeenvironment(List *const);
 
-// extern GDI readbinding(
-// 	const List *const,
-// 	const List *const key, const Ref,
-// 	unsigned *const isfresh);
-// 
-// extern GDI lookbinding(
-// 	const List *const,
-// 	const List *const key,
-// 	unsigned *const ontop);
-// 
-// extern Ref gditoref(const GDI);
-// extern Ref *gditorefcell(const GDI);
+extern void dumpenvironment(
+	FILE *const, const Array *const U, const List *const env);
 
 typedef struct
 {

@@ -13,10 +13,9 @@
 // #define DBGFLAGS (DBGFE)
 // #define DBGFLAGS (DBGPOOL)
 // #define DBGFLAGS (DBGMF)
+// #define DBGFLAGS (DBGFL)
 
-#define DBGFLAGS (DBGFL)
-
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 // Будем держать пулл звеньев для списков и пулл узлов. Немного улучшит
 // эффективность. Списки будут кольцевые, поэтому храним только один указатель.
@@ -425,12 +424,6 @@ static int releaser(List *const l, void *const p) {
 	return 0;
 }
 
-// void killnothing(const List *const l)
-// {
-// }
-// 
-// void freelist(List *const l, void (*killone)(const List *const))
-
 void freelist(List *const l)
 {
 	FState fs = { .list = NULL };
@@ -440,24 +433,30 @@ void freelist(List *const l)
 static int dumper(List *const l, void *const file);
 
 typedef struct {
-	FILE *file;
-	const List *first;
+	FILE *const file;
+	const List *const first;
+	const Array *const universe;
 } DumpState;
 
-static void dumptostream(List *const l, FILE *const f)
-{
-	assert(fputc('(', f) != EOF);
-
-	DumpState s = { .file = f, .first = l != NULL ? l->next : NULL };
-	forlist(l, dumper, &s, 0);
-
-	assert(fputc(')', f) != EOF);
-}
+// static void dumptostream(List *const l, FILE *const f)
+// {
+// 	assert(fputc('(', f) != EOF);
+// 
+// 	DumpState s = { .file = f, .first = l != NULL ? l->next : NULL };
+// 	forlist(l, dumper, &s, 0);
+// 
+// 	assert(fputc(')', f) != EOF);
+// }
 
 static int dumper(List *const l, void *const state)
 {
 	DumpState *const s = state;
+	assert(s);
+
 	FILE *const f = s->file;
+	assert(f);
+
+	const Array *const U = s->universe;
 
 	const unsigned isfinal = l->next == s->first;
 
@@ -468,7 +467,18 @@ static int dumper(List *const l, void *const state)
 		break;
 	
 	case ATOM:
-		assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
+		if(U)
+		{
+			const Atom a = atomat(U, l->ref.u.number);
+			assert(0 <
+				fprintf(f, "%u.\"%s\"",
+					atomhint(a), atombytes(a)));
+		}
+		else
+		{
+			assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
+		}
+
 		break;
 	
 	case TYPE:
@@ -484,7 +494,8 @@ static int dumper(List *const l, void *const state)
 		break;
 	
 	case LIST:
-		dumptostream(l->ref.u.list, f);
+// 		dumptostream(l->ref.u.list, f);
+		unidumplist(f, U, l->ref.u.list);
 		break;
 
 	default:
@@ -499,14 +510,35 @@ static int dumper(List *const l, void *const state)
 	return 0;
 }
 
-char *dumplist(const List *const l) {
+void unidumplist(
+	FILE *const f, const Array *const U, const List *const list)
+{
+	assert(fputc('(', f) != EOF);
+
+	DumpState s =
+	{
+		.file = f,
+		.first = list != NULL ? list->next : NULL,
+		.universe = U
+	};
+
+	forlist((List *)list, dumper, &s, 0);
+
+	assert(fputc(')', f) != EOF);
+}
+
+char *dumplist(const List *const l)
+{
 	char *buff = NULL;
 	size_t length = 0;
 	FILE *f = newmemstream(&buff, &length);
 	assert(f);
-	dumptostream((List *)l, f);
+
+	unidumplist(f, NULL, l);
+
 	assert(fputc(0, f) != EOF);
 	fclose(f);
+
 	return buff;
 }
 
