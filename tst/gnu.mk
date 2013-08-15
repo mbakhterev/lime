@@ -4,6 +4,7 @@ lmtstnode = $(call nodepath)
 lmtstsrc = \
 	tst-rune.c	\
 	tst-array.c	\
+	gen-atomtab.c	\
 	tst-loadatom.c	\
 	tst-loadtoken.c	\
 	tst-heapsort.c	\
@@ -11,15 +12,16 @@ lmtstsrc = \
 	tst-loaddag.c	\
 	tst-gcnodes.c	\
 	tst-forkdag.c	\
-	tst-evallists.c
+	tst-evallists.c \
+	tst-evalforms.c
 
 tstobj = $(call c2o,$(lmtstbits),$(lmtstsrc))
 
 lmlib = $(L)/liblime.a
 
-# lmtst: cflags += -I $(I)
-
 .PHONY: lmtst
+
+# lmtst: cflags += -I $(I)
 
 lmtst: \
 	$(T)/tst-rune		\
@@ -52,5 +54,7 @@ $(T)/tst-forkdag: $(lmtstbits)/tst-forkdag.o $(lmlib)
 $(T)/tst-evallists: $(lmtstbits)/tst-evallists.o $(lmlib)
 $(T)/tst-evalforms: $(lmtstbits)/tst-evalforms.o $(lmlib)
 
-$(call o2d,$(tstobj)): cflags += -I $(lmrootnode)/lib
+$(tstobj) $(call o2d,$(tstobj)): cflags += -I $(I)
+$(call o2d,$(tstobj)): $(lminc)
+
 -include $(call o2d,$(tstobj))

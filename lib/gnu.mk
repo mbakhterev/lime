@@ -23,7 +23,8 @@ lmsrc = \
 lminc = \
 	$(I)/lime/construct.h	\
 	$(I)/lime/util.h	\
-	$(I)/lime/heap.h
+	$(I)/lime/heap.h	\
+	$(I)/lime/rune.h
 
 lmobj = $(call c2o,$(lmbits),$(lmsrc))
 
