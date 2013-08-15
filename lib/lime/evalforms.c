@@ -7,6 +7,7 @@
 #define FPUT	1
 #define FGPUT	2
 #define FEPUT	3
+#define FLOOK	4
 
 static const char *const formverbs[] =
 {
@@ -14,6 +15,7 @@ static const char *const formverbs[] =
 	[FPUT] = "FPut",
 	[FGPUT] = "FGPut",
 	[FEPUT] = "FEPut",
+	[FLOOK] = "FLook",
 	NULL
 };
 
@@ -83,11 +85,10 @@ static void feputeval(
 	{
 		.code = FORM,
 
-		.u.form
-			= newform(
-				R[ADAG].u.node->u.attributes,
-				st->map,
-				R[ASIGNATURE].u.list)
+		.u.form = newform(
+			R[ADAG].u.node->u.attributes,
+			st->map,
+			R[ASIGNATURE].u.list)
 	};
 }
 
@@ -117,7 +118,7 @@ void evalforms(
 	const List *const env, const List *const ctx)
 {
 	assert(env && env->ref.code == ENV);
-//	assert(ctx && ctx->ref.code == CTX);
+	assert(ctx && ctx->ref.code == CTX);
 
 	const Array verbs = keymap(U, 0, formverbs);
 

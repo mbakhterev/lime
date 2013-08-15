@@ -97,14 +97,14 @@ Ref refform(Form *const f)
 	return (Ref) { .code = FORM, .u.form = f };
 }
 
-// Ref refliveform(LiveForm *const f)
-// {
-// 	return (Ref) { .code = LIVEFORM, .u.liveform = f };
-// }
-
 extern Ref refptr(void *const f)
 {
 	return (Ref) { .code = PTR, .u.pointer = f };
+}
+
+extern Ref refctx(Context *const c)
+{
+	return (Ref) { .code = CTX, .u.context = c };
 }
 
 static List *newlist(const Ref r)
@@ -118,6 +118,7 @@ static List *newlist(const Ref r)
 	case LIST:
 	case ENV:
 	case PTR:
+	case CTX:
 		break;
 	
 	default:

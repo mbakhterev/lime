@@ -14,6 +14,7 @@ typedef struct nodetag Node;
 typedef struct listtag List;
 typedef struct arraytag Array;
 typedef struct formtag Form;
+typedef struct contexttag Context;
 
 // typedef struct liveformtag LiveForm;
 
@@ -110,7 +111,7 @@ typedef struct {
 		Node *node;
 		Array *environment;
 		Form *form;
-// 		LiveForm *liveform;
+		Context *context;
 		unsigned number;
 	} u;
 } Ref;
@@ -128,13 +129,15 @@ extern Ref reflist(List *const);
 extern Ref refnode(Node *const);
 
 extern Ref refform(Form *const);
-// extern Ref refliveform(LiveForm *const);
+
+extern Ref refctx(Context *const);
 
 enum
 {
 	NUMBER, ATOM, TYPE, LIST, NODE,
 	ENV, MAP, PTR, CTX,
-	FORM, LIVEFORM,
+	FORM,
+// 	LIVEFORM,
 	FREE = -1
 };
 
@@ -379,7 +382,7 @@ extern Form *newform(
 
 // Структура контекста вывода
 
-typedef struct
+struct contexttag
 {
 	// Выведенная в этом контексте часть графа программы. Сюда дописывается
 	// содержимое активированных форм
@@ -401,7 +404,7 @@ typedef struct
 	// ключ : значение (ссылка на Form)
 
 	List *ins;
-} Context;
+};
 
 // Контексты собираются в стеки
 
