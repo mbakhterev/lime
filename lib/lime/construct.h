@@ -230,13 +230,11 @@ extern int forlist(List *const, Oneach, void *const, const int key);
 
 extern unsigned listlen(const List *const);
 
-// Окружения
+// Плавный переход к окружениям. Вписывается ли список в линейный порядок
 
-// extern Array makeenvironment(void);
-// extern void freeenvironment(Array *const);
-// extern GDI readbinding(Array *const, const Ref, const List *const key);
+extern unsigned iscomparable(const List *const);
 
-// Для создания нового стека окружений можно выполнить pushenv(NULL)
+// Для создания нового стека окружений можно выполнить pushenvironment(NULL)
 
 extern List *pushenvironment(List *const);
 extern List *popenvironment(List *const);

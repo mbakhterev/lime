@@ -17,18 +17,35 @@ static int cmplists(const List *const, const List *const);
 // различных классов определяется порядком классов в соответствующем enum (cf.
 // lib/lime/construct.h)
 
-static int iscomparable(const List *const k) {
+static int isitemcomparable(List *const k, void *const ptr)
+{
+	assert(ptr == NULL);
+	assert(k);
 	return k->ref.code <= LIST;
 }
 
-static int cmpitems(const List *const k, const List *const l) {
-	assert(iscomparable(k));
-	assert(iscomparable(l));
+// !0 - это числовое значение для True. Оно, вроде, должно быть равным 1. Но
+// что-то я уже ни в чём не уверен, когда речь заходит о GCC. forlist будет
+// продолжаться, пока k->ref.code <= LIST
+
+unsigned iscomparable(const List *const l)
+{
+	return forlist((List *)l, isitemcomparable, NULL, !0) == !0;
+}
+
+static int cmpitems(const List *const k, const List *const l)
+{
+	assert(isitemcomparable((List *)k, NULL));
+	assert(isitemcomparable((List *)l, NULL));
 
 	unsigned r = cmpui(k->ref.code, l->ref.code);
-	if(r) { return r; }
+	if(r)
+	{
+		return r;
+	}
 
-	if(k->ref.code < LIST) {
+	if(k->ref.code < LIST)
+	{
 		return cmpui(k->ref.u.number, l->ref.u.number);
 	}
 

@@ -21,8 +21,6 @@ lmlib = $(L)/liblime.a
 
 .PHONY: lmtst
 
-# lmtst: cflags += -I $(I)
-
 lmtst: \
 	$(T)/tst-rune		\
 	$(T)/tst-array		\
