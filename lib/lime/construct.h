@@ -388,6 +388,10 @@ extern Form *newform(
 
 struct contexttag
 {
+	// Куда же без этого? Карта выводимых dag-ов
+
+	const DagMap *const dagmap;
+
 	// Выведенная в этом контексте часть графа программы. Сюда дописывается
 	// содержимое активированных форм
 
@@ -412,13 +416,13 @@ struct contexttag
 
 // Контексты собираются в стеки
 
-extern List *pushcontext(List *const ctx);
+extern List *pushcontext(List *const ctx, const DagMap *const);
 extern List *popcontext(List *const ctx);
 
 // Слияние двух контекстов на вершине стека. Тот, что сверху дописывается к
 // тому, что снизу - это описание формирования порядка dag-ов
 
-extern List *mergecontext(List *const ctx);
+extern List *mergecontext(const Array *const U, List *const ctx);
 
 // Выбирает из текущего графа формы и размещает их в соответствии с указаниями
 // публикации: .FPut, .FGPut, .FSPut. Публикация осуществляется в на вершинах

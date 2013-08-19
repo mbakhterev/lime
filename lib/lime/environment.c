@@ -123,6 +123,8 @@ static void freeone(Array *const env)
 
 extern List *pushenvironment(List *const env)
 {
+	assert(!env || env->ref.code == ENV);
+
 	Array *const new = malloc(sizeof(Array));
 	assert(new);
 	*new = makeenvironment();	
