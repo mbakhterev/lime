@@ -410,7 +410,7 @@ static LoadCurrent node(
 		free(ns);
 	}
 
-	List *const l = RL(refnode(newnode(verb, lc.refs)));
+	List *const l = RL(refnode(newnode(item, verb, lc.refs)));
 
 	// Узел создан, и если под него зарезервирована метка в окружении, надо
 	// бы его туда добавить

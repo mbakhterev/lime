@@ -82,10 +82,15 @@ struct nodetag
 		List *attributes;
 	} u;
 
+	// В какой строке был получен узел. Важно для отладки
+	unsigned line;
+
 	unsigned verb;
 };
 
-extern Node *newnode(const unsigned verb, const List *const attributes);
+extern Node *newnode(
+	const unsigned line, const unsigned verb, const List *const attributes);
+
 extern void freenode(Node *const);
 
 // Списки
@@ -220,6 +225,7 @@ extern void freelist(List *const);
 extern char *dumplist(const List *const);
 extern void unidumplist(
 	FILE *const, const Array *const universe, const List *const list);
+extern char *listtostr(const Array *const universe, const List *const list);
 
 // Функция forlist применяет другую функцию типа Oneach к каждому элементу
 // списка, пока последняя возвращает значение, равное key. foreach устроена так,

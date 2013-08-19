@@ -31,7 +31,7 @@ static Node *tipoffnode(Node **const lptr) {
 	return n;
 }
 
-Node *newnode(const unsigned verb, const List *const attributes)
+Node *newnode(const unsigned line, const unsigned verb, const List *const attributes)
 {
 	assert(verb != FREE);
 
@@ -49,8 +49,7 @@ Node *newnode(const unsigned verb, const List *const attributes)
 		n->verb = FREE;
 	}
 
-// 	n->u.nextfree = n;
-
+	n->line = line;
 	n->verb = verb;
 	n->u.attributes = (List *)attributes;
 
@@ -316,6 +315,7 @@ List *forkdag(const List *const dag, const DagMap *const dm)
 		const Node *const n = nsrc[i];
 
 		N[i] = refnode(newnode(		
+			n->line,
 			n->verb,
 //			uireverse(dm, n->verb) == -1 ?
 			isdag(dm, n->verb) == 0 ?

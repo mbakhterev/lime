@@ -13,9 +13,13 @@ extern unsigned item;
 extern unsigned field;
 extern const char * unitname;
 
+// #define ERR(fmt, ...) \
+// 	err(EXIT_FAILURE, "%s(%u:%u) error: " fmt, \
+// 		unitname, item, field, __VA_ARGS__)
+
 #define ERR(fmt, ...) \
-	err(EXIT_FAILURE, "%s(%u:%u) error: " fmt, \
-		unitname, item, field, __VA_ARGS__)
+	err(EXIT_FAILURE, "%s(%u) error: " fmt, \
+		unitname, item, __VA_ARGS__)
 
 #define DBG(f, fmt, ...) \
 	(void)((f & DBGFLAGS) \

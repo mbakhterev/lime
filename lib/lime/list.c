@@ -471,7 +471,7 @@ static int dumper(List *const l, void *const state)
 		if(U)
 		{
 			const Atom a = atomat(U, l->ref.u.number);
-			assert(0 <
+			assert(0 < 
 				fprintf(f, "%u.\"%s\"",
 					atomhint(a), atombytes(a)));
 		}
@@ -487,15 +487,27 @@ static int dumper(List *const l, void *const state)
 		break;
 	
 	case NODE:
-		assert(l->ref.u.node);
+	{
+		const Node *const n = l->ref.u.node;
+		assert(n);
+//		assert(l->ref.u.node);
+		
+		if(U)
+		{
+			const char *const verb
+				= (char *)atombytes(atomat(U, n->verb));
 
-		assert(fprintf(f, "N:%p:%u",
-			(void *)l->ref.u.node, l->ref.u.node->verb) > 0);
+			assert(fprintf(f, "N:%p.%s", (void *)n, verb) > 0);
+		}
+		else
+		{
+			assert(fprintf(f, "N:%p.%u", (void *)n, n->verb) > 0);
+		}
 
 		break;
+	}
 	
 	case LIST:
-// 		dumptostream(l->ref.u.list, f);
 		unidumplist(f, U, l->ref.u.list);
 		break;
 
@@ -623,4 +635,15 @@ void formlist(List L[], const Ref R[], const unsigned N)
 		L[N - 1].next = &L[0];
 		L[0].ref = R[N - 1];
 	}
+}
+
+char *listtostr(const Array *const U, const List *const l)
+{
+	char *buf= NULL;
+	size_t sz = 0;
+	FILE *const f = newmemstream(&buf, &sz);
+	unidumplist(f, U, l);
+	fclose(f);
+
+	return buf;
 }

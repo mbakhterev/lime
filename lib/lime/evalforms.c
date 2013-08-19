@@ -21,11 +21,10 @@ static const char *const formverbs[] =
 
 // EState - Evaluation State
 
-
 #define AKEY 0
 #define AFORMREF 1
 #define ASIGNATURE 0
-#define AFORM 1
+#define ADAG 1
 
 typedef struct
 {
@@ -74,6 +73,24 @@ static FEssence extractfromnode(const Node *const n, const Array *const V)
 	return voidessence();
 }
 
+static int isvalidkey(const Ref ref)
+{
+	return ref.code == LIST && ref.u.list && iscomparable(ref.u.list);
+}
+
+static int isvalidone(List *const l, void *const ptr)
+{
+	assert(l);
+	return isvalidkey(l->ref);
+}
+
+static unsigned isvalidsignature(const Ref r)
+{
+	return r.code == LIST
+		&& r.u.list
+		&& forlist((List *)r.u.list, isvalidone, NULL, !0) == !0;
+}
+
 static FEssence extractfromlist(const List *const l, const Array *const V)
 {
 	assert(l);
@@ -87,11 +104,25 @@ static FEssence extractfromlist(const List *const l, const Array *const V)
 		return voidessence();
 	}
 
-	if(!(NULL))
+	if(!isvalidsignature(R[ASIGNATURE]))
 	{
+		return voidessence();
 	}
 
-	return voidessence();
+	const Ref d = R[ADAG];
+
+	if(!(d.code == NODE
+		&& d.u.node && uireverse(V, d.u.node->verb) == FNODE
+		&& d.u.node->u.attributes))
+	{
+		return voidessence();
+	}
+
+	return (FEssence)
+	{
+		.dag = d.u.node->u.attributes,
+		.signature = R[ASIGNATURE].u.list
+	};
 }
 
 // extractform должна получить описание формы: граф и сигнатуру - из списка
@@ -110,24 +141,15 @@ static FEssence extractform(const Ref ref, const Array *const V)
 
 	switch(ref.code)
 	{
-		case NODE:
-			return extractfromnode(ref.u.node, V);
+	case NODE:
+		return extractfromnode(ref.u.node, V);
 
-		case LIST:
-			return extractfromlist(ref.u.list, V);
+	case LIST:
+		return extractfromlist(ref.u.list, V);
 	}
 
 	return voidessence();
 }
-
-// static unsigned isfeputrefs(const Ref R[], const unsigned fverb)
-// {
-// 	return R[AKEY].code == LIST 
-// 		&& R[ASIGNATURE].code == LIST
-// 		&& (R[ADAG].code == NODE
-// 			&& R[ADAG].u.node
-// 			&& R[ADAG].u.node->verb == fverb);
-// }
 
 Ref *formkeytoref(
 	Array *const U,
@@ -149,19 +171,17 @@ typedef struct
 	Array *const universe;
 } EState;
 
-static unsigned isvalidkey(const Ref ref)
-{
-	return ref.code == LIST && ref.u.list && iscomparable(ref.u.list);
-}
 
-
-static void feputeval(const List *const attr, const EState *const st)
+static void feputeval(const Node *const n, const EState *const st)
 {
+	assert(n);
+
 	assert(st);
 	assert(st->env && st->env->ref.code == ENV);
 	assert(st->verbs);
 	assert(st->universe);
 
+	const List *const attr = n->u.attributes;
 	assert(attr);
 
 	// Ожидаемое количество
@@ -185,17 +205,9 @@ static void feputeval(const List *const attr, const EState *const st)
 
 	if(isvoidessence(fe))
 	{
-		ERR("%s", ".FEPut formspec attribute structure is broken");
+		ERR("%u: .FEPut formspec attribute structure is broken: ",
+			n->line);
 	}
-
-// 	// Получение и проверка структуры списка аттрибутов
-// 
-// 
-// 	if(!isfeputrefs(R, uidirect(st->verbs, FNODE)))
-// 	{
-// 		ERR("%s", ".FEPut node structure broken");
-// 	}
-
 
 	Ref *const r = formkeytoref(st->universe, st->env, R[AKEY].u.list, -1);
 
@@ -207,12 +219,6 @@ static void feputeval(const List *const attr, const EState *const st)
 	*r = (Ref)
 	{
 		.code = FORM,
-
-// 		.u.form = newform(
-// 			R[ADAG].u.node->u.attributes,
-// 			st->map,
-// 			R[ASIGNATURE].u.list)
-
 		.u.form = newform(fe.dag, st->map, fe.signature)
 	};
 }
@@ -235,7 +241,7 @@ static void evalone(List *const l, void *const ptr)
 	switch(key)
 	{
 	case FEPUT:
-		feputeval(n->u.attributes, st);
+		feputeval(n, st);
 	}
 }
 
