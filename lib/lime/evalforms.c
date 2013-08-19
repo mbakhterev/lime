@@ -24,6 +24,8 @@ static const char *const formverbs[] =
 
 #define AKEY 0
 #define AFORMREF 1
+#define ASIGNATURE 0
+#define AFORM 1
 
 typedef struct
 {
@@ -74,6 +76,21 @@ static FEssence extractfromnode(const Node *const n, const Array *const V)
 
 static FEssence extractfromlist(const List *const l, const Array *const V)
 {
+	assert(l);
+
+	const unsigned len = 2;
+	const Ref R[len + 1];
+	const unsigned refcnt = writerefs(l, (Ref *)R, len + 1);
+
+	if(!(refcnt == len + 1 && R[len].code == FREE))
+	{
+		return voidessence();
+	}
+
+	if(!(NULL))
+	{
+	}
+
 	return voidessence();
 }
 
