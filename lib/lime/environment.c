@@ -319,7 +319,8 @@ static int dumpone(List *const l, void *const ptr)
 			assert(fprintf(f, "\n\tform-dag: ") > 0);
 			dumpdag(f, 1, U,
 				B[i].ref.u.form->u.dag,
-				&B[i].ref.u.form->map->map);
+// 				&B[i].ref.u.form->map->map);
+				B[i].ref.u.form->map);
 
 			assert(fputc('\n', f) == '\n');
 

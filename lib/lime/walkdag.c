@@ -7,16 +7,20 @@
 
 typedef struct
 {
-// 	const Array *dagmap;
-// 	const Array *divemap;
-	const DagMap *dagmap;
-	WalkOne walk;
-	void *current;
+	const Array *const map;
+	const Array *const go;
+	const WalkOne walk;
+	void *const current;
 } NWState;
 
 static void assertuimap(const Array *const M)
 {
 	assert(M == NULL || M->code == MAP);
+}
+
+static unsigned inmap(const Array *const M, const unsigned verb)
+{
+	return uireverse(M, verb) != -1;
 }
 
 static int pernode(List *const l, void *const ptr)
@@ -28,46 +32,51 @@ static int pernode(List *const l, void *const ptr)
 	const Node *const n = l->ref.u.node;
 	assert(n);
 
-// 	const Array *const M = st->dagmap;
-// 	const Array *const dive = st->divemap;
+	const Array *const map = st->map;
+	const Array *const go = st->go;
 
-	const DagMap *const M = st->dagmap;
 	const WalkOne walk = st->walk;
 	void *const current = st->current;
 
-// 	if(uireverse(M, n->verb) == -1)
-	if(!isdag(M, n->verb))
+//	if(!isdag(M, go, n->verb))
+	if(!inmap(map, n->verb))
 	{
 		walk(l, current);
 	}
 	else
 	{
-// 		if(uireverse(dive, n->verb) != -1)
-		if(isgodag(M, n->verb))
+// 		if(isgodag(M, n->verb))
+		if(inmap(go, n->verb))
 		{
-// 			walkdag(n->u.attributes, M, dive, walk, current);
-			walkdag(n->u.attributes, M, walk, current);
+// 			walkdag(n->u.attributes, M, walk, current);
+			walkdag(n->u.attributes, map, go, walk, current);
 		}
 	}
 
 	return 0;
 }
 
+// void walkdag(
+// 	const List *const dag,
+// 	const DagMap *const M, const WalkOne walk, void *const ptr)
 void walkdag(
-	const List *const dag,
-// 	const Array *const M, const Array *const dive,
-	const DagMap *const M, const WalkOne walk, void *const ptr)
+	const List *const dag, const Array *const map, const Array *const go,
+	const WalkOne walk, void *const ptr)
 {
-	assert(M);
-	assertuimap(&M->map);
-	assertuimap(&M->go);
+// 	assert(M);
+// 	assertuimap(&M->map);
+// 	assertuimap(&M->go);
+
+	assertuimap(map);
+	assertuimap(go);
 
 	assert(walk);
 
 	NWState st =
 	{
-		.dagmap = M,
-//		.divemap = dive,
+//		.dagmap = M,
+		.go = go,
+		.map = map,
 		.walk = walk,
 		.current = ptr
 	};

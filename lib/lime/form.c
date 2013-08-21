@@ -74,7 +74,8 @@ void freeformlist(List *const forms)
 }
 
 Form *newform(
-	const List *const dag, const DagMap *const map,
+//	const List *const dag, const DagMap *const map,
+	const List *const dag, const Array *const map,
 	const List *const signature)
 {
 	Form *f = NULL;

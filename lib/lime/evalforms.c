@@ -166,7 +166,8 @@ typedef struct
 {
 	const List *const env;
 	const List *const ctx;
-	const DagMap *const map;
+//	const DagMap *const map;
+	const Array *const map;
 	const Array *const verbs;
 	Array *const universe;
 } EState;
@@ -245,9 +246,14 @@ static void evalone(List *const l, void *const ptr)
 	}
 }
 
+// void evalforms(
+// 	Array *const U,
+// 	const List *const dag, const DagMap *const M,
+// 	const List *const env, const List *const ctx)
+
 void evalforms(
 	Array *const U,
-	const List *const dag, const DagMap *const M,
+	const List *const dag, const Array *const map, const Array *const go,
 	const List *const env, const List *const ctx)
 {
 	assert(env && env->ref.code == ENV);
@@ -259,12 +265,14 @@ void evalforms(
 	{
 		.env = env,
 		.ctx = ctx,
-		.map = M,
+// 		.map = M,
+		.map = map,
 		.verbs = &verbs,
 		.universe = U
 	};
 	
-	walkdag(dag, M, evalone, (void *)&st);
+// 	walkdag(dag, M, evalone, (void *)&st);
+	walkdag(dag, map, go, evalone, (void *)&st);
 
 	freeuimap((Array *)&verbs);
 }

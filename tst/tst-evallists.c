@@ -11,22 +11,28 @@ int main(int argc, char *argv[])
 {
 	Array U = makeatomtab();
 
-	const DagMap DM
-		= makedagmap(&U, 0, ES("Z", "ZA", "ZB"), ES("Z", "ZA"));
+// 	const DagMap DM
+// 		= makedagmap(&U, 0, ES("Z", "ZA", "ZB"), ES("Z", "ZA"));
+	
+	const Array map = keymap(&U, 0, ES("Z", "ZA", "ZB"));
+	const Array go = keymap(&U, 0, ES("Z", "ZA"));
 	
 	const Array nonroots
 // 		= keymap(&U, 0, ES("L"));
 		= keymap(&U, 0, ES("L", "LNth", "FIn"));
 
-	List *l = loaddag(stdin, &U, &DM.map);
+	List *l = loaddag(stdin, &U, &map);
 
-	evallists(&U, &l, &DM, RL(refnum(1), refnum(2), refnum(3)));
-	gcnodes(&l, &DM, &nonroots);
+// 	evallists(&U, &l, &DM, RL(refnum(1), refnum(2), refnum(3)));
+// 	gcnodes(&l, &DM, &nonroots);
+
+	evallists(&U, &l, &map, &go, RL(refnum(1), refnum(2), refnum(3)));
+	gcnodes(&l, &map, &go, &nonroots);
 
 	size_t sz = 0;
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
-	dumpdag(f, 0, &U, l, &DM.map);
+	dumpdag(f, 0, &U, l, &map);
 	fclose(f);
 
 	printf("dag(l):%s\n", d);

@@ -389,10 +389,15 @@ static const char *const listverbs[] =
 	NULL
 };
 
+// List *evallists(
+// 	Array *const U,
+// 	List **const dag,
+// 	const DagMap *const M, const List *const arguments)
+
 List *evallists(
 	Array *const U,
-	List **const dag,
-	const DagMap *const M, const List *const arguments)
+	List **const dag, const Array *const map, const Array *const go,
+	const List *const arguments)
 {
 	const Array verbs = keymap(U, 0, listverbs);
 
@@ -402,7 +407,7 @@ List *evallists(
 		.L = (List *)arguments
 	};
 
-	walkdag(*dag, M, rewriteone, (void *)&st);
+	walkdag(*dag, map, go, rewriteone, (void *)&st);
 	freeuimap((Array *)&verbs);
 
 	return *dag;

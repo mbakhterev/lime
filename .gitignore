@@ -31,3 +31,8 @@
 
 !tcn
 !tcn/*.mk
+
+!bin
+!bin/knl
+!bin/knl/*.[ch]
+!bin/knl/gnu.mk

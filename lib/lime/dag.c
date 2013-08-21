@@ -74,44 +74,44 @@ void freenode(Node *const n)
 	freenodes = n;
 }
 
-DagMap makedagmap(
-	Array *const U, const unsigned hint,
-	const char *const dagverbs[], const char *const goverbs[])
-{
-	return (DagMap) {
-		.map = keymap(U, hint, dagverbs),
-		.go = keymap(U, hint, goverbs)
-	};
-}
-
-void freedagmap(DagMap *const M)
-{
-	freeuimap(&M->go);
-	freeuimap(&M->map);
-}
-
-unsigned isdag(const DagMap *const M, const unsigned verb)
-{
-	return uireverse(&M->map, verb) != -1;
-}
-
-unsigned isgodag(const DagMap *const M, const unsigned verb)
-{
-	return uireverse(&M->go, verb) != - 1;
-}
+// DagMap makedagmap(
+// 	Array *const U, const unsigned hint,
+// 	const char *const dagverbs[], const char *const goverbs[])
+// {
+// 	return (DagMap) {
+// 		.map = keymap(U, hint, dagverbs),
+// 		.go = keymap(U, hint, goverbs)
+// 	};
+// }
+// 
+// void freedagmap(DagMap *const M)
+// {
+// 	freeuimap(&M->go);
+// 	freeuimap(&M->map);
+// }
+// 
+// unsigned isdag(const DagMap *const M, const unsigned verb)
+// {
+// 	return uireverse(&M->map, verb) != -1;
+// }
+// 
+// unsigned isgodag(const DagMap *const M, const unsigned verb)
+// {
+// 	return uireverse(&M->go, verb) != - 1;
+// }
 
 typedef struct
 {
 	List *L;
-	const Array *nonroots;
-// 	const Array *dagmap;
-	const DagMap *dagmap;
+	const Array *const nonroots;
+//	const DagMap *dagmap;
+	const Array *const map;
+	const Array *const go;
 	Array marks;
 } GCState;
 
 static unsigned inmap(const Array *const map, const unsigned i)
 {
-// 	return map && uireverse(map, i) != -1;
 	return uireverse(map, i) != -1;
 }
 
@@ -181,8 +181,9 @@ static int rebuildone(List *const l, void *const state)
 		DBG(DBGGC,
 			"keeping: %p:rmap(%u)=%u; map: %p",
 			(void *)n, n->verb,
-			uireverse(&st->dagmap->map, n->verb),
-			(void *)st->dagmap);
+// 			uireverse(&st->dagmap->map, n->verb),
+			uireverse(st->map, n->verb),
+			(void *)st->map);
 
 		// Приписываем отмеченный узел к результату
 		st->L = append(st->L, l);
@@ -191,29 +192,40 @@ static int rebuildone(List *const l, void *const state)
 		// в нём
 
 // 		if(inmap(st->dagmap, n->verb))
-		if(isdag(st->dagmap, n->verb) && isgodag(st->dagmap, n->verb))
+//		if(isdag(st->dagmap, n->verb) && isgodag(st->dagmap, n->verb))
+		if(inmap(st->map, n->verb) && inmap(st->go, n->verb))
 		{
 			DBG(DBGGC, "gc for node: %u", n->verb);
-			gcnodes(&n->u.attributes, st->dagmap, st->nonroots);
+//			gcnodes(&n->u.attributes, st->dagmap, st->nonroots);
+			gcnodes(
+				&n->u.attributes, st->map, st->go,
+				st->nonroots);
 		}
 	}
 	else
 	{
-		freedag(l, st->dagmap);
+//		freedag(l, st->dagmap);
+		freedag(l, st->map);
 	}
 
 	return 0;
 }
 
+// List *gcnodes(
+// 	List **const dptr,
+// // 	const Array *const dagmap,
+// 	const DagMap *const dagmap, const Array *const nonroots)
+
 List *gcnodes(
-	List **const dptr,
-// 	const Array *const dagmap,
-	const DagMap *const dagmap, const Array *const nonroots)
+	List **const dptr, const Array *const map, const Array *const go,
+	const Array *const nonroots)
 {
 	GCState st =
 	{
 		.nonroots = nonroots,
-		.dagmap = dagmap,
+//		.dagmap = dagmap,
+		.go = go,
+		.map = map,
 		.marks = makeptrmap(),
 		.L = NULL
 	};
@@ -232,8 +244,8 @@ List *gcnodes(
 
 		const Node *const n = k->ref.u.node;
 
-// 		if(!inmap(dagmap, n->verb))
-		if(!isdag(dagmap, n->verb))
+//		if(!isdag(dagmap, n->verb))
+		if(!inmap(map, n->verb))
 		{
 			forlist(n->u.attributes, expandone, &st, 0);
 		}
@@ -255,8 +267,8 @@ static int freeone(List *const l, void *const dagmap)
 
 	Node *const n = l->ref.u.node;
 
-// 	if(!inmap(dagmap, n->verb))
-	if(!isdag(dagmap, n->verb))
+//	if(!isdag(dagmap, n->verb))
+	if(!inmap(dagmap, n->verb))
 	{
 		freelist(n->u.attributes);
 	}
@@ -270,9 +282,10 @@ static int freeone(List *const l, void *const dagmap)
 	return 0;
 }
 
-void freedag(List *const dag, const DagMap *const dagmap)
+// void freedag(List *const dag, const DagMap *const dagmap)
+void freedag(List *const dag, const Array *const map)
 {
-	forlist(dag, freeone, (void *)dagmap, 0);
+	forlist(dag, freeone, (void *)map, 0);
 	freelist(dag);
 }
 
@@ -297,7 +310,8 @@ typedef struct
 	unsigned bound;
 } FState;
 
-List *forkdag(const List *const dag, const DagMap *const dm)
+List *forkdag(const List *const dag, const Array *const map)
+// const DagMap *const dm)
 {
 	assert(dag);
 
@@ -317,10 +331,10 @@ List *forkdag(const List *const dag, const DagMap *const dm)
 		N[i] = refnode(newnode(		
 			n->line,
 			n->verb,
-//			uireverse(dm, n->verb) == -1 ?
-			isdag(dm, n->verb) == 0 ?
+// 			isdag(dm, n->verb) == 0 ?
+			inmap(map, n->verb) == 0 ?
 				  transforklist(n->u.attributes, &M, N, i)
-				: forkdag(n->u.attributes, dm)));
+				: forkdag(n->u.attributes, map)));
 	}
 
 	return readrefs(N);

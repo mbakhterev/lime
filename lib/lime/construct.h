@@ -16,9 +16,7 @@ typedef struct arraytag Array;
 typedef struct formtag Form;
 typedef struct contexttag Context;
 
-// typedef struct liveformtag LiveForm;
-
-// Индексированные массивы
+// Автоматически индексируемые массивы
 
 struct arraytag {
 	KeyCmp keycmp;
@@ -81,11 +79,10 @@ struct nodetag
 		Node *nextfree;
 		List *attributes;
 	} u;
-
-	// В какой строке был получен узел. Важно для отладки
-	unsigned line;
-
 	unsigned verb;
+
+	// В какой строке начинается описание узла. Важно для отладки
+	unsigned line;
 };
 
 extern Node *newnode(
@@ -109,7 +106,6 @@ extern void freenode(Node *const);
 // элементе списка
 
 typedef struct {
-	unsigned code;
 	union {
 		void *pointer;
 		List *list;
@@ -119,6 +115,7 @@ typedef struct {
 		Context *context;
 		unsigned number;
 	} u;
+	unsigned code;
 } Ref;
 
 // Конструкторы для Ref
@@ -142,7 +139,6 @@ enum
 	NUMBER, ATOM, TYPE, LIST, NODE,
 	ENV, MAP, PTR, CTX,
 	FORM,
-// 	LIVEFORM,
 	FREE = -1
 };
 
@@ -150,15 +146,6 @@ struct listtag {
 	List * next;
 	Ref ref;
 };
-
-// r - это Ref, которая определяет, как будет сконструирован список. Если по
-// семантике ссылка должна быть числом (NUMBER, ATOM, TYPE), то копируется поле
-// r.number. Если списком (LIST), то копируется поле n.list, даже если оно NULL
-// (пустые подсписки бывают). Если узлом (NODE), то ссылка копируется, если
-// r.node != NULL; если же r.node == NULL, то создаётся пустой узел с кодом FREE
-
-// newlist - неудобный вариант конструктора
-// extern List *newlist(const int code, Ref r);
 
 // Слепить несколько ссылок в массив вида Ref[], воспринимаемый readrefs.
 // Необходимо, чтобы он заканчивался ссылкой с кодом FREE. RS означает Refs
@@ -180,7 +167,7 @@ extern List *readrefs(const Ref refs[]);
 
 extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 
-// Для упрощения синтаксиса RLS - Ref List on Stack
+// Для упрощения синтаксиса DL - Define List (не особо удачное название)
 
 #define DL(DLNAME, REFS) \
 	const List DLNAME[sizeof(REFS)/sizeof(Ref) - 1]; \
@@ -201,7 +188,7 @@ extern List *tipoff(List **const);
 extern List *tip(const List *const);
 
 // Копирование списка с заменой ссылок на узлы (NODE). Если nodemap - это NULL,
-// то должно быть: nodes == NULL && bound == NULL. И в этом случае получается
+// то должно быть: (nodes == NULL && bound == 0). И в этом случае получается
 // реализация forklist. nodemap (M) и nodes (N) задают отображение ссылок в
 // исходном списке на новые узлы таким образом: m -> N[ptrreverse(M, m)]. При
 // этом должно выполняться: ptrreverse(M, m) < bound. Условие нужно для контроля
@@ -217,15 +204,12 @@ extern List *forklistcut(
 
 extern List *forklist(const List *const);
 
-// extern void freelist(List *const, void (*killone)(const List *const));
-// extern void killnothing(const List *const);
-
 extern void freelist(List *const);
 
 extern char *dumplist(const List *const);
+extern char *listtostr(const Array *const universe, const List *const list);
 extern void unidumplist(
 	FILE *const, const Array *const universe, const List *const list);
-extern char *listtostr(const Array *const universe, const List *const list);
 
 // Функция forlist применяет другую функцию типа Oneach к каждому элементу
 // списка, пока последняя возвращает значение, равное key. foreach устроена так,
@@ -290,72 +274,80 @@ extern const void *const ptrdirect(const Array *const, const unsigned);
 
 // Семантические функции
 
+// Во многих нижеследующих процедурах используется два особых параметра,
+// описывающих структуру обрабатываемого графа: map и go. Параметр map - это
+// uimap, которая задаёт verb-ы узлов, в атрибутах которых записаны графы.
+// Параметр go - это указание на verb-ы тех узлов с графами, в которые алгоритм
+// должен рекурсивно спускаться. Если параметр go не указан, значит, алгоритм
+// рекурсивно спускается в графы во всех узлах с ними.
+// 
+// Например, пройтись по всем графам в узлах, имена которых в массиве verbs:
+// 	const Array map = keymap(U, 0, verbs); 
+// 	walkdag(dag, &map, &map, walkone, ptr);
+//	freemap((Array *)map);
+
 // Загрузка dag-а. Атомы загружаются в universe. dagmap отмечает узлы, которые
 // должны содержать другие dag-и в своих атрибутах. У каждого dag-а своя область
 // видимости по ссылкам, они не могут явно ссылаться на узлы друг друга.
 
 extern List *loaddag(
-	FILE *const, Array *const universe, const Array *const dagmap);
+	FILE *const, Array *const universe, const Array *const map);
 
-// Выгрузка dag-а. tabs - для красивой печати с отступами.
+// Выгрузка dag-а. tabs - для красивой печати с отступами. 
 
 extern void dumpdag(
 	FILE *const, const unsigned tabs, const Array *const universe,
-	const List *const dag, const Array *const dagmap);
+	const List *const dag, const Array *const map);
 
 // Создать согласованную с таблицей атомов keymap по списку строк. Список строк,
-// оканчивающийся NULL
+// оканчивающийся NULL. В полученной uimap на i-том месте будет стоять номер
+// атома, который описывается (hint; strlen(atoms(i)); atoms(i))
 
 extern Array keymap(Array *const universe,
 	const unsigned hint, const char *const atoms[]);
 
+// // "Карта" для прохода по графу. В DagMap M оба поля - uimap-ы. M.map
+// // содержит verb-ы узлов, атрибутами которых являются подграфы. M.go -
+// // описывает узлы, в подграфы которых следует проходить рекурсивно.
+// // Некоторые процедуры игнорируют M.go
+// 
+// // Например, зайти во все под-dag-и: walkdag(dag, makedagmap(U, 0,
+// // verbs, verbs), walkone, ptr);
+// 
+// typedef struct
+// {
+// 	const Array *const map;
+// 	const Array *const go;
+// } DagMap;
+// 
+// extern DagMap makedagmap(
+// 	Array *const universe, const unsigned hint,
+// 	const char *const dagverbs[], const char *const dive[]);
+// 
+// extern void freedagmap(DagMap *const);
+// 
+// extern unsigned isdag(const DagMap *const, const unsigned verb);
+// extern unsigned isgodag(const DagMap *const, const unsigned verb);
 
-// "Карта" для прохода по графу. В DagMap M оба поля - uimap-ы. M.map содержит
-// verb-ы узлов, атрибутами которых являются подграфы. M.go - описывает узлы,
-// в подграфы которых следует проходить рекурсивно. Некоторые процедуры
-// игнорируют M.go
-
-// Например, зайти во все под-dag-и:
-// 	walkdag(dag, makedagmap(U, 0, verbs, verbs), walkone, ptr);
-
-typedef struct
-{
-	Array map;
-	Array go;
-} DagMap;
-
-extern DagMap makedagmap(
-	Array *const universe, const unsigned hint,
-	const char *const dagverbs[], const char *const dive[]);
-
-extern void freedagmap(DagMap *const);
-
-extern unsigned isdag(const DagMap *const, const unsigned verb);
-extern unsigned isgodag(const DagMap *const, const unsigned verb);
-
-// fork и free dag не используют DagMap.go
-
-extern List *forkdag(const List *const dag, const DagMap *const);
-extern void freedag(List *const dag, const DagMap *const);
+extern List *forkdag(const List *const dag, const Array *const map);
+extern void freedag(List *const dag, const Array *const map);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
 // uimap-отображением nonroots.
 
 extern List *gcnodes(
-	List **const dag,
-// 	const Array *const dagmap,
-	const DagMap *const dagmap, const Array *const nonroots);
+	List **const dag, const Array *const map, const Array *const go,
+	const Array *const nonroots);
 
 typedef void (*WalkOne)(List *const, void *const);
 
 extern void walkdag(
-	const List *const dag,
-//	const Array *const dagmap, const Array *const divedag,
-	const DagMap *const, const WalkOne, void *const);
+	const List *const dag, const Array *const map, const Array *const go,
+	const WalkOne, void *const);
 
 extern List *evallists(
 	Array *const U,
-	List **const dag, const DagMap *const,
+	List **const dag, const Array *const map, const Array *const go,
 	const List *const arguments);
 
 // Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
@@ -372,7 +364,7 @@ struct formtag
 		struct formtag *nextfree;
 	} u;
 	const List *const signature;
-	const DagMap *const map;
+	const Array *const map;
 	unsigned count;
 	const unsigned goal;
 };
@@ -380,20 +372,21 @@ struct formtag
 extern void freeform(Form *const f);
 
 extern Form *newform(
-	const List *const dag, const DagMap *const,
+	const List *const dag, const Array *const map,
 	const List *const signature);
-
 
 // Структура контекста вывода
 
 struct contexttag
 {
-	// Куда же без этого? Карта выводимых dag-ов
-
-	const DagMap *const dagmap;
-
-	// Выведенная в этом контексте часть графа программы. Сюда дописывается
-	// содержимое активированных форм
+// 	В каждой форме есть своя карта. И, видимо, индивидуальные карты нужны на
+// 	определённых шагах алгоритма. Поэтому вообще для контекста эти штуки
+// 	несколько бессмысленны
+// 
+// 	const DagMap *const dagmap;
+// 
+// 	// Выведенная в этом контексте часть графа программы. Сюда дописывается
+// 	// содержимое активированных форм
 
 	List *dag;
 
@@ -416,8 +409,13 @@ struct contexttag
 
 // Контексты собираются в стеки
 
-extern List *pushcontext(List *const ctx, const DagMap *const);
-extern List *popcontext(List *const ctx);
+extern List *pushcontext(List *const ctx);
+
+// При очищении контекста нужно знать структуру выращенного в нём графа, не
+// понятно наперёд, какая именно это карта должна быть (взятая из форм или что?
+// любые гипотезы приветствуются). Поэтому просто параметр
+
+extern List *popcontext(List *const ctx, const Array *const map);
 
 // Слияние двух контекстов на вершине стека. Тот, что сверху дописывается к
 // тому, что снизу - это описание формирования порядка dag-ов
@@ -425,7 +423,7 @@ extern List *popcontext(List *const ctx);
 extern List *mergecontext(const Array *const U, List *const ctx);
 
 // Выбирает из текущего графа формы и размещает их в соответствии с указаниями
-// публикации: .FPut, .FGPut, .FSPut. Публикация осуществляется в на вершинах
+// публикации: .FPut, .FGPut, .FEPut. Публикация осуществляется на вершинах
 // двух указанных стеков: областей видимости и контекстов вывода.
 
 // WARN: У формы есть ссылка на карту графа, эта ссылка будет взята из аргумента
@@ -433,7 +431,7 @@ extern List *mergecontext(const Array *const U, List *const ctx);
 
 extern void evalforms(
 	Array *const universe,
-	const List *const srcdag, const DagMap *const,
+	const List *const dag, const Array *const map, const Array *const go,
 	const List *const env, const List *const ctx);
 
 #endif

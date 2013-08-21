@@ -11,21 +11,24 @@ int main(int argc, char *argv[])
 {
 	Array U = makeatomtab();
 
-	const DagMap DM
-		= makedagmap(&U, 0, ES("F"), (const char *const[]) { NULL });
+// 	const DagMap DM
+// 		= makedagmap(&U, 0, ES("F"), (const char *const[]) { NULL });
 
-	List *l = loaddag(stdin, &U, &DM.map);
+	const Array map = keymap(&U, 0, ES("F"));
+
+	List *l = loaddag(stdin, &U, &map);
 
 	List *env = pushenvironment(NULL);
-	List *ctx = pushcontext(NULL, &DM);
+	List *ctx = pushcontext(NULL);
 
-	evallists(&U, &l, &DM, NULL);
-	evalforms(&U, l, &DM, env, ctx);
+	evallists(&U, &l, &map, NULL, NULL);
+	evalforms(&U, l, &map, NULL, env, ctx);
 
 	size_t sz = 0;
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
-	dumpdag(f, 0, &U, l, &DM.map);
+// 	dumpdag(f, 0, &U, l, &DM.map);
+	dumpdag(f, 0, &U, l, &map);
 	fclose(f);
 
 	printf("dag(l):%s\n", d);
