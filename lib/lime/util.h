@@ -13,9 +13,11 @@ extern unsigned item;
 extern unsigned field;
 extern const char * unitname;
 
-// #define ERR(fmt, ...) \
-// 	err(EXIT_FAILURE, "%s(%u:%u) error: " fmt, \
-// 		unitname, item, field, __VA_ARGS__)
+#if 0
+#define ERR(fmt, ...) \
+	err(EXIT_FAILURE, "%s(%u:%u) error: " fmt, \
+		unitname, item, field, __VA_ARGS__)
+#endif
 
 #define ERR(fmt, ...) \
 	err(EXIT_FAILURE, "%s(%u) error: " fmt, \
