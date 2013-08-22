@@ -27,8 +27,14 @@ lminc = \
 
 lmobj = $(call c2o,$(lmbits),$(lmsrc))
 
-.PHONY: lmlib
+.PHONY: lmlib cleanlmlib
+
 lmlib: $(L)/liblime.a $(lminc)
+
+cleanlmlib:
+	@ rm -r $(lmbits) \
+	&& rm $(L)/liblime.a \
+	&& rm -r $(I)/lime
 
 $(L)/liblime.a: $(lmobj)
 

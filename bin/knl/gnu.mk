@@ -5,8 +5,13 @@ lksrc = \
 
 lkobj = $(call c2o, $(lkbits),$(lksrc))
 
-.PHONY: lmknl
+.PHONY: lmknl cleanlmknl
+
 lmknl: $(B)/lime-knl
+
+cleanlmknl:
+	@ rm -r $(lkbits) \
+	&& rm $(B)/lime-knl
 
 $(B)/lime-knl: $(lkobj) $(L)/liblime.a
 

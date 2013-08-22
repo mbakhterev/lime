@@ -1,5 +1,5 @@
-lmtstbits = $(call bitspath)
-lmtstnode = $(call nodepath)
+lmtstbits := $(call bitspath)
+lmtstnode := $(call nodepath)
 
 lmtstsrc = \
 	tst-rune.c	\
@@ -15,13 +15,10 @@ lmtstsrc = \
 	tst-evallists.c \
 	tst-evalforms.c
 
-tstobj = $(call c2o,$(lmtstbits),$(lmtstsrc))
+lmtstobj = $(call c2o,$(lmtstbits),$(lmtstsrc))
 
-lmlib = $(L)/liblime.a
-
-.PHONY: lmtst
-
-lmtst: \
+# Targets
+lmtstbin = \
 	$(T)/tst-rune		\
 	$(T)/tst-array		\
 	$(T)/tst-heapsort	\
@@ -35,6 +32,16 @@ lmtst: \
 	$(T)/tst-forkdag	\
 	$(T)/tst-evallists	\
 	$(T)/tst-evalforms
+
+lmlib = $(L)/liblime.a
+
+.PHONY: lmtst cleanlmtst
+
+lmtst: $(lmtstbin)
+
+cleanlmtst:
+	@ rm -r $(lmtstbits) \
+	&& rm $(lmtstbin)
 
 $(T)/tst-rune: $(lmtstbits)/tst-rune.o $(lmlib)
 $(T)/tst-array: $(lmtstbits)/tst-array.o $(lmlib)
@@ -52,7 +59,7 @@ $(T)/tst-forkdag: $(lmtstbits)/tst-forkdag.o $(lmlib)
 $(T)/tst-evallists: $(lmtstbits)/tst-evallists.o $(lmlib)
 $(T)/tst-evalforms: $(lmtstbits)/tst-evalforms.o $(lmlib)
 
-$(tstobj) $(call o2d,$(tstobj)): cflags += -I $(I)
-$(call o2d,$(tstobj)): $(lminc)
+$(lmtstobj) $(call o2d,$(lmtstobj)): cflags += -I $(I)
+$(call o2d,$(lmtstobj)): $(lminc)
 
--include $(call o2d,$(tstobj))
+-include $(call o2d,$(lmtstobj))

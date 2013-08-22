@@ -2,7 +2,10 @@ lmrootnode := $(call nodepath)
 
 cstd = c99
 
+.PHONY: lime cleanlime
+
 lime: lmlib lmknl lmtst 
+cleanlime: cleanlmlib cleanlmknl cleanlmtst
 
 $(eval $(call headroute,lime,$(lmrootnode)/lib/lime))
 
