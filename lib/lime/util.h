@@ -20,13 +20,13 @@ extern const char * unitname;
 #endif
 
 #define ERR(fmt, ...) \
-	err(EXIT_FAILURE, "%s(%u) error: " fmt, \
-		unitname, item, __VA_ARGS__)
+	err(EXIT_FAILURE, __FILE__ "(%u) %s: error:\n\t%s(%u): " fmt, \
+		__LINE__, __func__, unitname, item, __VA_ARGS__)
 
 #define DBG(f, fmt, ...) \
 	(void)((f & DBGFLAGS) \
 		&& fprintf(stderr, \
-			__FILE__ ":%u\t%s\t" fmt "\n", \
+			__FILE__ "(%u) %s:\t" fmt "\n", \
 			__LINE__, __func__, __VA_ARGS__))
 
 #define MAXNUM ((unsigned)-1 >> 1)

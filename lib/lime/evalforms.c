@@ -194,11 +194,13 @@ static void feputeval(const Node *const n, const EState *const st)
 
 	if(!(refcnt == len + 1 && R[len].code == FREE))
 	{
+		item = 10;
 		ERR("%s", ".FEPut attribute structure is broken");
 	}
 
 	if(!isvalidkey(R[AKEY]))
 	{
+		item = n->line;
 		ERR("%s", ".FEPut keyspec attribute structure is broken");
 	}
 
@@ -206,14 +208,15 @@ static void feputeval(const Node *const n, const EState *const st)
 
 	if(isvoidessence(fe))
 	{
-		ERR("%u: .FEPut formspec attribute structure is broken: ",
-			n->line);
+		item = n->line;
+		ERR("%s", ".FEPut formspec attribute structure is broken");
 	}
 
 	Ref *const r = formkeytoref(st->universe, st->env, R[AKEY].u.list, -1);
 
 	if(r->code != FREE)
 	{
+		item = n->line;
 		ERR("%s", "Form with key exists");
 	}
 

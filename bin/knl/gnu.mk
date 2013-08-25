@@ -10,10 +10,12 @@ lkobj = $(call c2o, $(lkbits),$(lksrc))
 lmknl: $(B)/lime-knl
 
 cleanlmknl:
-	@ rm -r $(lkbits) \
+	@ rm -r $(lkbits)/*.o \
 	&& rm $(B)/lime-knl
 
 $(B)/lime-knl: $(lkobj) $(L)/liblime.a
+
+$(lkbits)/kernel.o: cflags += -D_XOPEN_SOURCE
 
 $(call o2d,$(lkobj)): cflags += -I $(I)
 $(lkobj): cflags += -I $(I)

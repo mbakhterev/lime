@@ -94,7 +94,6 @@ int skipspaces(FILE *const f)
 			default:
 				assert(fseek(f, -1, SEEK_CUR) == 0);
 				notdone = 0;
-				
 			}
 
 			break;

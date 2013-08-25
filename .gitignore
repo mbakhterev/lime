@@ -1,5 +1,4 @@
 *
-
 !.gitignore
 !TODO
 !TREE
@@ -25,6 +24,8 @@
 !tst/*.sh
 !tst/in-*.txt
 !tst/gnu.mk
+!tst/forms
+!tst/forms/*.lk
 
 !sketch
 !sketch/*.c
@@ -36,3 +37,6 @@
 !bin/knl
 !bin/knl/*.[ch]
 !bin/knl/gnu.mk
+
+!txt
+!txt/*.txt
