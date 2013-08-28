@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include <stdio.h>
+#include <ctype.h>
 #include <unistd.h>
 
 #define DBGMAIN 1
@@ -60,34 +61,167 @@ const char *const stdmap[] =
 // Команды от синтаксического фасада. Их тоже необходимо загружать в виде
 // атомов, чтобы был возможен поиск формы по её имени (ключу)
 
-#define AOP	0
-#define UOP	1
-#define BOP	2
-#define LOP	3
-#define EOP	4
-#define FOP	5
+// // #define AOP	0
+// // #define UOP	1
+// #define EUOP	(EOP + 1)
+// // #define BOP	3
+// #define EBOP	(EUOP + 1)
+// // #define LOP	5
+// #define ELOP	(EBOP + 1)
+// // #define FOP	7
 
 const char *const syntaxops[] =
 {
+	[FOP] = "F",
 	[AOP] = "A",
 	[UOP] = "U",
-	[BOP] = "B",
 	[LOP] = "L",
+	[BOP] = "B",
 	[EOP] = "E",
-	[FOP] = "F",
+// 	[EUOP] = "EU",
+// 	[EBOP] = "EB",
+// 	[ELOP] = "EL",
 	NULL
 };
 
-// Чтение синтаксиса и выстраива
+// FIXME: пока ничего не делается с F
 
-// static void readandcode(FILE *const f)
+static unsigned opdecode(int c)
+{
+	switch(c)
+	{
+	case 'A': return AOP;
+	case 'U': return UOP;
+	case 'L': return LOP;
+	case 'B': return BOP;
+	case 'E': return EOP;
+	}
+
+	return -1;
+}
+
+// Синтаксическая команда
+
+// typedef struct
 // {
-// 	
-// 	while(skipspaces(f) != EOF)
-// 	{
-// 		
-// 	}
-// }
+// 	unsigned code;
+// 	unsigned line;
+// 	unsigned col;
+// 	unsigned atom;
+// } Cmd;
+
+static Position notapos(void)
+{
+	return (Position) { .file = -1, .line = -1, .column = -1 };
+}
+
+static SyntaxNode syntaxend(void)
+{
+	return (SyntaxNode)
+	{
+		.op = EOF,
+		.atom = -1,
+		.pos = notapos()
+	};
+}
+
+static unsigned isgoodpos(Position p)
+{
+	if(p.file == -1 || p.line == -1 || p.column == -1)
+	{
+		assert(p.file == -1 && p.line == -1 && p.column == -1);
+		return 0;
+	}
+
+	return 1;
+}
+
+static Position readposition(FILE *const f)
+{
+	unsigned line;
+	unsigned col;
+	
+	if(fscanf(f, "%u.%u", &line, &col) == 2
+		&& line < MAXNUM && col < MAXNUM)
+	{
+		return (Position)
+		{
+			.line = line,
+			.column = col,
+			.file = 0 // FIXME
+		};
+	}
+
+	return notapos();
+}
+
+static SyntaxNode readone(FILE *const f, Array *const U)
+{
+	int c = -1;
+	
+	if((c = skipspaces(f)) == EOF)
+	{
+		return syntaxend();
+	}
+
+	// Декодируем op-код синтаксиса
+
+	const unsigned op = opdecode(c);
+	if(op == -1)
+	{
+		ERR("wrong syntax node op: %c", c);
+	}
+
+	// Зачитываем координаты. skipspaces нужна, чтобы учесть переходы на
+	// новую строку.
+	
+	// FIXME: Вообще, красивым решением было бы написать свои процедуры
+	// чтения текстовых файлов, где бы автоматически считалась позиция во
+	// вводе, но пока на это нет времени. Поэтому действуем топорно
+
+	if(!isdigit(c = skipspaces(f)))
+	{
+		ERR("%s", "can't get syntax node position");
+	}
+
+	assert(ungetc(c, f) == c);
+	const Position pos = readposition(f);
+	if(!isgoodpos(pos))
+	{
+		ERR("%s", "can't get syntax node position");
+	}
+
+	// Сам атом. Должен начинаться с шестнадцатеричного hint
+
+	if(!isxdigit(c = skipspaces(f)))
+	{
+		ERR("%s", "can't get syntax node atom");
+	}
+
+	assert(ungetc(c, f) == c);
+	const unsigned atom = loadatom(U, f);
+
+	return (SyntaxNode)
+	{
+		.op = op,
+		.atom = atom,
+		.pos = pos
+	};
+}
+
+// Тут read в форме past perfect
+
+static void progressread(
+	FILE *const f,
+	Array *const U, const List *const env, const List *const ctx)
+{
+	SyntaxNode sntx;
+
+	while((sntx = readone(f, U)).op != EOF)
+	{
+		progress(U, env, ctx, sntx);
+	}
+}
 
 int main(int argc, char *const argv[])
 {
@@ -105,8 +239,8 @@ int main(int argc, char *const argv[])
 
 	const Array map = keymap(&U, 0, stdmap);
 
-	List *env = pushenvironment(NULL);
-	List *ctx = pushcontext(NULL);
+	const List *env = pushenvironment(NULL);
+	const List *ctx = pushcontext(NULL);
 
 	initforms(argc, argv, &U, &map, env, ctx);
 
@@ -119,12 +253,9 @@ int main(int argc, char *const argv[])
 
 	// Основной цикл вывода графа программы. Чтение с stdin
 
-	FILE *const f = stdin;
-
-	while(skipspaces(f) != EOF)
-	{
-		
-	}
+	item = 1;
+	unitname = "stdin";
+	progressread(stdin, &U, env, ctx);
 
 	return 0;
 }

@@ -31,7 +31,8 @@ lmtstbin = \
 	$(T)/tst-gcnodes	\
 	$(T)/tst-forkdag	\
 	$(T)/tst-evallists	\
-	$(T)/tst-evalforms
+	$(T)/tst-evalforms	\
+	$(T)/tst-knl.sh
 
 lmlib = $(L)/liblime.a
 
@@ -58,6 +59,18 @@ $(T)/tst-gcnodes: $(lmtstbits)/tst-gcnodes.o $(lmlib)
 $(T)/tst-forkdag: $(lmtstbits)/tst-forkdag.o $(lmlib)
 $(T)/tst-evallists: $(lmtstbits)/tst-evallists.o $(lmlib)
 $(T)/tst-evalforms: $(lmtstbits)/tst-evalforms.o $(lmlib)
+
+lmtstforms = \
+	$(T)/forms/simple-atom.lk
+
+$(T)/tst-knl.sh: $(lmtstnode)/tst-knl.sh $(lmtstforms)
+
+# Правило подхвата тестовых форм
+
+$(T)/%.lk: $(lmtstnode)/%.lk
+	@ $(echo) '\tform\t$@' \
+	&& $(call mkpath,$(BDIR),$(@D)) \
+	&& install -m 755 $< $@
 
 $(lmtstobj) $(call o2d,$(lmtstobj)): cflags += -I $(I)
 $(call o2d,$(lmtstobj)): $(lminc)

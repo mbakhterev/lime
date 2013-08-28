@@ -17,7 +17,8 @@ lmsrc = \
 	evallists.c	\
 	context.c	\
 	form.c		\
-	evalforms.c
+	evalforms.c	\
+	progress.c
 
 lminc = \
 	$(I)/lime/construct.h	\

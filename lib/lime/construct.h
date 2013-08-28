@@ -434,4 +434,38 @@ extern void evalforms(
 	const List *const dag, const Array *const map, const Array *const go,
 	const List *const env, const List *const ctx);
 
+// Синтаксические команды
+
+#define FOP 0
+#define AOP 1
+#define UOP 2
+#define LOP 3
+#define BOP 4
+#define EOP 5
+
+// О Position заметка txt/worklog.txt Position 2013-08-27 18:24:10
+
+typedef struct
+{
+	// номер атома с именем файла
+	unsigned file;
+	unsigned line;
+	unsigned column;
+} Position;
+
+typedef struct
+{
+	const unsigned op;
+	const unsigned atom;
+	const Position pos;
+} SyntaxNode;
+
+// Самая главная функция. Новые атомы могут появится в ходе вывода графа
+// программы (например, атомы меток), поэтому universe не константа
+
+extern void progress(
+	Array *const universe,
+	const List *const env, const List *const ctx,
+	const SyntaxNode cmd);
+
 #endif

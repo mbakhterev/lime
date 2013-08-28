@@ -92,6 +92,10 @@ int skipspaces(FILE *const f)
 				break;
 
 			default:
+				// Потому что двойной ungetc не определён, а он
+				// возможен с учётом активности на уровень выше
+				// skipspaces
+
 				assert(fseek(f, -1, SEEK_CUR) == 0);
 				notdone = 0;
 			}
