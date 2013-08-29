@@ -40,7 +40,10 @@ void *initforms(
 			// Параметр go = NULL, в под-графы не ходим, собираем
 			// формы только из верхнего уровня
 
-			evalforms(U, loaddag(f, U, map), map, NULL, env, ctx);
+// 			evalforms(U, loaddag(f, U, map), map, NULL, env, ctx);
+			List *const g = loaddag(f, U, map);
+			evalforms(U, g, map, NULL, env, ctx);
+			freedag(g, map);
 			
 			break;
 		}

@@ -306,29 +306,6 @@ extern void dumpdag(
 extern Array keymap(Array *const universe,
 	const unsigned hint, const char *const atoms[]);
 
-// // "Карта" для прохода по графу. В DagMap M оба поля - uimap-ы. M.map
-// // содержит verb-ы узлов, атрибутами которых являются подграфы. M.go -
-// // описывает узлы, в подграфы которых следует проходить рекурсивно.
-// // Некоторые процедуры игнорируют M.go
-// 
-// // Например, зайти во все под-dag-и: walkdag(dag, makedagmap(U, 0,
-// // verbs, verbs), walkone, ptr);
-// 
-// typedef struct
-// {
-// 	const Array *const map;
-// 	const Array *const go;
-// } DagMap;
-// 
-// extern DagMap makedagmap(
-// 	Array *const universe, const unsigned hint,
-// 	const char *const dagverbs[], const char *const dive[]);
-// 
-// extern void freedagmap(DagMap *const);
-// 
-// extern unsigned isdag(const DagMap *const, const unsigned verb);
-// extern unsigned isgodag(const DagMap *const, const unsigned verb);
-
 extern List *forkdag(const List *const dag, const Array *const map);
 extern void freedag(List *const dag, const Array *const map);
 
@@ -379,14 +356,8 @@ extern Form *newform(
 
 struct contexttag
 {
-// 	В каждой форме есть своя карта. И, видимо, индивидуальные карты нужны на
-// 	определённых шагах алгоритма. Поэтому вообще для контекста эти штуки
-// 	несколько бессмысленны
-// 
-// 	const DagMap *const dagmap;
-// 
-// 	// Выведенная в этом контексте часть графа программы. Сюда дописывается
-// 	// содержимое активированных форм
+	// Выведенная в этом контексте часть графа программы. Сюда дописывается
+	// содержимое активированных форм
 
 	List *dag;
 
@@ -405,7 +376,17 @@ struct contexttag
 	// ключ : значение (ссылка на Form)
 
 	List *ins;
+
+	// Состояние контекста
+	unsigned state;
+
+	// Атом - метка контекста для сопоставления с закрывающими E-узлами
+	// синтаксиса
 };
+
+// Варианты состояния контекста
+
+enum { EMPTY, RIPENING, RIPE };
 
 // Контексты собираются в стеки
 
@@ -461,9 +442,9 @@ typedef struct
 } SyntaxNode;
 
 // Самая главная функция. Новые атомы могут появится в ходе вывода графа
-// программы (например, атомы меток), поэтому universe не константа
+// программы (например, атомы меток), поэтому universe не константа. 
 
-extern void progress(
+extern unsigned progress(
 	Array *const universe,
 	const List *const env, const List *const ctx,
 	const SyntaxNode cmd);

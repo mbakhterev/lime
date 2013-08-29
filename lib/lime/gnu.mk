@@ -18,7 +18,8 @@ lmsrc = \
 	context.c	\
 	form.c		\
 	evalforms.c	\
-	progress.c
+	progress.c	\
+	checkpoint.c
 
 lminc = \
 	$(I)/lime/construct.h	\

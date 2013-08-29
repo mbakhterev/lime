@@ -3,28 +3,24 @@
 
 #include <assert.h>
 
-// static Context makecontext(const DagMap *const map)
 static Context makecontext(void)
 {
 	return (Context)
 	{
 		.dag = NULL,
-//		.dagmap = map,
 		.outs = pushenvironment(NULL),
 		.forms = NULL,
 		.ins = pushenvironment(NULL),
+		.state = EMPTY
 	};
 }
 
 List *pushcontext(List *const ctx)
-// , const DagMap *const map)
 {
-// 	assert(map);
 	assert(!ctx || ctx->ref.code == CTX);
 
 	Context *const new = malloc(sizeof(Context));
 	assert(new);
-// 	*new = makecontext(map);
 	*new = makecontext();
 
 	return append(RL(refctx(new)), ctx);
@@ -37,7 +33,6 @@ static void freectx(Context *const ctx, const Array *const map)
 	assert(popenvironment(ctx->ins) == NULL);
 	freelist(ctx->forms);
 
-//	freedag(ctx->dag, ctx->dagmap);
 	freedag(ctx->dag, map);
 
 	free(ctx);

@@ -7,24 +7,29 @@ unsigned field = 1;
 unsigned item = 1;
 const char *unitname = "stdin";
 
+#define DBGFLAGS 1
+
 int main(int argc, char *argv[])
 {
 	Array U = makeatomtab();
-
-// 	const DagMap DM
-// 		= makedagmap(&U, 0, ES("Z", "ZA", "ZB"), ES("Z", "ZA"));
-	
 	const Array map = keymap(&U, 0, ES("Z", "ZA", "ZB"));
 	const Array go = keymap(&U, 0, ES("Z", "ZA"));
 	
 	const Array nonroots
-// 		= keymap(&U, 0, ES("L"));
 		= keymap(&U, 0, ES("L", "LNth", "FIn"));
+	
+	List *l = NULL;
 
-	List *l = loaddag(stdin, &U, &map);
-
-// 	evallists(&U, &l, &DM, RL(refnum(1), refnum(2), refnum(3)));
-// 	gcnodes(&l, &DM, &nonroots);
+	unsigned ok = CKPT() == 0;
+	if(ok)
+	{
+		l = loaddag(stdin, &U, &map);
+	}
+	else
+	{
+		DBG(DBGFLAGS, "%s", "FAIL");
+		return EXIT_FAILURE;
+	}
 
 	evallists(&U, &l, &map, &go, RL(refnum(1), refnum(2), refnum(3)));
 	gcnodes(&l, &map, &go, &nonroots);
