@@ -66,6 +66,7 @@ static int rewriteref(List *const l, void *const ptr)
 		{
 		case LNODE:
 		case LNTH:
+		case FIN:
 			freelist(l);
 			r = forklist(n->u.attributes);
 			break;
@@ -175,33 +176,6 @@ static int indexone(List *const i, void *const ptr)
 
 	switch(i->ref.code)
 	{
-// 	case NUMBER:
-// 		DBG(DBGIDX, "number: %u", i->ref.u.number);
-// 		from = i->ref.u.number;
-// 		to = from;
-// 		break;
-// 
-// 	case ATOM:
-// 	{
-// 		const unsigned key
-// 			= uireverse(st->verbs, i->ref.u.number);
-// 
-// 		DBG(DBGIDX, "atom: %u -> %u; tail: %u",
-// 			i->ref.u.number, key, (unsigned)TAIL);
-// 
-// 		if(key == TAIL)
-// 		{
-// 			from = -1;
-// 			to = -1;
-// 		}
-// 		else
-// 		{
-// 			errmsg = "incorrect index structure";
-// 		}
-// 
-// 		break;
-// 	}
-
 	case NUMBER:
 	case ATOM:
 	{
@@ -278,23 +252,6 @@ static int indexone(List *const i, void *const ptr)
 
 static List *deconstructlist(List *const l, const Array *const verbs)
 {
-// 	// Формат у начального l должен быть верным. Напоминание: -1 -- самое
-// 	// большое unsigned
-// 
-// 	const unsigned ok
-// 
-// 		// Список не должен быть пустым, а на первом месте должна быть
-// 		// ссылка на узел со списокм: (.L, .LNth, .FIn)
-// 
-// 		 = (l != NULL
-// 			&& tip(l)->ref.code == NODE 
-// 			&& uireverse(verbs, tip(l)->ref.u.node->verb) < TAIL)
-// 
-// 		// На второй позиции должна быть ссылка на список с индексами.
-// 		// Здесь проверяем, что там стоит подсписок
-// 
-// 		&& tip(l)->next->ref.code == LIST;
-
 	const unsigned len = 2;
 	Ref R[len + 1];
 	const unsigned t = writerefs(l, R, len + 1);
@@ -313,19 +270,11 @@ static List *deconstructlist(List *const l, const Array *const verbs)
 	// FIXME: список копируется для упрощения алгоритма выдирания элементов
 	// по индексу из списка, который после очередного шага надо освобождать
 
-// 	DCState st =
-// 	{
-// 		.verbs = verbs,
-// 		.L = forklist(tip(l)->ref.u.node->u.attributes)
-// 	};
-
 	DCState st =
 	{
 		.verbs = verbs,
 		.L = forklist(R[0].u.node->u.attributes)
 	};
-
-// 	forlist(tip(l)->next->ref.u.list, indexone, &st, 0);
 
 	forlist(R[1].u.list, indexone, &st, 0);
 
@@ -372,7 +321,13 @@ static void rewriteone(List *const l, void *const ptr)
 			ERR("%s", ".FIn node argument list should be NULL");
 		}
 
-		n->u.attributes = st->L;
+		// FIXME: мягко говоря, не самое эффективное решение. Вообще,
+		// можно по всему алгоритму при встрече с .FIn смотреть на
+		// st->L, но это дорогое исправление. Пока просто копируем
+		// список. Это важно при сборке мусора. st->L нельзя удалять,
+		// это список извне текущего кусочка графа
+
+		n->u.attributes = forklist(st->L);
 		break;
 	
 	default:
@@ -388,11 +343,6 @@ static const char *const listverbs[] =
 	[TAIL] = "T",
 	NULL
 };
-
-// List *evallists(
-// 	Array *const U,
-// 	List **const dag,
-// 	const DagMap *const M, const List *const arguments)
 
 List *evallists(
 	Array *const U,

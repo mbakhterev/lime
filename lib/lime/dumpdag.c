@@ -10,9 +10,9 @@
 #define DBGATTR 4
 
 // #define DBGFLAGS (DBGDAG | DBGSTD | DBGATTR)
-// #define DBGFLAGS 0
+// #define DBGFLAGS (DBGATTR)
 
-#define DBGFLAGS (DBGATTR)
+#define DBGFLAGS 0
 
 typedef struct
 {
