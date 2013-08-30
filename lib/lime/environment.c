@@ -263,6 +263,17 @@ Ref *keytoref(
 	return gditorefcell(allocate(tip(env)->ref.u.environment, key));
 }
 
+Ref *formkeytoref(
+	Array *const U,
+	const List *const env, const List *const key, const unsigned depth)
+{
+	DL(fkey, RS(
+		refatom(readpack(U, strpack(0, "#"))),
+		reflist((List *)key)));
+	
+	return keytoref(env, fkey, depth);
+}
+
 const Binding *topbindings(const List *const env, unsigned *const count)
 {
 	assert(env && env->ref.code == ENV);

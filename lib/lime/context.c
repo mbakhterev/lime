@@ -3,7 +3,7 @@
 
 #include <assert.h>
 
-static Context makecontext(void)
+static Context makecontext(const unsigned state, const unsigned marker)
 {
 	return (Context)
 	{
@@ -11,17 +11,26 @@ static Context makecontext(void)
 		.outs = pushenvironment(NULL),
 		.forms = NULL,
 		.ins = pushenvironment(NULL),
-		.state = EMPTY
+		.state = state,
+		.marker = marker
 	};
 }
 
-List *pushcontext(List *const ctx)
+List *pushcontext(
+	List *const ctx, const unsigned state, const unsigned marker)
 {
 	assert(!ctx || ctx->ref.code == CTX);
 
 	Context *const new = malloc(sizeof(Context));
 	assert(new);
-	*new = makecontext();
+
+// Workaround странного (?) поведения GCC
+// 	*new = makecontext(state, marker);
+
+	{
+		const Context C = makecontext(state, marker);
+		memcpy(new, &C, sizeof(Context));
+	}
 
 	return append(RL(refctx(new)), ctx);
 }

@@ -151,17 +151,6 @@ static FEssence extractform(const Ref ref, const Array *const V)
 	return voidessence();
 }
 
-Ref *formkeytoref(
-	Array *const U,
-	const List *const env, const List *const key, const unsigned depth)
-{
-	DL(fkey, RS(
-		refatom(readpack(U, strpack(0, "#"))),
-		reflist((List *)key)));
-	
-	return keytoref(env, fkey, depth);
-}
-
 typedef struct 
 {
 	const List *const env;
@@ -259,8 +248,11 @@ void evalforms(
 	const List *const dag, const Array *const map, const Array *const go,
 	const List *const env, const List *const ctx)
 {
-	assert(env && env->ref.code == ENV);
-	assert(ctx && ctx->ref.code == CTX);
+// Это надо проверять по ходу дела. В ситуации больше динамики, чем
+// предполагают эти проверки. Откладываем их до конкретных функций
+// 
+// 	assert(env && env->ref.code == ENV);
+// 	assert(ctx && ctx->ref.code == CTX);
 
 	const Array verbs = keymap(U, 0, formverbs);
 

@@ -18,7 +18,8 @@ typedef struct contexttag Context;
 
 // Автоматически индексируемые массивы
 
-struct arraytag {
+struct arraytag
+{
 	KeyCmp keycmp;
 	ItemCmp itemcmp;
 
@@ -105,8 +106,10 @@ extern void freenode(Node *const);
 // Имеет смысл отдельно вынести описание вариантов ссылок, которые могут быть в
 // элементе списка
 
-typedef struct {
-	union {
+typedef struct
+{
+	union
+	{
 		void *pointer;
 		List *list;
 		Node *node;
@@ -142,7 +145,8 @@ enum
 	FREE = -1
 };
 
-struct listtag {
+struct listtag
+{
 	List * next;
 	Ref ref;
 };
@@ -241,6 +245,15 @@ typedef struct
 } Binding;
 
 extern Ref *keytoref(
+	const List *const env, const List *const key, const unsigned depth);
+
+// Набор специальных функций, которые дополнительно декорируют ключи
+// определёнными атомами, чтобы имена различных по назначению структур не
+// перемешивались. Декорация осуществляется атомами, поэтому появляется
+// дополнительный параметр - U
+
+extern Ref *formkeytoref(
+	Array *const U,
 	const List *const env, const List *const key, const unsigned depth);
 
 extern const Binding *topbindings(const List *const, unsigned *const length);
@@ -381,7 +394,9 @@ struct contexttag
 	unsigned state;
 
 	// Атом - метка контекста для сопоставления с закрывающими E-узлами
-	// синтаксиса
+	// синтаксиса. Не должно меняться
+
+	const unsigned marker;
 };
 
 // Варианты состояния контекста
@@ -390,7 +405,11 @@ enum { EMPTY, RIPENING, RIPE };
 
 // Контексты собираются в стеки
 
-extern List *pushcontext(List *const ctx);
+// При размещении нового контекста имеет смысл указать его состояние и маркер
+// (последний для проверки корректности). Маркер - это номер атома
+
+extern List *pushcontext(
+	List *const ctx, const unsigned state, const unsigned marker);
 
 // При очищении контекста нужно знать структуру выращенного в нём графа, не
 // понятно наперёд, какая именно это карта должна быть (взятая из форм или что?
@@ -444,7 +463,7 @@ typedef struct
 // Самая главная функция. Новые атомы могут появится в ходе вывода графа
 // программы (например, атомы меток), поэтому universe не константа. 
 
-extern unsigned progress(
+extern void progress(
 	Array *const universe,
 	const List *const env, const List *const ctx,
 	const SyntaxNode cmd);

@@ -57,3 +57,8 @@ void checkout(const int code)
 	default: assert(0);
 	}
 }
+
+unsigned therearepoints(void)
+{
+	return points != NULL;
+}

@@ -19,7 +19,8 @@ int main(int argc, char *argv[])
 	List *l = loaddag(stdin, &U, &map);
 
 	List *env = pushenvironment(NULL);
-	List *ctx = pushcontext(NULL);
+//	List *ctx = pushcontext(NULL);
+	List *ctx = NULL;
 
 	evallists(&U, &l, &map, NULL, NULL);
 	evalforms(&U, l, &map, NULL, env, ctx);

@@ -4,11 +4,51 @@
 #include <assert.h>
 
 #define DBGPGRS 1
-#define DBGPGRSEX 2	
+#define DBGPGRSEX 2
+#define DBGAFERR 4 
 
-#define DBGFLAGS (DBGPGRSEX) 
+#define DBGFLAGS (DBGPGRSEX | DBGAFERR) 
 
-unsigned progress(
+static Form *getatomform(
+	Array *const U, const unsigned atom, const List *const env)
+{
+	// Первый шаг: ищем форму по ключу (0."A"; atom). Проверять то, что
+	// номер 0."A" совпадает с AOP явно не будем, если совпадает, поиск
+	// должен окончится успехом. Второй шаг: форма по ключу (0."A"; тип для
+	// класса атома) 
+
+	DL(key, RS(refatom(AOP), refatom(atom)));
+	const Ref *const r = formkeytoref(U, env, key, -1);
+
+	if(r->code == FORM)
+	{
+		assert(r->u.form);
+		return r->u.form;
+	}
+
+	assert(r->code == FREE);
+
+	// FIXME: второй шаг
+
+	char *const c = listtostr(U, key);
+	DBG(DBGAFERR, "search failed for key: %s", c);
+	free(c);
+	ERR("%s", "no form for key");
+
+	return NULL;
+}
+
+static void proatom(
+	Array *const U, const unsigned atom,
+	const List *const env, const List *const ctx)
+{
+	// Найти соответствующую форму
+
+	// const Form *const f =
+	getatomform(U, atom, env);
+}
+
+void progress(
 	Array *const U,
 	const List *const env, const List *const ctx,
 	const SyntaxNode cmd)
@@ -26,9 +66,10 @@ unsigned progress(
 	switch(cmd.op)
 	{
 	case AOP:
+		proatom(U, cmd.atom, env, ctx);
+		break;
+
 	case UOP:
 		break;
 	}
-
-	return 0;
 }

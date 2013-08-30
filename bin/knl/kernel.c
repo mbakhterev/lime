@@ -61,18 +61,6 @@ const char *const stdmap[] =
 	"F", "LB", NULL
 };
 
-// Команды от синтаксического фасада. Их тоже необходимо загружать в виде
-// атомов, чтобы был возможен поиск формы по её имени (ключу)
-
-// // #define AOP	0
-// // #define UOP	1
-// #define EUOP	(EOP + 1)
-// // #define BOP	3
-// #define EBOP	(EUOP + 1)
-// // #define LOP	5
-// #define ELOP	(EBOP + 1)
-// // #define FOP	7
-
 const char *const syntaxops[] =
 {
 	[FOP] = "F",
@@ -81,9 +69,6 @@ const char *const syntaxops[] =
 	[LOP] = "L",
 	[BOP] = "B",
 	[EOP] = "E",
-// 	[EUOP] = "EU",
-// 	[EBOP] = "EB",
-// 	[ELOP] = "EL",
 	NULL
 };
 
@@ -102,16 +87,6 @@ static unsigned opdecode(int c)
 
 	return -1;
 }
-
-// Синтаксическая команда
-
-// typedef struct
-// {
-// 	unsigned code;
-// 	unsigned line;
-// 	unsigned col;
-// 	unsigned atom;
-// } Cmd;
 
 static Position notapos(void)
 {
@@ -218,11 +193,27 @@ static void progressread(
 	FILE *const f,
 	Array *const U, const List *const env, const List *const ctx)
 {
-	SyntaxNode sntx;
+// Workaround странного (?) поведения GCC
+// 
+// 	SyntaxNode sntx;
+// 
+// 
+// 	while((sntx = readone(f, U)).op != EOF)
+// 	{
+// 		progress(U, env, ctx, sntx);
+// 	}
 
-	while((sntx = readone(f, U)).op != EOF)
+	while(1)
 	{
-		progress(U, env, ctx, sntx);
+		const SyntaxNode sntx = readone(f, U);
+		if(sntx.op != EOF)
+		{
+			progress(U, env, ctx, sntx);
+		}
+		else
+		{
+			break;
+		}
 	}
 }
 
@@ -243,7 +234,9 @@ int main(int argc, char *const argv[])
 	const Array map = keymap(&U, 0, stdmap);
 
 	const List *env = pushenvironment(NULL);
-	const List *ctx = pushcontext(NULL);
+	const List *ctx = NULL;
+
+// 	const List *ctx = pushcontext(NULL);
 
 	initforms(argc, argv, &U, &map, env, ctx);
 
@@ -254,11 +247,28 @@ int main(int argc, char *const argv[])
 		dumpenvironment(stderr, &U, env);
 	}
 
-	// Основной цикл вывода графа программы. Чтение с stdin
+	// Основной цикл вывода графа программы. Чтение с stdin. Если вывод не
+	// удался, то, всё равно, выдаём накопленный в "придонном" контексте
+	// граф. Потому что, пока cfe не отлажен корректный вывод не получится
 
-	item = 1;
-	unitname = "stdin";
-	progressread(stdin, &U, env, ctx);
+	if(CKPT() == 0)
+	{
+		item = 1;
+		unitname = "stdin";
+		progressread(stdin, &U, env, ctx);
+
+		checkout(0);
+	}
+	else
+	{
+		DBG(DBGMAIN, "%s", "progression error; dumping result anyway");
+	}
+
+	assert(!therearepoints());
+	assert(ctx && ctx->ref.code == CTX && ctx->ref.u.context);
+
+	dumpdag(stdout, 0, &U, ctx->ref.u.context->dag, &map);
+	fprintf(stdout, "\n");
 
 	return 0;
 }

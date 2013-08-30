@@ -50,6 +50,8 @@ enum { STRIKE = 2 };
 extern jmp_buf *checkpoint(void);
 extern void checkout(int code);
 
+extern unsigned therearepoints(void);
+
 #if 0
 #define ERR(fmt, ...) \
 	err(EXIT_FAILURE, __FILE__ "(%u) %s: error:\n\t%s(%u): " fmt, \

@@ -439,16 +439,6 @@ typedef struct {
 	const Array *const universe;
 } DumpState;
 
-// static void dumptostream(List *const l, FILE *const f)
-// {
-// 	assert(fputc('(', f) != EOF);
-// 
-// 	DumpState s = { .file = f, .first = l != NULL ? l->next : NULL };
-// 	forlist(l, dumper, &s, 0);
-// 
-// 	assert(fputc(')', f) != EOF);
-// }
-
 static int dumper(List *const l, void *const state)
 {
 	DumpState *const s = state;
@@ -472,7 +462,7 @@ static int dumper(List *const l, void *const state)
 		{
 			const Atom a = atomat(U, l->ref.u.number);
 			assert(0 < 
-				fprintf(f, "%u.\"%s\"",
+				fprintf(f, "%02x.\"%s\"",
 					atomhint(a), atombytes(a)));
 		}
 		else
