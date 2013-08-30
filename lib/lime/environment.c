@@ -127,7 +127,13 @@ extern List *pushenvironment(List *const env)
 
 	Array *const new = malloc(sizeof(Array));
 	assert(new);
-	*new = makeenvironment();	
+
+// Таков уж стандарт
+// 
+// 	*new = makeenvironment();	
+
+	const Array fresh = makeenvironment();
+	memcpy(new, &fresh, sizeof(Array));
 
 	return append(RL(refenv(new)), env);
 }

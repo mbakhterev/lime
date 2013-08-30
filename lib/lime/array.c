@@ -21,12 +21,23 @@ Array makearray(const int code, const unsigned ilen,
 	};
 }
 
-void freearray(Array *const a) {
-	if(a->data) {
+void freearray(Array *const a)
+{
+	assert(a);
+
+	if(a->data)
+	{
 		assert(a->index && a->count);
 		free(a->data);
 		free(a->index);
-		*a = makearray(a->code, a->itemlength, a->itemcmp, a->keycmp);
+
+// 		*a = makearray(a->code, a->itemlength, a->itemcmp, a->keycmp);
+		
+		const Array fresh
+			= makearray(a->code,
+				a->itemlength, a->itemcmp, a->keycmp);
+
+		memcpy(a, &fresh, sizeof(Array));
 	}
 }
 

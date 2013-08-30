@@ -20,8 +20,8 @@ typedef struct contexttag Context;
 
 struct arraytag
 {
-	KeyCmp keycmp;
-	ItemCmp itemcmp;
+	const KeyCmp keycmp;
+	const ItemCmp itemcmp;
 
 	void *data;
 	unsigned *index;
@@ -29,7 +29,7 @@ struct arraytag
 	unsigned itemlength;
 	unsigned count;
 
-	int code;
+	const int code;
 };
 
 extern Array makearray(const int code, const unsigned itemlen,
@@ -80,10 +80,11 @@ struct nodetag
 		Node *nextfree;
 		List *attributes;
 	} u;
-	unsigned verb;
+
+	const unsigned verb;
 
 	// В какой строке начинается описание узла. Важно для отладки
-	unsigned line;
+	const unsigned line;
 };
 
 extern Node *newnode(
@@ -240,7 +241,7 @@ extern void dumpenvironment(
 
 typedef struct
 {
-	const List *key;
+	const List *const key;
 	Ref ref;
 } Binding;
 

@@ -31,7 +31,8 @@ static Node *tipoffnode(Node **const lptr) {
 	return n;
 }
 
-Node *newnode(const unsigned line, const unsigned verb, const List *const attributes)
+Node *newnode(
+	const unsigned line, const unsigned verb, const List *const attributes)
 {
 	assert(verb != FREE);
 
@@ -46,12 +47,23 @@ Node *newnode(const unsigned line, const unsigned verb, const List *const attrib
 	{
 		n = malloc(sizeof(Node));
 		assert(n);
-		n->verb = FREE;
+
+// Это не особо нужно
+// 		n->verb = FREE;
 	}
 
-	n->line = line;
-	n->verb = verb;
-	n->u.attributes = (List *)attributes;
+// 	n->line = line;
+// 	n->verb = verb;
+// 	n->u.attributes = (List *)attributes;
+
+// Цена постоянных полей. Может быть, чрезмерная
+
+	memcpy(n,
+		&(Node) {
+			.line = line,
+			.verb = verb,
+			.u.attributes = (List *)attributes },
+		sizeof(Node));
 
 	return n;
 }
@@ -60,7 +72,13 @@ void freenode(Node *const n)
 {
 	assert(n && n->verb != FREE);
 
-	n->verb = FREE;
+// 	n->verb = FREE;
+// Платим свою цену:
+
+	memcpy(n,
+		&(Node) {
+			.line = -1, .verb = FREE, .u.attributes = NULL },
+		sizeof(Node));
 
 	if(freenodes == NULL)
 	{
@@ -73,32 +91,6 @@ void freenode(Node *const n)
 	n->u.nextfree = freenodes;
 	freenodes = n;
 }
-
-// DagMap makedagmap(
-// 	Array *const U, const unsigned hint,
-// 	const char *const dagverbs[], const char *const goverbs[])
-// {
-// 	return (DagMap) {
-// 		.map = keymap(U, hint, dagverbs),
-// 		.go = keymap(U, hint, goverbs)
-// 	};
-// }
-// 
-// void freedagmap(DagMap *const M)
-// {
-// 	freeuimap(&M->go);
-// 	freeuimap(&M->map);
-// }
-// 
-// unsigned isdag(const DagMap *const M, const unsigned verb)
-// {
-// 	return uireverse(&M->map, verb) != -1;
-// }
-// 
-// unsigned isgodag(const DagMap *const M, const unsigned verb)
-// {
-// 	return uireverse(&M->go, verb) != - 1;
-// }
 
 typedef struct
 {
