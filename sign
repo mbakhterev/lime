@@ -1,3 +1,6 @@
 #/usr/bin/env /usr/bin/bash
 
-git tag -sm "ЭЦП" 0.dev-sig-$USER-$(date +%Y.%m.%d)
+set -e
+
+tag="0.dev-sig-$USER-$(date +%Y.%m.%d)"
+git tag -sm "ЭЦП: ${tag}" "${tag}"
