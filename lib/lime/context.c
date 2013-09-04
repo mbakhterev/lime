@@ -3,16 +3,47 @@
 
 #include <assert.h>
 
+static struct reactor emptyreactor(void)
+{
+	return (struct reactor)
+	{ 
+		.forms = NULL,
+		.outs = pushenvironment(NULL),
+		.ins = pushenvironment(NULL)
+	};
+}
+
+static void purgereactor(struct reactor *const r)
+{
+	assert(popenvironment(r->outs) == NULL);
+	assert(popenvironment(r->ins) == NULL);
+
+	// freeformlist работает через freeform, которая отличает различает 
+	// external-формы. Формы из окружений не будут затронуты
+
+	freeformlist(r->forms);
+
+	freelist(r->forms);
+}
+
 static Context makecontext(const unsigned state, const unsigned marker)
 {
+// 	return (Context)
+// 	{
+// 		.dag = NULL,
+// 		.state = state,
+// 		.marker = marker,
+// 		.outs = pushenvironment(NULL),
+// 		.forms = NULL,
+// 		.ins = pushenvironment(NULL),
+// 	};
+
 	return (Context)
 	{
 		.dag = NULL,
-		.outs = pushenvironment(NULL),
-		.forms = NULL,
-		.ins = pushenvironment(NULL),
 		.state = state,
-		.marker = marker
+		.marker = marker,
+		.R = { emptyreactor(), emptyreactor() }
 	};
 }
 
@@ -24,9 +55,7 @@ List *pushcontext(
 	Context *const new = malloc(sizeof(Context));
 	assert(new);
 
-// Workaround странного (?) поведения GCC
-// 	*new = makecontext(state, marker);
-
+	// Потому что в структуре есть const поля
 	{
 		const Context C = makecontext(state, marker);
 		memcpy(new, &C, sizeof(Context));
@@ -38,11 +67,15 @@ List *pushcontext(
 static void freectx(Context *const ctx, const Array *const map)
 {
 	assert(ctx);
-	assert(popenvironment(ctx->outs) == NULL);
-	assert(popenvironment(ctx->ins) == NULL);
-	freelist(ctx->forms);
 
-	freedag(ctx->dag, map);
+// 	assert(popenvironment(ctx->outs) == NULL);
+// 	assert(popenvironment(ctx->ins) == NULL);
+// 	freelist(ctx->forms);
+// 
+// 	freedag(ctx->dag, map);
+
+	purgereactor(ctx->R + 0);
+	purgereactor(ctx->R + 1);
 
 	free(ctx);
 }

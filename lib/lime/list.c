@@ -63,48 +63,72 @@ Ref refnat(const unsigned code, const unsigned n)
 		assert(0);
 	}
 
-	return (Ref) { .code = code, .u.number = n };
+	return (Ref) { .code = code, .u.number = n, .external = 0 };
 }
 
 Ref refnum(const unsigned n)
 {
-	return (Ref) { .code = NUMBER, .u.number = n };
+	return (Ref) { .code = NUMBER, .u.number = n, .external = 0 };
 }
 
 Ref refatom(const unsigned n)
 {
-	return (Ref) { .code = ATOM, .u.number = n };
+	return (Ref) { .code = ATOM, .u.number = n, .external = 0 };
 }
 
 Ref refenv(Array *const e)
 {
 	assert(e && e->code == ENV);
-	return (Ref) { .code = ENV, .u.environment = e };
+	return (Ref) { .code = ENV, .u.environment = e, .external = 0 };
 }
 
 Ref refnode(Node *const n)
 {
-	return (Ref) { .code = NODE, .u.node = n };
+	return (Ref) { .code = NODE, .u.node = n, .external = 0 };
 }
 
 Ref reflist(List *const l)
 {
-	return (Ref) { .code = LIST, .u.list = l };
+	return (Ref) { .code = LIST, .u.list = l, .external = 0 };
 }
 
 Ref refform(Form *const f)
 {
-	return (Ref) { .code = FORM, .u.form = f };
+	return (Ref) { .code = FORM, .u.form = f, .external = 0 };
 }
 
 extern Ref refptr(void *const f)
 {
-	return (Ref) { .code = PTR, .u.pointer = f };
+	return (Ref) { .code = PTR, .u.pointer = f, .external = 0 };
 }
 
 extern Ref refctx(Context *const c)
 {
-	return (Ref) { .code = CTX, .u.context = c };
+	return (Ref) { .code = CTX, .u.context = c, .external = 0 };
+}
+
+extern Ref markext(const Ref r)
+{
+	// switch для аккуратности, потому что во многих случаях Ref не должна
+	// быть внешней. Случая сейчас вообще всего два: форма и список (для
+	// ключей и аргументов .FIn)
+
+	switch(r.code)
+	{
+	case LIST:
+	case FORM:
+		return (Ref)
+		{ 
+			.code = r.code,
+			.external = 1,
+			.u.pointer = r.u.pointer
+		};
+
+	default:
+		assert(0);
+	}
+
+	return (Ref) { .code = FREE, .u.pointer = NULL, .external = 0 };
 }
 
 static List *newlist(const Ref r)
@@ -227,6 +251,12 @@ static void assertmap(
 static int forkitem(List *const k, void *const ptr)
 {
 	assert(k);
+
+	// external-маркер только для особых ситуаций, с ручным контролем за
+	// составлением списков. Поэтому проверяем, что пользователь не
+	// разошёлся уж слишком
+
+	assert(!k->ref.external);
 
 	FState *const fs = ptr;
 	assert(fs);
@@ -414,7 +444,23 @@ List *megafork(
 	assert(0);
 }
 
-static int releaser(List *const l, void *const p) {
+static int releaser(List *const l, void *const p)
+{
+	assert(l);
+
+	switch(l->ref.code)
+	{
+	case LIST:
+		// Если ссылка не на внешний список, то чистим его рекурсивно
+
+		if(!l->ref.external)
+		{
+			freelist(l->ref.u.list);
+		}
+
+		break;
+	}
+
 	l->ref.code = FREE;
 
 	DBG(DBGPOOL, "pooling: %p", (void *)l);

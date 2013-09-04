@@ -110,7 +110,12 @@ static void freeone(Array *const env)
 		switch(B[i].ref.code)
 		{
 		case FORM:
-			freeform(B[i].ref.u.form);
+//			freeform(B[i].ref.u.form);
+			
+			// Здесь не должно быть external-форм
+
+			assert(!B[i].ref.external);
+			freeform(B[i].ref);
 			break;
 		}
 

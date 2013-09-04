@@ -191,7 +191,7 @@ static SyntaxNode readone(FILE *const f, Array *const U)
 
 static void progressread(
 	FILE *const f,
-	Array *const U, const List *const env, const List *const ctx)
+	Array *const U, const List **const env, const List **const ctx)
 {
 // Workaround странного (?) поведения GCC
 // 
@@ -255,7 +255,7 @@ int main(int argc, char *const argv[])
 	{
 		item = 1;
 		unitname = "stdin";
-		progressread(stdin, &U, env, ctx);
+		progressread(stdin, &U, &env, &ctx);
 
 		checkout(0);
 	}

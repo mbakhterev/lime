@@ -209,11 +209,13 @@ static void feputeval(const Node *const n, const EState *const st)
 		ERR("%s", "Form with key exists");
 	}
 
-	*r = (Ref)
-	{
-		.code = FORM,
-		.u.form = newform(fe.dag, st->map, fe.signature)
-	};
+// 	*r = (Ref)
+// 	{
+// 		.code = FORM,
+// 		.u.form = newform(fe.dag, st->map, fe.signature)
+// 	};
+
+	*r = newform(fe.dag, st->map, fe.signature);
 }
 
 static void evalone(List *const l, void *const ptr)

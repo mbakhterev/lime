@@ -25,22 +25,23 @@ static Form *tipoffform(Form **const fptr)
 	return g;
 }
 
-void freeform(Form *const f)
+
+// void freeform(Form *const f)
+
+void freeform(const Ref r)
 {
+	assert(r.code == FORM);
+
+	Form *const f = r.u.form;
 	assert(f);
 
-	freelist((List *)f->signature);
-	freedag((List *)f->u.dag, f->map);
+	if(!r.external)
+	{
+		freelist((List *)f->signature);
+		freedag((List *)f->u.dag, f->map);
+	}
 
-//	*f = (Form)
-// 	{
-// 		.signature = NULL,
-// 		.map = NULL,
-// 		.goal = 0,
-// 		.count = FREE
-// 	};
-
-// FIXME: hackaround GCC. конструкция заменяет вышестоящую
+	// Плата за наличие const полей в структуре
 
 	memcpy(f,
 		&(Form) {
@@ -63,8 +64,12 @@ void freeform(Form *const f)
 
 static int freeone(List *const f, void *const ptr)
 {
-	assert(f && f->ref.code == FORM);
-	freeform(f->ref.u.form);
+// 	assert(f && f->ref.code == FORM);
+// 	freeform(f->ref.u.form);
+
+	assert(f);
+	freeform(f->ref);
+
 	return 0;
 }
 
@@ -73,8 +78,9 @@ void freeformlist(List *const forms)
 	forlist(forms, freeone, NULL, 0);
 }
 
-Form *newform(
-//	const List *const dag, const DagMap *const map,
+// Form *newform(
+
+Ref newform(
 	const List *const dag, const Array *const map,
 	const List *const signature)
 {
@@ -94,16 +100,7 @@ Form *newform(
 		assert(f);
 	}
 
-// 	*f = (Form)
-// 	{
-// 		.u.dag = forkdag(dag, map),
-// 		.signature = forklist(signature),
-// 		.map = map,
-// 		.count = 0,
-// 		.goal = 0
-// 	};
-
-// FIXME: hackaround GCC. конструкция заменяет вышестоящую
+	// Плата за const поля в структуре
 
 	memcpy(f,
 		&(Form) {
@@ -113,5 +110,5 @@ Form *newform(
 		.count = 0,
 		.goal = 0 }, sizeof(Form));
 
-	return f;
+	return refform(f);
 }
