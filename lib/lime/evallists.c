@@ -62,11 +62,25 @@ static int rewriteref(List *const l, void *const ptr)
 	{
 		const Node *const n = l->ref.u.node;
 		const unsigned key = uireverse(st->verbs, n->verb);
+
 		switch(key)
 		{
+		case FIN:
+		{
+			const List *const attr = n->u.attributes;
+
+			assert(attr
+				&& attr->ref.code == LIST
+				&& attr->ref.external);
+
+			freelist(l);
+			r = forklist(attr->ref.u.list);
+
+			break;
+		}
+
 		case LNODE:
 		case LNTH:
-		case FIN:
 			freelist(l);
 			r = forklist(n->u.attributes);
 			break;
@@ -246,6 +260,29 @@ static int indexone(List *const i, void *const ptr)
 	return -1;
 } 
 
+// Извлечение списка из LNODE, LNTH или FIN, в зависимости от типа узла
+
+static const List *extractlist(const List *const attr, const unsigned verb)
+{
+	switch(verb)
+	{
+	case LNODE:
+	case LNTH:
+		return attr;
+	
+	case FIN:
+		assert(attr
+			&& attr->ref.code == LIST && attr->ref.external);
+		
+		return attr->ref.u.list;
+
+	default:
+		assert(0);
+	}
+
+	return NULL;
+}
+
 // FIXME: (1) хотелось бы избежать дополнительного копирования списка; (2)
 // хотелось бы вместо вот такого сложного ok иметь относительно простой массив.
 // Ок (2) сделаем сейчас
@@ -255,11 +292,13 @@ static List *deconstructlist(List *const l, const Array *const verbs)
 	const unsigned len = 2;
 	Ref R[len + 1];
 	const unsigned t = writerefs(l, R, len + 1);
+	
+	unsigned verb = -1;
 
 	const unsigned ok
 		 = (t == len + 1 && R[len].code == FREE)
-		&& (R[0].code == NODE
-			&& uireverse(verbs, R[0].u.node->verb) < TAIL)
+		&& (R[0].code == NODE && R[0].u.node
+			&& (verb = uireverse(verbs, R[0].u.node->verb)) < TAIL)
 		&& (R[1].code == LIST);
 
 	if(!ok)
@@ -267,13 +306,16 @@ static List *deconstructlist(List *const l, const Array *const verbs)
 		ERR("%s", "wrong .LNth attributes format");
 	}
 
+	// Извлекаем исходный список.
+
 	// FIXME: список копируется для упрощения алгоритма выдирания элементов
 	// по индексу из списка, который после очередного шага надо освобождать
 
 	DCState st =
 	{
 		.verbs = verbs,
-		.L = forklist(R[0].u.node->u.attributes)
+//		.L = forklist(R[0].u.node->u.attributes)
+		.L = forklist(extractlist(R[0].u.node->u.attributes, verb))
 	};
 
 	forlist(R[1].u.list, indexone, &st, 0);
@@ -321,13 +363,19 @@ static void rewriteone(List *const l, void *const ptr)
 			ERR("%s", ".FIn node argument list should be NULL");
 		}
 
-		// FIXME: мягко говоря, не самое эффективное решение. Вообще,
-		// можно по всему алгоритму при встрече с .FIn смотреть на
-		// st->L, но это дорогое исправление. Пока просто копируем
-		// список. Это важно при сборке мусора. st->L нельзя удалять,
-		// это список извне текущего кусочка графа
+// 		// FIXME: мягко говоря, не самое эффективное решение. Вообще,
+// 		// можно по всему алгоритму при встрече с .FIn смотреть на
+// 		// st->L, но это дорогое исправление. Пока просто копируем
+// 		// список. Это важно при сборке мусора. st->L нельзя удалять,
+// 		// это список извне текущего кусочка графа
+// 
+// 		n->u.attributes = forklist(st->L);
 
-		n->u.attributes = forklist(st->L);
+		// Создаём в атрибутах .FIn список, содержащий
+		// external-подсписок st->L. Это должно защитить последний от
+		// очистки при сборке мусора:
+
+		n->u.attributes = RL(markext(reflist(st->L)));
 		break;
 	
 	default:

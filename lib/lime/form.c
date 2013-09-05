@@ -47,7 +47,7 @@ void freeform(const Ref r)
 		&(Form) {
 			.signature = NULL,
 			.map = NULL,
-			.goal = 0,
+//			.goal = 0,
 			.count = FREE }, sizeof(Form));
 
 	if(freeforms == NULL)
@@ -90,7 +90,7 @@ Ref newform(
 	{
 		f = tipoffform(&freeforms);
 		assert(f->count == FREE
-			&& f->goal == 0
+//			&& f->goal == 0
 			&& f->signature == NULL
 			&& f->map == NULL);
 	}
@@ -102,13 +102,21 @@ Ref newform(
 
 	// Плата за const поля в структуре
 
+// 	memcpy(f,
+// 		&(Form) {
+// 		.u.dag = forkdag(dag, map),
+// 		.signature = forklist(signature),
+// 		.map = map,
+// 		.count = 0,
+// 		.goal = 0 }, sizeof(Form));
+
 	memcpy(f,
-		&(Form) {
-		.u.dag = forkdag(dag, map),
-		.signature = forklist(signature),
-		.map = map,
-		.count = 0,
-		.goal = 0 }, sizeof(Form));
+		&(Form)
+		{
+			.u.dag = dag,
+			.signature = signature,
+			.map = map,
+			.count = 0 }, sizeof(Form));
 
 	return refform(f);
 }

@@ -215,7 +215,8 @@ static void feputeval(const Node *const n, const EState *const st)
 // 		.u.form = newform(fe.dag, st->map, fe.signature)
 // 	};
 
-	*r = newform(fe.dag, st->map, fe.signature);
+	// fork-и, потому что отправляем в окружение, где нужна твёрдая копия
+	*r = newform(forkdag(fe.dag, st->map), st->map, forklist(fe.signature));
 }
 
 static void evalone(List *const l, void *const ptr)

@@ -144,6 +144,8 @@ extern Ref refform(Form *const);
 
 extern Ref refctx(Context *const);
 
+extern Ref markext(const Ref);
+
 enum
 {
 	NUMBER, ATOM, TYPE, LIST, NODE,
@@ -363,7 +365,7 @@ struct formtag
 	const List *const signature;
 	const Array *const map;
 	unsigned count;
-	const unsigned goal;
+//	const unsigned goal;
 };
 
 // extern void freeform(Form *const f);
