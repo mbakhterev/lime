@@ -15,5 +15,5 @@ echo
 
 ./mc-lime-cfe <<<"${code}"
 
-./mc-lime-cfe <<<"${code}" \
+./mc-lime-cfe <<<"${code}" 2>/dev/null \
 	| ./lime-knl -f "${base}/tst/forms/simple-atom.lk"

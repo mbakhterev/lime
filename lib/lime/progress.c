@@ -116,6 +116,18 @@ void progress(
 			cmd.op, atomizeop(U, cmd.op));
 	}
 
+	// Размещаем в текущем контексте форму. Для проверки корректности
+	// происходящего убеждаемся, что forward-реактор на вершине стека пустой
+
+	assert(isforwardempty(ctx));
+
+	// Забираем форму в текущий реактор (то есть, ctx->ref.u.context->R[0]).
+	// Забираем, как external
+
+	intakeform(
+		U, tip(ctx)->ref.u.context, 0,
+		f->u.dag, f->map, f->signature, 1);
+
 	*pctx = ctx;
 	*penv = env;
 }

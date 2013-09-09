@@ -482,6 +482,8 @@ extern List *popcontext(List *const ctx, const Array *const map);
 
 extern List *mergecontext(const Array *const U, List *const ctx);
 
+extern unsigned isforwardempty(const List *const ctx);
+
 // Выбирает из текущего графа формы и размещает их в соответствии с указаниями
 // публикации: .FPut, .FGPut, .FEPut. Публикация осуществляется на вершинах
 // двух указанных стеков: областей видимости и контекстов вывода.

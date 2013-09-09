@@ -93,3 +93,25 @@ extern List *popcontext(List *const ctx, const Array *const map)
 
 	return c;
 }
+
+static unsigned isemptyenv(const List *const env)
+{
+	return env && env->next == env
+		&& env->ref.code == ENV && env->ref.u.environment
+		&& env->ref.u.environment->count == 0;
+}
+
+unsigned isforwardempty(const List *const ctx)
+{
+	if(ctx && ctx->ref.code == CTX && ctx->ref.u.context)
+	{
+	}
+	else
+	{
+		return 0;
+	}
+
+	const Reactor *const r = ctx->ref.u.context->R + 1;
+
+	return r->forms == NULL && isemptyenv(r->ins) && isemptyenv(r->outs);
+}

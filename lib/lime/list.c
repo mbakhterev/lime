@@ -140,6 +140,7 @@ static List *newlist(const Ref r)
 	case TYPE:
 	case NODE:
 	case LIST:
+	case FORM:
 	case ENV:
 	case PTR:
 	case CTX:
