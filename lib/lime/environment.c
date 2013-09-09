@@ -2,6 +2,7 @@
 #include "util.h"
 
 #include <assert.h>
+#include <string.h>
 
 #define DBGFREE	1
 
@@ -112,10 +113,16 @@ static void freeone(Array *const env)
 		case FORM:
 //			freeform(B[i].ref.u.form);
 			
-			// Здесь не должно быть external-форм
+// 			// Здесь не должно быть external-форм
+// 
+// 			assert(!B[i].ref.external);
 
-			assert(!B[i].ref.external);
+			// external-формы из других окружений не должны быть
+			// затронуты. Сотрётся только их структура, но не графы
+			// или сигнатуры
+
 			freeform(B[i].ref);
+
 			break;
 		}
 
@@ -137,8 +144,10 @@ extern List *pushenvironment(List *const env)
 // 
 // 	*new = makeenvironment();	
 
-	const Array fresh = makeenvironment();
-	memcpy(new, &fresh, sizeof(Array));
+	{
+		const Array fresh = makeenvironment();
+		memcpy(new, &fresh, sizeof(Array));
+	}
 
 	return append(RL(refenv(new)), env);
 }
@@ -257,7 +266,17 @@ static Ref *gditorefcell(const GDI g)
 	assert(g.array && g.array->code == ENV);
 	assert(g.position != -1 && g.position < g.array->count);
 	Binding *const B = g.array->data;
+	assert(B);
 	return &B[g.position].ref;
+}
+
+static Binding *gditobindcell(const GDI g)
+{
+	assert(g.array && g.array->code == ENV);
+	assert(g.position != -1 && g.position < g.array->count);
+	Binding *const B = g.array->data;
+	assert(B);
+	return &B[g.position];
 }
 
 Ref *keytoref(
@@ -272,6 +291,19 @@ Ref *keytoref(
 
 	// После lookbinding уже известно, что в env находятся ENV
 	return gditorefcell(allocate(tip(env)->ref.u.environment, key));
+}
+
+Binding *keytobinding(
+	const List *const env, const List *const key, const unsigned depth)
+{
+	const GDI gdi = lookbinding(env, key, depth);
+
+	if(gdi.position != -1)
+	{
+		return gditobindcell(gdi);
+	}
+
+	return gditobindcell(allocate(tip(env)->ref.u.environment, key));
 }
 
 Ref *formkeytoref(

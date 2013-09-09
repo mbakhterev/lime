@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
-// #include <err.h>
-#include <string.h>
 #include <setjmp.h>
 
 // Координаты при чтении, для формирования сообщения об ошибке. Устанавливаются
@@ -52,12 +50,6 @@ extern void checkout(int code);
 
 extern unsigned therearepoints(void);
 
-#if 0
-#define ERR(fmt, ...) \
-	err(EXIT_FAILURE, __FILE__ "(%u) %s: error:\n\t%s(%u): " fmt, \
-		__LINE__, __func__, unitname, item, __VA_ARGS__)
-#endif
-
 // Имеет смысл упростить синтаксис
 
 #define CKPT() (setjmp(*checkpoint()))
@@ -65,16 +57,15 @@ extern unsigned therearepoints(void);
 #define ERR(fmt, ...) \
 do { \
 	fprintf(stderr, \
-		__FILE__ "(%u) %s: error(%s):\n\t%s(%u): " fmt "\n", \
-		__LINE__, __func__, strerror(errno), \
-		unitname, item, __VA_ARGS__); \
+		__FILE__ "(%u) %s: ERR:\t%s(%u): " fmt "\n", \
+		__LINE__, __func__, unitname, item, __VA_ARGS__); \
 	checkout(STRIKE); \
 } while(0)
 
 #define DBG(f, fmt, ...) \
 	(void)((f & DBGFLAGS) \
 		&& fprintf(stderr, \
-			__FILE__ "(%u) %s:\t" fmt "\n", \
+			__FILE__ "(%u) %s: DBG:\t" fmt "\n", \
 			__LINE__, __func__, __VA_ARGS__))
 
 #define MAXNUM ((unsigned)-1 >> 1)

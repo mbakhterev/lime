@@ -256,6 +256,9 @@ typedef struct
 extern Ref *keytoref(
 	const List *const env, const List *const key, const unsigned depth);
 
+extern Binding *keytobinding(
+	const List *const env, const List *const key, const unsigned depth);
+
 // Набор специальных функций, которые дополнительно декорируют ключи
 // определёнными атомами, чтобы имена различных по назначению структур не
 // перемешивались. Декорация осуществляется атомами, поэтому появляется
@@ -423,6 +426,13 @@ extern void freeformlist(List *const forms);
 
 // В соответствии с txt/worklog.txt:2331 2013-09-01 22:31:36
 
+typedef struct
+{
+	List *outs;
+	List *ins;
+	List *forms;
+} Reactor;
+
 struct contexttag
 {
 	// Выращенная в этом контексте часть графа программы. Сюда дописывается
@@ -433,12 +443,14 @@ struct contexttag
 	// Это та часть, которая называется в worklog реакторами. Но всерьёз
 	// писать ->reactor в коде? Настолько ли мы безумные программисты?
 
-	struct reactor
-	{
-		List *outs;
-		List *ins;
-		List *forms;
-	} R[2];
+// 	struct reactor
+// 	{
+// 		List *outs;
+// 		List *ins;
+// 		List *forms;
+// 	} R[2];
+
+	Reactor R[2];
 
 	// marker пригодится для проверки соответствий. Нужен ли state - пока не
 	// понятно
@@ -521,8 +533,16 @@ extern void progress(
 	const SyntaxNode cmd);
 
 // Процедура вбрасывания в контекст новой формы. Параметр level задаёт тот R
-// (реактор - гы, я это всерьёз написал), в который следует забрать форму
+// (реактор - гы, я это всерьёз написал), в который следует забрать форму. Форма
+// задаётся тройкой параметров: (dag; map), signature и external. U необходима
+// для распечатки ошибок внутри intakeform
 
-extern void intakeform(Context *const, const Form *const, const unsigned level);
+enum { ITLOCAL = 0, ITEXTERNAL };
+
+extern void intakeform(
+	const Array *const U,
+	Context *const, const unsigned level,
+	const List *const dag, const Array *const map,
+	const List *const signature, const unsigned external);
 
 #endif

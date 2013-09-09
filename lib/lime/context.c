@@ -2,10 +2,11 @@
 #include "util.h"
 
 #include <assert.h>
+#include <string.h>
 
-static struct reactor emptyreactor(void)
+static Reactor emptyreactor(void)
 {
-	return (struct reactor)
+	return (Reactor)
 	{ 
 		.forms = NULL,
 		.outs = pushenvironment(NULL),
@@ -13,7 +14,7 @@ static struct reactor emptyreactor(void)
 	};
 }
 
-static void purgereactor(struct reactor *const r)
+static void purgereactor(Reactor *const r)
 {
 	assert(popenvironment(r->outs) == NULL);
 	assert(popenvironment(r->ins) == NULL);

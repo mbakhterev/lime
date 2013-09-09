@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #define DBGGC	1
 
@@ -47,14 +48,7 @@ Node *newnode(
 	{
 		n = malloc(sizeof(Node));
 		assert(n);
-
-// Это не особо нужно
-// 		n->verb = FREE;
 	}
-
-// 	n->line = line;
-// 	n->verb = verb;
-// 	n->u.attributes = (List *)attributes;
 
 // Цена постоянных полей. Может быть, чрезмерная
 

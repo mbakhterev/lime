@@ -26,6 +26,10 @@ static const char *const formverbs[] =
 #define ASIGNATURE 0
 #define ADAG 1
 
+#define DBGITERR 1
+
+#define DBGFLAGS (DBGITERR)
+
 typedef struct
 {
 	const List *const dag;
@@ -155,7 +159,6 @@ typedef struct
 {
 	const List *const env;
 	const List *const ctx;
-//	const DagMap *const map;
 	const Array *const map;
 	const Array *const verbs;
 	Array *const universe;
@@ -221,16 +224,14 @@ static void feputeval(const Node *const n, const EState *const st)
 
 static void evalone(List *const l, void *const ptr)
 {
+	assert(l && l->ref.code == NODE);
+
 	const EState *const st = ptr;
 	assert(st);
 	const Array *const V = st->verbs;
 	assert(V);
-
-	assert(l);
 	const Node *const n = l->ref.u.node;
 	assert(n);
-
-	assert(l && l->ref.code == NODE && l->ref.u.node);
 	
 	const unsigned key = uireverse(V, n->verb);
 
@@ -240,11 +241,6 @@ static void evalone(List *const l, void *const ptr)
 		feputeval(n, st);
 	}
 }
-
-// void evalforms(
-// 	Array *const U,
-// 	const List *const dag, const DagMap *const M,
-// 	const List *const env, const List *const ctx)
 
 void evalforms(
 	Array *const U,
@@ -263,14 +259,110 @@ void evalforms(
 	{
 		.env = env,
 		.ctx = ctx,
-// 		.map = M,
 		.map = map,
 		.verbs = &verbs,
 		.universe = U
 	};
 	
-// 	walkdag(dag, M, evalone, (void *)&st);
 	walkdag(dag, map, go, evalone, (void *)&st);
 
 	freeuimap((Array *)&verbs);
+}
+
+typedef struct
+{
+	const Array *const U;
+	const List *const ins;
+
+	// В случае !external-формы, в этот список накопятся ссылки на ключи в
+	// ins
+
+	List *L;
+
+	// Флаг external
+	const unsigned ext;
+} IIState;
+
+static int intakesigone(List *const sig, void *const ptr)
+{
+	IIState *const st = ptr;
+	assert(st);
+	assert(st->ins
+		&& st->ins->ref.code == ENV && st->ins->ref.u.environment);
+	assert(st->U);
+	
+	// Сигнатуру глубоко не assert-им по максимуму, потому что, есть assert
+	// в keytoref, ну и она пришла извне, там должны быть проверки тоже
+
+	assert(sig && sig->ref.code == LIST);
+	
+	// FIXME: надо ещё раз разобраться с режимом поиска в keytox
+
+	Binding *const B = keytobinding(st->ins, sig->ref.u.list, -1);
+//	Ref *const r = keytoref(st->ins, sig->ref.u.list, -1);
+	Ref *const r = &B->ref;
+
+	if(r->code != FREE)
+	{
+		char *const str = listtostr(st->U, sig->ref.u.list);
+		DBG(DBGITERR, "signature: %s\n", str);
+		free(str);
+
+		ERR("%s", "input signature conflict");
+
+		return 1;
+	}
+
+	// Если место пустое, добавляем ссылку на форму... FIXME: МЛИН!!!
+
+	return 0;
+}
+
+static const List *intakesig(
+	const Array *const U,
+	const List *const ins, const List *const sig, const unsigned ext)
+{
+	assert(U);
+
+	IIState st =
+	{
+		.ins =  ins, .ext = ext, .U = U, .L = NULL
+	};
+
+	forlist((List *)sig, intakesigone, &st, 0);
+
+	return ext ? sig : st.L;
+}
+
+static Ref rskip(const Ref r)
+{
+	return r;
+}
+
+static List *dskip(const List *const dag, const Array *const map)
+{
+	return (List *)dag;
+}
+
+void intakeform(
+	const Array *const U,
+	Context *const ctx, const unsigned level,
+	const List *const dag, const Array *const map,
+	const List *const signature, const unsigned external)
+{
+	assert(ctx);
+	assert(level < sizeof(ctx->R) / sizeof(Reactor));
+
+	Reactor *const R = ctx->R + level;
+
+	// Содзадём ссылку на форму, с учётом external. В предположении, что в
+	// intakeform всё приходит уже проверенным из evalforms (проверки там
+	// есть и перед размещением в окружении и проверка будет перед
+	// непосредственным вызовом intakeform в обработке fput
+
+	const Ref f
+		= (external ? markext : rskip)(
+			newform(
+				(external ? forkdag : dskip)(dag, map), map,
+				intakesig(U, R->ins, signature, external)));
 }
