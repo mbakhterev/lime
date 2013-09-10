@@ -479,7 +479,7 @@ void intakeform(
 
 	freeform(f);
 
-	char *const sig = listtostr(U, B[i]->key);
+	char *const sig = strlist(U, B[i]->key);
 	DBG(DBGITERR, "signature: %s", sig);
 	free(sig);
 	ERR("%s", "in-signature duplication detected");
@@ -606,7 +606,7 @@ void intakeout(
 
 	// Здесь печать и надо выводить сообщение об ошибке
 
-	char *const sig = listtostr(U, B[i]->key);
+	char *const sig = strlist(U, B[i]->key);
 	DBG(DBGITERR, "signature: %s", sig);
 	free(sig);
 	ERR("%s", "out-signature duplication detected");

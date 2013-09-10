@@ -366,15 +366,14 @@ static int dumpone(List *const l, void *const ptr)
 		{
 		case FORM:
 			assert(fprintf(f, "\n\tform-key: ") > 0);
-			unidumplist(f, U, B[i].key);
+			dumplist(f, U, B[i].key);
 
 			assert(fprintf(f, "\n\tform-signature: ") > 0);
-			unidumplist(f, U, B[i].ref.u.form->signature);
+			dumplist(f, U, B[i].ref.u.form->signature);
 
 			assert(fprintf(f, "\n\tform-dag: ") > 0);
 			dumpdag(f, 1, U,
 				B[i].ref.u.form->u.dag,
-// 				&B[i].ref.u.form->map->map);
 				B[i].ref.u.form->map);
 
 			assert(fputc('\n', f) == '\n');

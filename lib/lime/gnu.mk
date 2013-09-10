@@ -11,7 +11,7 @@ lmsrc = \
 	uimap.c		\
 	ptrmap.c	\
 	loaddag.c	\
-	dumpdag.c	\
+	dump.c		\
 	dag.c		\
 	walkdag.c	\
 	evallists.c	\

@@ -219,9 +219,11 @@ extern List *forklist(const List *const);
 
 extern void freelist(List *const);
 
-extern char *dumplist(const List *const);
-extern char *listtostr(const Array *const universe, const List *const list);
-extern void unidumplist(
+// extern char *dumplist(const List *const);
+
+extern char *strlist(const Array *const universe, const List *const list);
+
+extern void dumplist(
 	FILE *const, const Array *const universe, const List *const list);
 
 // Функция forlist применяет другую функцию типа Oneach к каждому элементу

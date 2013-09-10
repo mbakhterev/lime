@@ -402,8 +402,8 @@ static LoadCurrent node(
 
 	if(DBGFLAGS & DBGNODE)
 	{
-		char *const ns = dumplist(lc.nodes);
-		char *const rs = dumplist(lc.refs);
+		char *const ns = strlist(NULL, lc.nodes);
+		char *const rs = strlist(NULL, lc.refs);
 		DBG(DBGNODE, "ns: %s", ns);
 		DBG(DBGNODE, "rs: %s", rs);
 		free(rs);
@@ -456,7 +456,7 @@ List *loaddag(
 	{
 		DBG(DBGLRD, "%s", "dumping");
 
-		char *const c = dumplist(lc.refs);
+		char *const c = strlist(NULL, lc.refs);
 		DBG(DBGLRD, "refs(%u): %s", listlen(lc.refs), c);
 		free(c);
 	}

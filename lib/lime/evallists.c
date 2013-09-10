@@ -175,7 +175,7 @@ static int indexone(List *const i, void *const ptr)
 	DCState *const st = ptr;
 
 	{
-		const char *const c = dumplist(st->L);
+		const char *const c = strlist(NULL, st->L);
 		DBG(DBGIDX, "current list: %s", c);
 		free((void *)c);
 	}

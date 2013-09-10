@@ -478,119 +478,119 @@ void freelist(List *const l)
 	forlist(l, releaser, &fs, 0);
 }
 
-static int dumper(List *const l, void *const file);
-
-typedef struct {
-	FILE *const file;
-	const List *const first;
-	const Array *const universe;
-} DumpState;
-
-static int dumper(List *const l, void *const state)
-{
-	DumpState *const s = state;
-	assert(s);
-
-	FILE *const f = s->file;
-	assert(f);
-
-	const Array *const U = s->universe;
-
-	const unsigned isfinal = l->next == s->first;
-
-	switch(l->ref.code)
-	{
-	case NUMBER:
-		assert(fprintf(f, "%u", l->ref.u.number) > 0);
-		break;
-	
-	case ATOM:
-		if(U)
-		{
-			const Atom a = atomat(U, l->ref.u.number);
-			assert(0 < 
-				fprintf(f, "%02x.\"%s\"",
-					atomhint(a), atombytes(a)));
-		}
-		else
-		{
-			assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
-		}
-
-		break;
-	
-	case TYPE:
-		assert(fprintf(f, "T:%u", l->ref.u.number) > 0);
-		break;
-	
-	case NODE:
-	{
-		const Node *const n = l->ref.u.node;
-		assert(n);
-//		assert(l->ref.u.node);
-		
-		if(U)
-		{
-			const char *const verb
-				= (char *)atombytes(atomat(U, n->verb));
-
-			assert(fprintf(f, "N:%p.%s", (void *)n, verb) > 0);
-		}
-		else
-		{
-			assert(fprintf(f, "N:%p.%u", (void *)n, n->verb) > 0);
-		}
-
-		break;
-	}
-	
-	case LIST:
-		unidumplist(f, U, l->ref.u.list);
-		break;
-
-	default:
-		assert(0);
-	}
-
-	if(!isfinal)
-	{
-		assert(fputc(' ', f) != EOF);
-	}
-
-	return 0;
-}
-
-void unidumplist(
-	FILE *const f, const Array *const U, const List *const list)
-{
-	assert(fputc('(', f) != EOF);
-
-	DumpState s =
-	{
-		.file = f,
-		.first = list != NULL ? list->next : NULL,
-		.universe = U
-	};
-
-	forlist((List *)list, dumper, &s, 0);
-
-	assert(fputc(')', f) != EOF);
-}
-
-char *dumplist(const List *const l)
-{
-	char *buff = NULL;
-	size_t length = 0;
-	FILE *f = newmemstream(&buff, &length);
-	assert(f);
-
-	unidumplist(f, NULL, l);
-
-	assert(fputc(0, f) != EOF);
-	fclose(f);
-
-	return buff;
-}
+// static int dumper(List *const l, void *const file);
+// 
+// typedef struct {
+// 	FILE *const file;
+// 	const List *const first;
+// 	const Array *const universe;
+// } DumpState;
+// 
+// static int dumper(List *const l, void *const state)
+// {
+// 	DumpState *const s = state;
+// 	assert(s);
+// 
+// 	FILE *const f = s->file;
+// 	assert(f);
+// 
+// 	const Array *const U = s->universe;
+// 
+// 	const unsigned isfinal = l->next == s->first;
+// 
+// 	switch(l->ref.code)
+// 	{
+// 	case NUMBER:
+// 		assert(fprintf(f, "%u", l->ref.u.number) > 0);
+// 		break;
+// 	
+// 	case ATOM:
+// 		if(U)
+// 		{
+// 			const Atom a = atomat(U, l->ref.u.number);
+// 			assert(0 < 
+// 				fprintf(f, "%02x.\"%s\"",
+// 					atomhint(a), atombytes(a)));
+// 		}
+// 		else
+// 		{
+// 			assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
+// 		}
+// 
+// 		break;
+// 	
+// 	case TYPE:
+// 		assert(fprintf(f, "T:%u", l->ref.u.number) > 0);
+// 		break;
+// 	
+// 	case NODE:
+// 	{
+// 		const Node *const n = l->ref.u.node;
+// 		assert(n);
+// //		assert(l->ref.u.node);
+// 		
+// 		if(U)
+// 		{
+// 			const char *const verb
+// 				= (char *)atombytes(atomat(U, n->verb));
+// 
+// 			assert(fprintf(f, "N:%p.%s", (void *)n, verb) > 0);
+// 		}
+// 		else
+// 		{
+// 			assert(fprintf(f, "N:%p.%u", (void *)n, n->verb) > 0);
+// 		}
+// 
+// 		break;
+// 	}
+// 	
+// 	case LIST:
+// 		unidumplist(f, U, l->ref.u.list);
+// 		break;
+// 
+// 	default:
+// 		assert(0);
+// 	}
+// 
+// 	if(!isfinal)
+// 	{
+// 		assert(fputc(' ', f) != EOF);
+// 	}
+// 
+// 	return 0;
+// }
+// 
+// void unidumplist(
+// 	FILE *const f, const Array *const U, const List *const list)
+// {
+// 	assert(fputc('(', f) != EOF);
+// 
+// 	DumpState s =
+// 	{
+// 		.file = f,
+// 		.first = list != NULL ? list->next : NULL,
+// 		.universe = U
+// 	};
+// 
+// 	forlist((List *)list, dumper, &s, 0);
+// 
+// 	assert(fputc(')', f) != EOF);
+// }
+// 
+// char *dumplist(const List *const l)
+// {
+// 	char *buff = NULL;
+// 	size_t length = 0;
+// 	FILE *f = newmemstream(&buff, &length);
+// 	assert(f);
+// 
+// 	unidumplist(f, NULL, l);
+// 
+// 	assert(fputc(0, f) != EOF);
+// 	fclose(f);
+// 
+// 	return buff;
+// }
 
 // Состояние для прохода со счётчиками
 
@@ -679,7 +679,7 @@ char *listtostr(const Array *const U, const List *const l)
 	char *buf= NULL;
 	size_t sz = 0;
 	FILE *const f = newmemstream(&buf, &sz);
-	unidumplist(f, U, l);
+	dumplist(f, U, l);
 	fclose(f);
 
 	return buf;

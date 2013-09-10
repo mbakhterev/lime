@@ -49,7 +49,8 @@ static void cutnprint(List *const k, const unsigned from, const unsigned to)
 	List *const l = forklistcut(k, from, to, &correct);
 
 	printf("len(list; (%u; %u)): %u\n(list; (%u; %u)): %s\n%s\n",
-		from, to, listlen(l), from, to, c = dumplist(l), C[correct]);
+		from, to, listlen(l),
+		from, to, c = strlist(NULL, l), C[correct]);
 	
 	free(c);
 	freelist(l);
@@ -65,13 +66,13 @@ int main(int argc, char * argv[]) {
 	}
 	printf("---\n");
 
-	char *c = dumplist(l);
+	char *c = strlist(NULL, l);
 	printf("l: %s\n", c);
 	free(c);
 
 	List *const k = forklist(l);
 	printf("k forked\n"); fflush(stdout);
-	c = dumplist(k);
+	c = strlist(NULL, k);
 	printf("k: %s\n", c);
 	free(c);
 
@@ -79,10 +80,11 @@ int main(int argc, char * argv[]) {
 	forlist(k, checkfree, NULL, 0);
 
 	List *const m = forklist(l);
-	printf("m: %s\n", dumplist(m));
+	printf("m: %s\n", c = strlist(NULL, m));
+	free(c);
 
 	List *const n = forklist(m);
-	printf("n: %s\n", c = dumplist(n));
+	printf("n: %s\n", c = strlist(NULL, n));
 	free(c);
 
 	Ref R[21];
@@ -96,11 +98,12 @@ int main(int argc, char * argv[]) {
 	printf("\n");
 
 	List *const o = readrefs(R);
-	printf("o: %s\n", c = dumplist(o));
-
+	printf("o: %s\n", c = strlist(NULL, o));
 	printf("len(o): %u\n", listlen(o));
+	free(c);
 
-	printf("len(NULL): %u; NULL: %s\n", listlen(NULL), c = dumplist(NULL));
+	printf("len(NULL): %u; NULL: %s\n",
+		listlen(NULL), c = strlist(NULL, NULL));
 	free(c);
 
 	cutnprint(o, 10, 14);
@@ -115,7 +118,8 @@ int main(int argc, char * argv[]) {
 	printf("lists on stack done\n");
 
 	char *d = NULL;
-	printf("sl: %s\ntl: %s\n", c = dumplist(sl), d = dumplist(tl));
+	printf("sl: %s\ntl: %s\n",
+		c = strlist(NULL, sl), d = strlist(NULL, tl));
 	free(c);
 	free(d);
 

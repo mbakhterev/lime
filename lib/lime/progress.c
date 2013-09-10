@@ -34,7 +34,7 @@ static Form *getform(
 
 	// FIXME: второй шаг
 
-	char *const c = listtostr(U, key);
+	char *const c = strlist(U, key);
 	DBG(DBGAFERR, "search failed for form-key: %s", c);
 	free(c);
 	ERR("%s", "no form for key");
@@ -119,7 +119,7 @@ void progress(
 	intakeout(U, tip(ctx)->ref.u.context, 0, outs);
 
 	// Ключ больше не нужен
-	freelist(key);
+	freelist((List *)key);
 
 	*pctx = ctx;
 	*penv = env;

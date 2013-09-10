@@ -21,7 +21,7 @@ int main(const int ac, const char *const av[])
 
 	printf("loaded\n");
 
-	char *const c = dumplist(l);
+	char *const c = strlist(NULL, l);
 	printf("l: %s\n", c);
 
 	return 0;

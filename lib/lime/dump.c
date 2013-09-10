@@ -85,8 +85,6 @@ static int dumpattrone(List *const l, void *const ptr)
 		const Atom a = atomat(U, l->ref.u.number);
 		const unsigned len = atomlen(a);
 
-//		assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
-
 		assert(fprintf(f, "'%02x.%u.\"", atomhint(a), len) > 0);
 		assert(fwrite(atombytes(a), 1, len, f) == len);
 		assert(fputc('"', f) == '"');
@@ -123,7 +121,7 @@ static int dumpattrone(List *const l, void *const ptr)
 
 	if(l != st->last)
 	{
-		assert(fputs("; ", f) > 0);
+		assert(fputs("; ", f) >= 0);
 	}
 
 	return 0;
@@ -133,7 +131,10 @@ static void dumpattrlist(
 	List *const l, const Array *const U,
 	FILE *const f, const Array *const nodes)
 {
-	assert(f && nodes);
+//	assert(f && nodes);
+
+	assert(f);
+
 	DBG(DBGATTR, "f: %p", (void *)f);
 
 	const DAState st =
@@ -211,8 +212,6 @@ void dumpdag(
 		const Node *const n = ptrdirect(dc.nodes, i);
 		assert(n);
 
-// 		FIXME: ?		
-// 		assert(0 < fprintf(f, "\n%s\t.%s\tn%u\t= ",
 		assert(0 < fprintf(f, "\n%s\t.%s\tn%u\t",
 			dc.tabstr,
 			atombytes(atomat(U, n->verb)),
@@ -232,4 +231,122 @@ void dumpdag(
 	free((void *)dc.tabstr);
 
 	freeptrmap(&nodes);
+}
+
+// static int dumper(List *const l, void *const file);
+// 
+// typedef struct {
+// 	FILE *const file;
+// 	const List *const first;
+// 	const Array *const universe;
+// } DumpState;
+// 
+// static int dumper(List *const l, void *const state)
+// {
+// 	DumpState *const s = state;
+// 	assert(s);
+// 
+// 	FILE *const f = s->file;
+// 	assert(f);
+// 
+// 	const Array *const U = s->universe;
+// 
+// 	const unsigned isfinal = l->next == s->first;
+// 
+// 	switch(l->ref.code)
+// 	{
+// 	case NUMBER:
+// 		assert(fprintf(f, "%u", l->ref.u.number) > 0);
+// 		break;
+// 	
+// 	case ATOM:
+// 		if(U)
+// 		{
+// 			const Atom a = atomat(U, l->ref.u.number);
+// 			assert(0 < 
+// 				fprintf(f, "%02x.\"%s\"",
+// 					atomhint(a), atombytes(a)));
+// 		}
+// 		else
+// 		{
+// 			assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
+// 		}
+// 
+// 		break;
+// 	
+// 	case TYPE:
+// 		assert(fprintf(f, "T:%u", l->ref.u.number) > 0);
+// 		break;
+// 	
+// 	case NODE:
+// 	{
+// 		const Node *const n = l->ref.u.node;
+// 		assert(n);
+// 		
+// 		if(U)
+// 		{
+// 			const char *const verb
+// 				= (char *)atombytes(atomat(U, n->verb));
+// 
+// 			assert(fprintf(f, "N:%p.%s", (void *)n, verb) > 0);
+// 		}
+// 		else
+// 		{
+// 			assert(fprintf(f, "N:%p.%u", (void *)n, n->verb) > 0);
+// 		}
+// 
+// 		break;
+// 	}
+// 	
+// 	case LIST:
+// 		dumplist(f, U, l->ref.u.list);
+// 		break;
+// 
+// 	default:
+// 		assert(0);
+// 	}
+// 
+// 	if(!isfinal)
+// 	{
+// 		assert(fputc(' ', f) != EOF);
+// 	}
+// 
+// 	return 0;
+// }
+// 
+// void dumplist(
+// 	FILE *const f, const Array *const U, const List *const list)
+// {
+// 	assert(fputc('(', f) != EOF);
+// 
+// 	DumpState s =
+// 	{
+// 		.file = f,
+// 		.first = list != NULL ? list->next : NULL,
+// 		.universe = U
+// 	};
+// 
+// 	forlist((List *)list, dumper, &s, 0);
+// 
+// 	assert(fputc(')', f) != EOF);
+// }
+
+void dumplist(FILE *const f, const Array *const U, const List *const l)
+{
+	dumpattrlist((List *)l, U, f, NULL);
+}
+
+char *strlist(const Array *const U, const List *const l)
+{
+	char *buf = NULL;
+	size_t length = 0;
+	FILE *f = newmemstream(&buf, &length);
+	assert(f);
+
+	dumplist(f, NULL, l);
+
+	assert(fputc(0, f) != EOF);
+	fclose(f);
+
+	return buf;
 }
