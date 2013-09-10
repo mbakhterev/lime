@@ -219,10 +219,7 @@ extern List *forklist(const List *const);
 
 extern void freelist(List *const);
 
-// extern char *dumplist(const List *const);
-
 extern char *strlist(const Array *const universe, const List *const list);
-
 extern void dumplist(
 	FILE *const, const Array *const universe, const List *const list);
 
@@ -394,38 +391,6 @@ extern void freeformlist(List *const forms);
 
 // Структура контекста вывода
 
-// struct contexttag
-// {
-// 	// Выведенная в этом контексте часть графа программы. Сюда дописывается
-// 	// содержимое активированных форм
-// 
-// 	List *dag;
-// 
-// 	// Ссылки на уже выведенные в контексте узлы графа программы.
-// 	// Environment из пар ключ (список из чисел, атомов, типов) : значение
-// 	// (список с указателями на узлы)
-// 
-// 	List *outs;
-// 
-// 	// Размещённые в контексте формы, которые можно (потенциально)
-// 	// активировать
-// 
-// 	List *forms;
-// 	
-// 	// Части сигнатур входов потенциально активных форм. Environment из пар
-// 	// ключ : значение (ссылка на Form)
-// 
-// 	List *ins;
-// 
-// 	// Состояние контекста
-// 	unsigned state;
-// 
-// 	// Атом - метка контекста для сопоставления с закрывающими E-узлами
-// 	// синтаксиса. Не должно меняться
-// 
-// 	const unsigned marker;
-// };
-
 // В соответствии с txt/worklog.txt:2331 2013-09-01 22:31:36
 
 typedef struct
@@ -444,13 +409,6 @@ struct contexttag
 
 	// Это та часть, которая называется в worklog реакторами. Но всерьёз
 	// писать ->reactor в коде? Настолько ли мы безумные программисты?
-
-// 	struct reactor
-// 	{
-// 		List *outs;
-// 		List *ins;
-// 		List *forms;
-// 	} R[2];
 
 	Reactor R[2];
 

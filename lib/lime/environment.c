@@ -337,65 +337,65 @@ void freeenvironment(List *env)
 	}
 }
 
-typedef struct
-{
-	FILE *const file;
-	const Array *const universe;
-	unsigned depth;
-} DState;
-
-static int dumpone(List *const l, void *const ptr)
-{
-	assert(ptr);
-	assert(l && l->ref.code == ENV && l->ref.u.environment);
-
-	DState *const st = ptr;
-	FILE *const f = st->file;
-	const Array *const U = st->universe;
-	assert(f);
-	assert(U);
-
-	const Array *const E = l->ref.u.environment;
-	const Binding *const B = E->data;
-
-	assert(fprintf(f, "ENV{%u}:", st->depth) > 0);
-
-	for(unsigned i = 0; i < E->count; i += 1)
-	{
-		switch(B[i].ref.code)
-		{
-		case FORM:
-			assert(fprintf(f, "\n\tform-key: ") > 0);
-			dumplist(f, U, B[i].key);
-
-			assert(fprintf(f, "\n\tform-signature: ") > 0);
-			dumplist(f, U, B[i].ref.u.form->signature);
-
-			assert(fprintf(f, "\n\tform-dag: ") > 0);
-			dumpdag(f, 1, U,
-				B[i].ref.u.form->u.dag,
-				B[i].ref.u.form->map);
-
-			assert(fputc('\n', f) == '\n');
-
-			break;
-		}
-	}
-
-	st->depth += 1;
-
-	return 0;
-}
-
-void dumpenvironment(
-	FILE *const f, const Array *const U, const List *const env)
-{
-	const DState st =
-	{
-		.file = f,
-		.universe = U,
-		.depth = 0
-	};
-
-	forlist((List *)env, dumpone, (void *)&st, 0);
-}
+// typedef struct
+// {
+// 	FILE *const file;
+// 	const Array *const universe;
+// 	unsigned depth;
+// } DState;
+// 
+// static int dumpone(List *const l, void *const ptr)
+// {
+// 	assert(ptr);
+// 	assert(l && l->ref.code == ENV && l->ref.u.environment);
+// 
+// 	DState *const st = ptr;
+// 	FILE *const f = st->file;
+// 	const Array *const U = st->universe;
+// 	assert(f);
+// 	assert(U);
+// 
+// 	const Array *const E = l->ref.u.environment;
+// 	const Binding *const B = E->data;
+// 
+// 	assert(fprintf(f, "ENV{%u}:", st->depth) > 0);
+// 
+// 	for(unsigned i = 0; i < E->count; i += 1)
+// 	{
+// 		switch(B[i].ref.code)
+// 		{
+// 		case FORM:
+// 			assert(fprintf(f, "\n\tform-key: ") > 0);
+// 			dumplist(f, U, B[i].key);
+// 
+// 			assert(fprintf(f, "\n\tform-signature: ") > 0);
+// 			dumplist(f, U, B[i].ref.u.form->signature);
+// 
+// 			assert(fprintf(f, "\n\tform-dag: ") > 0);
+// 			dumpdag(f, 1, U,
+// 				B[i].ref.u.form->u.dag,
+// 				B[i].ref.u.form->map);
+// 
+// 			assert(fputc('\n', f) == '\n');
+// 
+// 			break;
+// 		}
+// 	}
+// 
+// 	st->depth += 1;
+// 
+// 	return 0;
+// }
+// 
+// void dumpenvironment(
+// 	FILE *const f, const Array *const U, const List *const env)
+// {
+// 	const DState st =
+// 	{
+// 		.file = f,
+// 		.universe = U,
+// 		.depth = 0
+// 	};
+// 
+// 	forlist((List *)env, dumpone, (void *)&st, 0);
+// }
