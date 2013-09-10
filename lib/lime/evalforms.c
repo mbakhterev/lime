@@ -414,27 +414,20 @@ static const List *sigselect(
 	return l;
 }
 
+static Reactor *getreactor(Context *const ctx, const unsigned level)
+{
+	assert(ctx);
+	assert(level < sizeof(ctx->R) / sizeof(Reactor));
+	return ctx->R + level;
+}
+
 void intakeform(
 	const Array *const U,
 	Context *const ctx, const unsigned level,
 	const List *const dag, const Array *const map,
 	const List *const signature, const unsigned external)
 {
-	assert(ctx);
-	assert(level < sizeof(ctx->R) / sizeof(Reactor));
-
-	Reactor *const R = ctx->R + level;
-
-// 	// Содзадём ссылку на форму, с учётом external. В предположении, что в
-// 	// intakeform всё приходит уже проверенным из evalforms (проверки там
-// 	// есть и перед размещением в окружении и проверка будет перед
-// 	// непосредственным вызовом intakeform в обработке fput
-// 
-// 	const Ref f
-// 		= (external ? markext : refpass)(
-// 			newform(
-// 				(external ? forkdag : dagpass)(dag, map), map,
-// 				intakesig(U, R->ins, signature, external)));
+	Reactor *const R = getreactor(ctx, level);
 
 	const unsigned N = listlen(signature) + 1;
 	Binding *const B[N];
@@ -446,15 +439,24 @@ void intakeform(
 	
 	// Ок. Есть нужная сигнатура. Она по-прежнему может быть не особо
 	// корректной, потому что в Binding-и могут быть не свободными. Но
-	// сперва сотворим форму, а потом разберёмся с этим
+	// сперва сотворим форму, а потом разберёмся с этим. В сотворении формы
+	// dag fork-ается для !external-формы. Потому что эта форма живёт в
+	// обрабатываемом графе, и на её стабильность нельзя рассчитывать
 
 	const Ref f
 		= (external ? markext : refpass)(newform(
-			(external ? dagpass : forkdag)(dag, map), map, fsig));
+			(!external ? forkdag : dagpass)(dag, map), map, fsig));
 	
-	// Ок. Форма есть, сигнатура есть. Теперь надо пройтись по массиву и
-	// записать на нужные места указатель на эту форму. В этом цикле
-	// проверяем и свободу связок
+	// Ок. Форма есть, сигнатура есть. Все ссылки на новые ресурсы теперь
+	// внутри f.u.form. Поэтому достаточно освободить эту форму и остальное
+	// корректно почистится (или не-почистится в случае external). Надо
+	// завести счётчик активации формы (N-1 - длина исходного списка с
+	// сигнатурами)
+
+	f.u.form->count = N-1;
+	
+	// Теперь надо пройтись по массиву и записать на нужные места указатель
+	// на эту форму. В этом цикле проверяем и свободу связок
 
 	unsigned i;
 	for(i = 0; B[i] && B[i]->ref.code == FREE; i += 1)
@@ -480,5 +482,106 @@ void intakeform(
 	char *const sig = listtostr(U, B[i]->key);
 	DBG(DBGITERR, "signature: %s", sig);
 	free(sig);
-	ERR("%s", "signature duplication detected");
+	ERR("%s", "in-signature duplication detected");
+}
+
+typedef struct
+{
+	List *K;
+	Ref *const V;
+	const unsigned N;
+	unsigned nth;
+} SOState;
+
+static int splitone(List *const o, void *const ptr)
+{
+	assert(o && o->ref.code == LIST);
+	
+	const List *const pair = o->ref.u.list;
+	assert(listlen(pair) == 2);
+	assert(tip(pair)->ref.code == LIST);
+
+	SOState *const st = ptr;
+	assert(st);
+	assert(st->V);
+
+	assert(st->N > st->nth + 1);
+	
+	// Забираем значение из пары (key value) в массив
+
+	st->V[st->nth] = tip(pair)->next->ref;
+	st->nth += 1;
+
+	// Забираем ключ из пары (key value) в список. Помечаем его external,
+	// чтобы при освобождении этого вспомогательного списка не навредить
+	// внешним параметрам
+	
+	st->K = append(st->K, RL(markext(tip(pair)->ref)));
+
+	return 0;
+}
+
+static const List *splitouts(const List *const outs, Ref V[], const unsigned N)
+{
+	SOState st = { .K = NULL, .nth = 0, .V = V, .N = N };
+	forlist((List *)outs, splitone, &st, 0);
+	assert(N == st.nth + 1);
+	st.V[st.nth] = (Ref) { .code = FREE, .u.pointer = NULL };
+
+	return st.K;
+}
+
+void intakeout(
+	const Array *const U,
+	Context *const ctx, const unsigned level, const List *const outs) 
+{
+	assert(ctx);
+	assert(level < sizeof(ctx->R) / sizeof(Reactor));
+
+	Reactor *const R = getreactor(ctx, level);
+
+	// Разбираем список outs на части. В итоге он должен превратится в
+	// вектор Binding-ов, которые задаются первыми элементами в парах из
+	// списка outs, и в вектор Ref-ов из вторых элементов этих пар. Длины
+	// должны быть согласованы, поэтому куча assert-ов
+
+	const unsigned N = listlen(outs) + 1;
+
+	// Разбираем outs на список ключей и на вектор значений
+
+	const Ref V[N];
+	const List *const keys = splitouts(outs, (Ref *)V, N);
+	assert(V[N-1].code == FREE);
+
+	// Получаем вектор Binding-ов
+
+	Binding *const B[N];
+	listbindings(R->outs, keys, (Binding **)B, N);
+	assert(B[N-1] == NULL);
+	freelist((List *)keys);
+
+	// Теперь надо вписать в Binding-и полученные значения, при этом
+	// убеждаясь, что Binding-и свободны
+
+	unsigned i;
+	for(i = 0; B[i] != NULL && B[i]->ref.code == FREE; i += 1)
+	{
+		B[i]->ref = V[i];
+	}
+
+	// Если дошли до конца, то радость: связи с outs-ами прописаны в
+	// контексте, можно возвращаться
+
+	if(B[i] == NULL)
+	{
+		assert(V[i].code == FREE);
+		return;
+	}
+
+	// Здесь печать и надо выводить сообщение об ошибке
+
+	char *const sig = listtostr(U, B[i]->key);
+	DBG(DBGITERR, "signature: %s", sig);
+	free(sig);
+	ERR("%s", "out-signature duplication detected");
 }

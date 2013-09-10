@@ -547,4 +547,8 @@ extern void intakeform(
 	const List *const dag, const Array *const map,
 	const List *const signature, const unsigned external);
 
+extern void intakeout(
+	const Array *const U,
+	Context *const, const unsigned level, const List *const outs);
+
 #endif
