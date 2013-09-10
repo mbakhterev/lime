@@ -11,8 +11,11 @@
 
 static Form *getform(
 	Array *const U, const unsigned code, const unsigned atom,
-	const List *const env)
+	const List *const env,
+	const List **const pkey)
 {
+	assert(pkey);
+
 	// Первый шаг: ищем форму по ключу (code; atom). Второй шаг: ищем по
 	// ключу (code; тип для класса атом)
 
@@ -22,6 +25,8 @@ static Form *getform(
 	if(r->code == FORM)
 	{
 		assert(r->u.form);
+
+		*pkey = forklist(key);
 		return r->u.form;
 	}
 
@@ -64,39 +69,15 @@ void progress(
 	DBG(DBGPGRSEX, "%s %s",
 		atombytes(atomat(U, cmd.op)), atombytes(atomat(U, cmd.atom)));
 
-// 	// Интуиция подсказывает, что  более простая структура у кода будет,
-// 	// если пройдём несколько стадий: поиск формы, если нужно; размещение
-// 	// нового контекста в стеке, если нужно; засевание контекста на вершине
-// 	// стека новой формой или слияние двух верхних контекстов, в зависимости
-// 	// от кода операции; осуществлять операцию вывода в контексте на
-// 	// вершине, пока выводится
-// 
-// 	const Form *f = NULL;
-// 
-// 	switch(cmd.op)
-// 	{
-// 	case AOP:
-// 	case UOP:
-// 	case LOP:
-// 		f = getform(U, cmd.op, cmd.atom, env);
-// 		break;
-// 	
-// 	case EOP:
-// 		break;	
-// 
-// 	default:
-// 		ERR("unknown syntax op: %s",
-// 			cmd.op < U->count ?
-// 				(char *)f->u.dag->ref.u.pointer
-// 				: "null");
-// 
-// 	}
-
 	// В соответствии с txt/worklog.txt:2331 2013-09-01 22:31:36
 
-	// Поиск новой для контекста формы в окружении
-	const Form *f = getform(U, cmd.op, cmd.atom, env);
+	// Поиск новой для контекста формы в окружении. getform скажет, с каким
+	// ключом она нагла форму
+
+	const List *key = NULL;
+	const Form *f = getform(U, cmd.op, cmd.atom, env, &key);
 	assert(f);
+	assert(key);
 
 	// При необходимости добавляем новый контекст на вершину стека
 	switch(cmd.op)
@@ -127,6 +108,18 @@ void progress(
 	intakeform(
 		U, tip(ctx)->ref.u.context, 0,
 		f->u.dag, f->map, f->signature, ITEXTERNAL);
+
+	// Забираем ((key); cmd.atom), в outs текущего реактора. Сначала
+	// формируем собственно пару из ((key) atom); а затем outs, как список
+	// из этой пары
+
+	DL(pair, RS(reflist((List *)key), refatom(cmd.atom)));
+	DL(outs, RS(reflist((List *)pair)));
+
+	intakeout(U, tip(ctx)->ref.u.context, 0, outs);
+
+	// Ключ больше не нужен
+	freelist(key);
 
 	*pctx = ctx;
 	*penv = env;

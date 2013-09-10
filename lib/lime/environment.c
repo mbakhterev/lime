@@ -111,18 +111,19 @@ static void freeone(Array *const env)
 		switch(B[i].ref.code)
 		{
 		case FORM:
-//			freeform(B[i].ref.u.form);
-			
-// 			// Здесь не должно быть external-форм
-// 
-// 			assert(!B[i].ref.external);
-
 			// external-формы из других окружений не должны быть
 			// затронуты. Сотрётся только их структура, но не графы
 			// или сигнатуры
 
 			freeform(B[i].ref);
+			break;
 
+		case LIST:
+			// Будем считать, что если в окружении список, то за
+			// этот список отвечает окружение. Как с формами.
+			// Поэтому, удаляем
+
+			freelist(B[i].ref.u.list);
 			break;
 		}
 
