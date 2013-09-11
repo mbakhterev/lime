@@ -29,14 +29,14 @@ int main(int argc, char *argv[])
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
 // 	dumpdag(f, 0, &U, l, &DM.map);
-	dumpdag(f, 0, &U, l, &map);
+	dumpdag(1, f, 0, &U, l, &map);
 	fclose(f);
 
 	printf("dag(l):%s\n", d);
 	freedag(l, NULL);
 	free((void *)d);
 
-	dumpenvironment(stdout, &U, env);
+	dumpenvironment(stdout, 0, &U, env);
 
 	return 0;
 }

@@ -244,7 +244,7 @@ int main(int argc, char *const argv[])
 
 	if(DBGFLAGS & DBGMAINEX)
 	{
-		dumpenvironment(stderr, &U, env);
+		dumpenvironment(stderr, 0, &U, env);
 	}
 
 	// Основной цикл вывода графа программы. Чтение с stdin. Если вывод не
@@ -267,7 +267,9 @@ int main(int argc, char *const argv[])
 	assert(!therearepoints());
 	assert(ctx && ctx->ref.code == CTX && ctx->ref.u.context);
 
-	dumpdag(stdout, 0, &U, ctx->ref.u.context->dag, &map);
+	dumpcontext(stderr, &U, ctx);
+
+	dumpdag(0, stdout, 0, &U, ctx->ref.u.context->dag, &map);
 	fprintf(stdout, "\n");
 
 	return 0;

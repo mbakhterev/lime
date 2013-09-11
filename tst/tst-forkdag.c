@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	char *d = NULL;
 
 	FILE *f = newmemstream(&d, &sz);
-	dumpdag(f, 0, &U, l, &map);
+	dumpdag(1, f, 0, &U, l, &map);
 	fclose(f);
 
 	printf("dag(l):%s\n", d);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	free((void *)d);
 
 	f = newmemstream(&d, &sz);
-	dumpdag(f, 0, &U, k, &map);
+	dumpdag(1, f, 0, &U, k, &map);
 	fclose(f);
 
 	printf("dag(k):%s\n", d);

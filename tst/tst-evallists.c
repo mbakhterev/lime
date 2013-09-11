@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 	size_t sz = 0;
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
-	dumpdag(f, 0, &U, l, &map);
+	dumpdag(1, f, 0, &U, l, &map);
 	fclose(f);
 
 	printf("dag(l):%s\n", d);

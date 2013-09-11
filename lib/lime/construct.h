@@ -244,7 +244,8 @@ extern List *popenvironment(List *const);
 extern void freeenvironment(List *const);
 
 extern void dumpenvironment(
-	FILE *const, const Array *const U, const List *const env);
+	FILE *const, const unsigned tabs,
+	const Array *const U, const List *const env);
 
 typedef struct
 {
@@ -317,11 +318,12 @@ extern const void *const ptrdirect(const Array *const, const unsigned);
 extern List *loaddag(
 	FILE *const, Array *const universe, const Array *const map);
 
-// Выгрузка dag-а. tabs - для красивой печати с отступами. 
+// Выгрузка dag-а. tabs - для красивой печати с отступами. dbg - выдавать ли
+// указатели на узлы в выводе графов (это нужно для отладки)
 
 extern void dumpdag(
-	FILE *const, const unsigned tabs, const Array *const universe,
-	const List *const dag, const Array *const map);
+	const unsigned dbg, FILE *const, const unsigned tabs,
+	const Array *const U, const List *const dag, const Array *const map);
 
 // Создать согласованную с таблицей атомов keymap по списку строк. Список строк,
 // оканчивающийся NULL. В полученной uimap на i-том месте будет стоять номер
@@ -443,6 +445,8 @@ extern List *popcontext(List *const ctx, const Array *const map);
 extern List *mergecontext(const Array *const U, List *const ctx);
 
 extern unsigned isforwardempty(const List *const ctx);
+
+extern void dumpcontext(FILE *const, const Array *const, const List *const ctx);
 
 // Выбирает из текущего графа формы и размещает их в соответствии с указаниями
 // публикации: .FPut, .FGPut, .FEPut. Публикация осуществляется на вершинах
