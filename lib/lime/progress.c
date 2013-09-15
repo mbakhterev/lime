@@ -107,7 +107,9 @@ void progress(
 
 	intakeform(
 		U, tip(ctx)->ref.u.context, 0,
-		f->u.dag, f->map, f->signature, ITEXTERNAL);
+		f->u.dag,
+// 		f->map,
+		f->signature, ITEXTERNAL);
 
 	// Забираем ((key); cmd.atom), в outs текущего реактора. Сначала
 	// формируем собственно пару из ((key) atom); а затем outs, как список

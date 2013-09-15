@@ -220,7 +220,10 @@ static void feputeval(const Node *const n, const EState *const st)
 // 	};
 
 	// fork-и, потому что отправляем в окружение, где нужна твёрдая копия
-	*r = newform(forkdag(fe.dag, st->map), st->map, forklist(fe.signature));
+	*r = newform(
+		forkdag(fe.dag),
+		// , st->map), st->map,
+		forklist(fe.signature));
 }
 
 static void evalone(List *const l, void *const ptr)
@@ -245,7 +248,9 @@ static void evalone(List *const l, void *const ptr)
 
 void evalforms(
 	Array *const U,
-	const List *const dag, const Array *const map, const Array *const go,
+	const List *const dag,
+// 	const Array *const map,
+	const Array *const go,
 	const List *const env, const List *const ctx)
 {
 // Это надо проверять по ходу дела. В ситуации больше динамики, чем
@@ -260,12 +265,13 @@ void evalforms(
 	{
 		.env = env,
 		.ctx = ctx,
-		.map = map,
+// 		.map = map,
 		.verbs = &verbs,
 		.universe = U
 	};
 	
-	walkdag(dag, map, go, evalone, (void *)&st);
+//	walkdag(dag, map, go, evalone, (void *)&st);
+	walkdag(dag, go, evalone, (void *)&st);
 
 	freeuimap((Array *)&verbs);
 }
@@ -385,7 +391,8 @@ static Ref refpass(const Ref r)
 	return r;
 }
 
-static List *dagpass(const List *const dag, const Array *const map)
+static List *dagpass(const List *const dag)
+// , const Array *const map)
 {
 	return (List *)dag;
 }
@@ -424,7 +431,8 @@ static Reactor *getreactor(Context *const ctx, const unsigned level)
 void intakeform(
 	const Array *const U,
 	Context *const ctx, const unsigned level,
-	const List *const dag, const Array *const map,
+	const List *const dag,
+// 	const Array *const map,
 	const List *const signature, const unsigned external)
 {
 	Reactor *const R = getreactor(ctx, level);
@@ -445,7 +453,9 @@ void intakeform(
 
 	const Ref f
 		= (external ? markext : refpass)(newform(
-			(!external ? forkdag : dagpass)(dag, map), map, fsig));
+			(!external ? forkdag : dagpass)(dag),
+			// , map), map,
+			fsig));
 	
 	// Ок. Форма есть, сигнатура есть. Все ссылки на новые ресурсы теперь
 	// внутри f.u.form. Поэтому достаточно освободить эту форму и остальное

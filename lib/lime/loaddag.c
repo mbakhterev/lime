@@ -365,12 +365,6 @@ static LoadCurrent node(
 
 	if(isfirstid(c))
 	{
-// 		const List lid =
-// 		{
-// 			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
-// 			.next = (List *)&lid
-// 		};
-
 		DL(label, RS(refatom(loadtoken(U, f, 0, "[0-9A-Za-z]"))));
 		ref = keytoref(env, label, -1);
 
@@ -385,20 +379,13 @@ static LoadCurrent node(
 		}
 	}
 
-// 	FIXME: ?
-// 	// Удостоверяемся в =
-// 	if((c = skipspaces(f)) != '=')
-// 	{
-// 		errexpect(c, ES("="));
-// 	}
-
-
 	// Загрузка атрибутов узла. Которые могут составлять либо список
 	// атрибутов в текущем dag-е, либо под-dag
 
+	const unsigned isdag = uireverse(ctx->dagmap, verb) != -1;
 	const LoadCurrent lc
-		= (uireverse(ctx->dagmap, verb) == -1 ?
-			loadattr : loadsubdag)(ctx, env, nodes);
+// 		= (uireverse(ctx->dagmap, verb) == -1 ?
+		= (!isdag ? loadattr : loadsubdag)(ctx, env, nodes);
 
 	if(DBGFLAGS & DBGNODE)
 	{
@@ -410,7 +397,7 @@ static LoadCurrent node(
 		free(ns);
 	}
 
-	List *const l = RL(refnode(newnode(item, verb, lc.refs)));
+	List *const l = RL(refnode(newnode(item, verb, lc.refs, isdag)));
 
 	// Узел создан, и если под него зарезервирована метка в окружении, надо
 	// бы его туда добавить

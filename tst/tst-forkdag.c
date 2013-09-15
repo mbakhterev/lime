@@ -19,7 +19,8 @@ int main(int argc, char *argv[])
 
 	const Array map = keymap(&U, 0, ES("Z"));
 	List *const l = loaddag(stdin, &U, &map);
-	List *const k = forkdag(l, &map);
+	List *const k = forkdag(l);
+	// , &map);
 
 	printf("len(l): %u\n", listlen(l));
 
@@ -27,19 +28,23 @@ int main(int argc, char *argv[])
 	char *d = NULL;
 
 	FILE *f = newmemstream(&d, &sz);
-	dumpdag(1, f, 0, &U, l, &map);
+	dumpdag(1, f, 0, &U, l);
+	// , &map);
 	fclose(f);
 
 	printf("dag(l):%s\n", d);
-	freedag(l, NULL);
+	freedag(l);
+	// , NULL);
 	free((void *)d);
 
 	f = newmemstream(&d, &sz);
-	dumpdag(1, f, 0, &U, k, &map);
+	dumpdag(1, f, 0, &U, k);
+	// , &map);
 	fclose(f);
 
 	printf("dag(k):%s\n", d);
-	freedag(k, NULL);
+	freedag(k);
+	// , NULL);
 	free((void *)d);
 	return 0;
 }

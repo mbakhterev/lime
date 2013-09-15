@@ -85,10 +85,16 @@ struct nodetag
 
 	// В какой строке начинается описание узла. Важно для отладки
 	const unsigned line;
+
+	// Признак того, что в атрибутах узла записан dag со своими внутренними
+	// ссылками
+
+	const unsigned dag:1;
 };
 
 extern Node *newnode(
-	const unsigned line, const unsigned verb, const List *const attributes);
+	const unsigned line,
+	const unsigned verb, const List *const attributes, const unsigned dag);
 
 extern void freenode(Node *const);
 
@@ -299,19 +305,26 @@ extern const void *const ptrdirect(const Array *const, const unsigned);
 
 // Семантические функции
 
-// Во многих нижеследующих процедурах используется два особых параметра,
-// описывающих структуру обрабатываемого графа: map и go. Параметр map - это
-// uimap, которая задаёт verb-ы узлов, в атрибутах которых записаны графы.
-// Параметр go - это указание на verb-ы тех узлов с графами, в которые алгоритм
-// должен рекурсивно спускаться. Если параметр go не указан, значит, алгоритм
-// рекурсивно спускается в графы во всех узлах с ними.
-// 
-// Например, пройтись по всем графам в узлах, имена которых в массиве verbs:
-// 	const Array map = keymap(U, 0, verbs); 
-// 	walkdag(dag, &map, &map, walkone, ptr);
-//	freemap((Array *)map);
+// // Во многих нижеследующих процедурах используется два особых параметра,
+// // описывающих структуру обрабатываемого графа: map и go. Параметр map - это
+// // uimap, которая задаёт verb-ы узлов, в атрибутах которых записаны графы.
+// // Параметр go - это указание на verb-ы тех узлов с графами, в которые алгоритм
+// // должен рекурсивно спускаться. Если параметр go не указан, значит, алгоритм
+// // рекурсивно спускается в графы во всех узлах с ними.
+// // 
+// // Например, пройтись по всем графам в узлах, имена которых в массиве verbs:
+// // 	const Array map = keymap(U, 0, verbs); 
+// // 	walkdag(dag, &map, &map, walkone, ptr);
+// //	freemap((Array *)map);
 
-// Загрузка dag-а. Атомы загружаются в universe. dagmap отмечает узлы, которые
+// Отказываемся от параметра map в нижеследующих функциях
+
+// Некоторые нижеследующие функции содержат параметр go. Он является uimap,
+// которая задаёт verb-ы тех узлов (N) с графами в атрибутах (N.dag == 1), в
+// которые алгоритм должен рекурсивно спускаться. Если параметр go не задан для
+// процедуры, значит, алгоритм рекурсивно спускается во все такие графы.
+
+// Загрузка dag-а. Атомы загружаются в universe. map отмечает узлы, которые
 // должны содержать другие dag-и в своих атрибутах. У каждого dag-а своя область
 // видимости по ссылкам, они не могут явно ссылаться на узлы друг друга.
 
@@ -323,7 +336,8 @@ extern List *loaddag(
 
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
-	const Array *const U, const List *const dag, const Array *const map);
+	const Array *const U, const List *const dag);
+// 	, const Array *const map);
 
 // Создать согласованную с таблицей атомов keymap по списку строк. Список строк,
 // оканчивающийся NULL. В полученной uimap на i-том месте будет стоять номер
@@ -332,25 +346,34 @@ extern void dumpdag(
 extern Array keymap(Array *const universe,
 	const unsigned hint, const char *const atoms[]);
 
-extern List *forkdag(const List *const dag, const Array *const map);
-extern void freedag(List *const dag, const Array *const map);
+extern List *forkdag(const List *const dag);
+// , const Array *const map);
+
+extern void freedag(List *const dag);
+// , const Array *const map);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
 // uimap-отображением nonroots.
 
 extern List *gcnodes(
-	List **const dag, const Array *const map, const Array *const go,
+	List **const dag,
+//	const Array *const map,
+	const Array *const go,
 	const Array *const nonroots);
 
 typedef void (*WalkOne)(List *const, void *const);
 
 extern void walkdag(
-	const List *const dag, const Array *const map, const Array *const go,
+	const List *const dag,
+// 	const Array *const map,
+	const Array *const go,
 	const WalkOne, void *const);
 
 extern List *evallists(
 	Array *const U,
-	List **const dag, const Array *const map, const Array *const go,
+	List **const dag,
+// 	const Array *const map,
+	const Array *const go,
 	const List *const arguments);
 
 // Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
@@ -367,16 +390,10 @@ struct formtag
 		struct formtag *nextfree;
 	} u;
 	const List *const signature;
-	const Array *const map;
+//	const Array *const map;
 	unsigned count;
 //	const unsigned goal;
 };
-
-// extern void freeform(Form *const f);
-// 
-// extern Form *newform(
-// 	const List *const dag, const Array *const map,
-// 	const List *const signature);
 
 // Из-за сложной жизни форм (cf. txt/worklog.txt:2690 2013-09-04 11:55:50) имеет
 // смысл во freeform передавать Ref и, соответственно, возвращать Ref из
@@ -386,7 +403,8 @@ struct formtag
 extern void freeform(const Ref);
 
 extern Ref newform(
-	const List *const dag, const Array *const map,
+	const List *const dag,
+// 	const Array *const map,
 	const List *const signature);
 
 extern void freeformlist(List *const forms);
@@ -437,7 +455,8 @@ extern List *pushcontext(
 // понятно наперёд, какая именно это карта должна быть (взятая из форм или что?
 // любые гипотезы приветствуются). Поэтому просто параметр
 
-extern List *popcontext(List *const ctx, const Array *const map);
+extern List *popcontext(List *const ctx);
+// , const Array *const map);
 
 // Слияние двух контекстов на вершине стека. Тот, что сверху дописывается к
 // тому, что снизу - это описание формирования порядка dag-ов
@@ -457,7 +476,9 @@ extern void dumpcontext(FILE *const, const Array *const, const List *const ctx);
 
 extern void evalforms(
 	Array *const universe,
-	const List *const dag, const Array *const map, const Array *const go,
+	const List *const dag,
+// 	const Array *const map,
+	const Array *const go,
 	const List *const env, const List *const ctx);
 
 // Синтаксические команды. Тут и дальше получается некий свободный поток
@@ -508,7 +529,8 @@ enum { ITLOCAL = 0, ITEXTERNAL };
 extern void intakeform(
 	const Array *const U,
 	Context *const, const unsigned level,
-	const List *const dag, const Array *const map,
+	const List *const dag,
+// 	const Array *const map,
 	const List *const signature, const unsigned external);
 
 extern void intakeout(

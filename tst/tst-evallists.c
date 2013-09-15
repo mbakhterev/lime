@@ -31,17 +31,28 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	evallists(&U, &l, &map, &go, RL(refnum(1), refnum(2), refnum(3)));
-	gcnodes(&l, &map, &go, &nonroots);
+	printf("original:\n");
+	dumpdag(1, stdout, 0, &U, l);
+	printf("\n");
+
+	evallists(&U, &l,
+	// &map,
+		&go, RL(refnum(1), refnum(2), refnum(3)));
+
+	gcnodes(&l,
+	// &map,
+		&go, &nonroots);
 
 	size_t sz = 0;
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
-	dumpdag(1, f, 0, &U, l, &map);
+	dumpdag(1, f, 0, &U, l);
+	// , &map);
 	fclose(f);
 
 	printf("dag(l):%s\n", d);
-	freedag(l, NULL);
+	freedag(l);
+	// , NULL);
 	free((void *)d);
 
 	return 0;

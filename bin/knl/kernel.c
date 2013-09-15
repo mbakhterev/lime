@@ -40,10 +40,11 @@ void *initforms(
 			// Параметр go = NULL, в под-графы не ходим, собираем
 			// формы только из верхнего уровня
 
-// 			evalforms(U, loaddag(f, U, map), map, NULL, env, ctx);
 			List *const g = loaddag(f, U, map);
-			evalforms(U, g, map, NULL, env, ctx);
-			freedag(g, map);
+// 			evalforms(U, g, map, NULL, env, ctx);
+			evalforms(U, g, NULL, env, ctx);
+// 			freedag(g, map);
+			freedag(g);
 			
 			break;
 		}
@@ -269,7 +270,8 @@ int main(int argc, char *const argv[])
 
 	dumpcontext(stderr, &U, ctx);
 
-	dumpdag(0, stdout, 0, &U, ctx->ref.u.context->dag, &map);
+	dumpdag(0, stdout, 0, &U, ctx->ref.u.context->dag);
+	// , &map);
 	fprintf(stdout, "\n");
 
 	return 0;

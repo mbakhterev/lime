@@ -22,18 +22,23 @@ int main(int argc, char *argv[])
 //	List *ctx = pushcontext(NULL);
 	List *ctx = NULL;
 
-	evallists(&U, &l, &map, NULL, NULL);
-	evalforms(&U, l, &map, NULL, env, ctx);
+	evallists(&U, &l,
+	// &map,
+		NULL, NULL);
+	evalforms(&U, l,
+	// &map,
+		NULL, env, ctx);
 
 	size_t sz = 0;
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
-// 	dumpdag(f, 0, &U, l, &DM.map);
-	dumpdag(1, f, 0, &U, l, &map);
+	dumpdag(1, f, 0, &U, l);
+	// , &map);
 	fclose(f);
 
 	printf("dag(l):%s\n", d);
-	freedag(l, NULL);
+	freedag(l);
+	// , NULL);
 	free((void *)d);
 
 	dumpenvironment(stdout, 0, &U, env);

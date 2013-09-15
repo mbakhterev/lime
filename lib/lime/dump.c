@@ -18,7 +18,7 @@ typedef struct
 {
 	FILE *file;
 	const Array *universe;
-	const Array *map;
+//	const Array *map;
 } DumpContext;
 
 typedef struct
@@ -50,7 +50,8 @@ static const char *tabstr(const unsigned tabs)
 
 static int mapone(List *const l, void *const ptr)
 {
-	assert(l && l->ref.code == NODE);
+	assert(l);
+	assert(l->ref.code == NODE);
 	assert(ptr);
 	Array *const nodes = ptr;
 
@@ -270,6 +271,7 @@ static void dumpattr(
 	
 	DBG(DBGSTD, "f: %p", (void *)f);
 
+	assert(fputc('\t', f) == '\t');
 	dumpattrlist(attr, U, f, dc->nodes);
 }
 
@@ -283,12 +285,15 @@ static void dumpsubdag(
 	assert(U);
 	assert(f);
 
-	dumpdag(dc->dbg, f, dc->tabs + 1, U, dag, ctx->map);
+	assert(fputc('\n', f) == '\n');
+	dumpdag(dc->dbg, f, dc->tabs + 1, U, dag);
+	// , ctx->map);
 }
 
 void dumpdag(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
-	const Array *const U, const List *const dag, const Array *const map)
+	const Array *const U, const List *const dag)
+// 	, const Array *const map)
 {
 	assert(f);
 
@@ -298,8 +303,8 @@ void dumpdag(
 	const DumpContext ctx =
 	{
 		.file = f,
-		.universe = U,
-		.map = map
+		.universe = U
+// 		.map = map
 	};
 
 	DBG(DBGDAG, "f: %p", (void *)ctx.file);
@@ -323,18 +328,19 @@ void dumpdag(
 
 		if(dbg)
 		{
-			assert(0 < fprintf(f, "\n%s\t%p\t.%s\tn%u\t",
+			assert(0 < fprintf(f, "\n%s\t%p\t.%s\tn%u",
 				dc.tabstr,
 				(void *)n, atombytes(atomat(U, n->verb)), i));
 		}
 		else
 		{
-			assert(0 < fprintf(f, "\n%s\t.%s\tn%u\t",
+			assert(0 < fprintf(f, "\n%s\t.%s\tn%u",
 				dc.tabstr,
 				atombytes(atomat(U, n->verb)), i));
 		}
 
-		(uireverse(map, n->verb) == -1 ?
+// 		(uireverse(map, n->verb) == -1 ?
+		(!n->dag ?
 			dumpattr : dumpsubdag)(&ctx, &dc, n->u.attributes);
 
 		if(i + 1 < nodes.count)
@@ -629,7 +635,8 @@ static int dumpformone(List *const l, void *const ptr)
 	dumplist(f, st->U, frm->signature);	
 
 	assert(fprintf(f, "\n%sdag %p:\n", st->tabstr, (void *)frm->u.dag) > 0);
-	dumpdag(1, f, st->tabs, st->U, frm->u.dag, frm->map);
+	dumpdag(1, f, st->tabs, st->U, frm->u.dag);
+	// , frm->map);
 
 	assert(fputc('\n', f) == '\n');
 

@@ -27,19 +27,21 @@ int main(int argc, char *argv[])
 
 //	List *k = gcnodes(&l, &DM, &nonroots);
 
-	List *k = gcnodes(&l, &map, &go, &nonroots);
+//	List *k = gcnodes(&l, &map, &go, &nonroots);
+	List *k = gcnodes(&l, &go, &nonroots);
 
 	printf("len(l): %u; len(k): %u\n", listlen(l), listlen(k));
 
 	size_t sz = 0;
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
-// 	dumpdag(f, 0, &U, k, &DM.map);
-	dumpdag(1, f, 0, &U, k, &map);
+	dumpdag(1, f, 0, &U, k);
+	// , &map);
 	fclose(f);
 
 	printf("dag(k):%s\n", d);
-	freedag(k, NULL);
+	freedag(k);
+	// , NULL);
 	free((void *)d);
 
 	return 0;

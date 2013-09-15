@@ -65,15 +65,10 @@ List *pushcontext(
 	return append(RL(refctx(new)), ctx);
 }
 
-static void freectx(Context *const ctx, const Array *const map)
+static void freectx(Context *const ctx)
+// const Array *const map)
 {
 	assert(ctx);
-
-// 	assert(popenvironment(ctx->outs) == NULL);
-// 	assert(popenvironment(ctx->ins) == NULL);
-// 	freelist(ctx->forms);
-// 
-// 	freedag(ctx->dag, map);
 
 	purgereactor(ctx->R + 0);
 	purgereactor(ctx->R + 1);
@@ -81,14 +76,17 @@ static void freectx(Context *const ctx, const Array *const map)
 	free(ctx);
 }
 
-extern List *popcontext(List *const ctx, const Array *const map)
+extern List *popcontext(List *const ctx)
+// , const Array *const map)
 {
 	assert(ctx && ctx->ref.code == CTX);
 
 	List *c = ctx;
 	List *t = tipoff(&c);
 
-	freectx(t->ref.u.context, map);
+	freectx(t->ref.u.context);
+	// , map);
+
 	freelist(t);
 
 	return c;

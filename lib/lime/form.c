@@ -38,7 +38,8 @@ void freeform(const Ref r)
 	if(!r.external)
 	{
 		freelist((List *)f->signature);
-		freedag((List *)f->u.dag, f->map);
+		freedag((List *)f->u.dag);
+		// , f->map);
 	}
 
 	// Плата за наличие const полей в структуре
@@ -46,7 +47,7 @@ void freeform(const Ref r)
 	memcpy(f,
 		&(Form) {
 			.signature = NULL,
-			.map = NULL,
+// 			.map = NULL,
 //			.goal = 0,
 			.count = FREE }, sizeof(Form));
 
@@ -81,7 +82,8 @@ void freeformlist(List *const forms)
 // Form *newform(
 
 Ref newform(
-	const List *const dag, const Array *const map,
+	const List *const dag,
+// 	const Array *const map,
 	const List *const signature)
 {
 	Form *f = NULL;
@@ -91,8 +93,8 @@ Ref newform(
 		f = tipoffform(&freeforms);
 		assert(f->count == FREE
 //			&& f->goal == 0
-			&& f->signature == NULL
-			&& f->map == NULL);
+			&& f->signature == NULL);
+// 			&& f->map == NULL);
 	}
 	else
 	{
@@ -115,7 +117,7 @@ Ref newform(
 		{
 			.u.dag = dag,
 			.signature = signature,
-			.map = map,
+// 			.map = map,
 			.count = 0 }, sizeof(Form));
 
 	return refform(f);
