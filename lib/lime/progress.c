@@ -54,6 +54,10 @@ static const char *atomizeop(const Array *const U, const unsigned op)
 	return "Not-An-Atom";
 }
 
+static void infer(
+	const Array *const U,
+	const List **const penv, const List **const pctx);
+
 void progress(
 	Array *const U,
 	const List **const penv, const List **const pctx,
@@ -123,6 +127,15 @@ void progress(
 	// Ключ больше не нужен
 	freelist((List *)key);
 
+	infer(U, &env, &ctx);
+
 	*pctx = ctx;
 	*penv = env;
+}
+
+void infer(
+	const Array *const U,
+	const List **const env, const List **const ctx)
+{
+	return;
 }

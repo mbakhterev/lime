@@ -591,7 +591,8 @@ static int dumpctxone(List *const c, void *const ptr)
 	}
 
 	assert(fprintf(f, "\n\tDAG:\n") > 0);
-	// TODO: dumpdag Не хватает карты
+	dumpdag(1, f, 1, U, ctx->dag);
+	assert(fputc('\n', f) == '\n');
 
 	st->depth += 1;
 
