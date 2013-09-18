@@ -1,9 +1,10 @@
 lmrootnode := $(call nodepath)
 
-cstd = c99
+# cstd = c99
 
 .PHONY: lime cleanlime
 
+lime: cstd = c99
 lime: lmlib lmknl lmtst 
 cleanlime: cleanlmlib cleanlmknl cleanlmtst
 
