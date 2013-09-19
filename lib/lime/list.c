@@ -30,18 +30,21 @@ List *tip(const List *const l)
 }
 
 // Откусить первый элемент
-List *tipoff(List **const lptr) {
+List *tipoff(List **const lptr)
+{
 	List *const l = *lptr;
 	assert(l);
 
 	// Первый элемент здесь
 	List *const n = l->next;
 
-	if(l != n) {
+	if(l != n)
+	{
 		// Список из >1 элементов
 		l->next = n->next;
 	}
-	else {
+	else
+	{
 		*lptr = NULL;
 	}
 
@@ -478,151 +481,41 @@ void freelist(List *const l)
 	forlist(l, releaser, &fs, 0);
 }
 
-// static int dumper(List *const l, void *const file);
-// 
-// typedef struct {
-// 	FILE *const file;
-// 	const List *const first;
-// 	const Array *const universe;
-// } DumpState;
-// 
-// static int dumper(List *const l, void *const state)
-// {
-// 	DumpState *const s = state;
-// 	assert(s);
-// 
-// 	FILE *const f = s->file;
-// 	assert(f);
-// 
-// 	const Array *const U = s->universe;
-// 
-// 	const unsigned isfinal = l->next == s->first;
-// 
-// 	switch(l->ref.code)
-// 	{
-// 	case NUMBER:
-// 		assert(fprintf(f, "%u", l->ref.u.number) > 0);
-// 		break;
-// 	
-// 	case ATOM:
-// 		if(U)
-// 		{
-// 			const Atom a = atomat(U, l->ref.u.number);
-// 			assert(0 < 
-// 				fprintf(f, "%02x.\"%s\"",
-// 					atomhint(a), atombytes(a)));
-// 		}
-// 		else
-// 		{
-// 			assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
-// 		}
-// 
-// 		break;
-// 	
-// 	case TYPE:
-// 		assert(fprintf(f, "T:%u", l->ref.u.number) > 0);
-// 		break;
-// 	
-// 	case NODE:
-// 	{
-// 		const Node *const n = l->ref.u.node;
-// 		assert(n);
-// //		assert(l->ref.u.node);
-// 		
-// 		if(U)
-// 		{
-// 			const char *const verb
-// 				= (char *)atombytes(atomat(U, n->verb));
-// 
-// 			assert(fprintf(f, "N:%p.%s", (void *)n, verb) > 0);
-// 		}
-// 		else
-// 		{
-// 			assert(fprintf(f, "N:%p.%u", (void *)n, n->verb) > 0);
-// 		}
-// 
-// 		break;
-// 	}
-// 	
-// 	case LIST:
-// 		unidumplist(f, U, l->ref.u.list);
-// 		break;
-// 
-// 	default:
-// 		assert(0);
-// 	}
-// 
-// 	if(!isfinal)
-// 	{
-// 		assert(fputc(' ', f) != EOF);
-// 	}
-// 
-// 	return 0;
-// }
-// 
-// void unidumplist(
-// 	FILE *const f, const Array *const U, const List *const list)
-// {
-// 	assert(fputc('(', f) != EOF);
-// 
-// 	DumpState s =
-// 	{
-// 		.file = f,
-// 		.first = list != NULL ? list->next : NULL,
-// 		.universe = U
-// 	};
-// 
-// 	forlist((List *)list, dumper, &s, 0);
-// 
-// 	assert(fputc(')', f) != EOF);
-// }
-// 
-// char *dumplist(const List *const l)
-// {
-// 	char *buff = NULL;
-// 	size_t length = 0;
-// 	FILE *f = newmemstream(&buff, &length);
-// 	assert(f);
-// 
-// 	unidumplist(f, NULL, l);
-// 
-// 	assert(fputc(0, f) != EOF);
-// 	fclose(f);
-// 
-// 	return buff;
-// }
-
 // Состояние для прохода со счётчиками
 
-typedef struct {
+typedef struct
+{
 	Ref *refs;
 
 	// N - ограничение сверху; n - пройдено элементов
-	unsigned N;
+	const unsigned N;
 	unsigned n;
 } CState;
 
-static int writer(List *const k, void *const ptr) {
+static int writer(List *const k, void *const ptr)
+{
 	CState *const st = ptr;
 
-	if(st->n < st->N) {
+	if(st->n < st->N)
+	{
 		st->refs[st->n] = k->ref;
 		st->n += 1;
 		return 0;
 	}
-	else {
-		return 1;
-	}
+	
+	return 1;
 }
 
-unsigned writerefs(const List *const l, Ref refs[], const unsigned N) {
+unsigned writerefs(const List *const l, Ref refs[], const unsigned N)
+{
 	CState st = { .refs = refs, .N = N, .n = 0 };
 	forlist((List *)l, writer, &st, 0);
 
 	assert(N == st.N);
 	assert(N >= st.n);
 
-	if(st.n < N) {
+	if(st.n < N)
+	{
 		refs[st.n].code = FREE;
 
 	 	// Обнуляем весь union
@@ -633,14 +526,16 @@ unsigned writerefs(const List *const l, Ref refs[], const unsigned N) {
 	return st.n;
 }
 
-static int counter(List *const l, void *const ptr) {
+static int counter(List *const l, void *const ptr)
+{
 	CState *const st = ptr;
 	assert(st->n < st->N);
 	st->n += 1;
 	return 0;
 }
 
-unsigned listlen(const List *const l) {
+unsigned listlen(const List *const l)
+{
 	CState st = { .refs = NULL, .N = MAXNUM, .n = 0 };
 	forlist((List *)l, counter, &st, 0);
 	assert(st.n < MAXNUM);
@@ -655,7 +550,6 @@ void formlist(List L[], const Ref R[], const unsigned N)
 
 	if(N > 0)
 	{
-
 		// Чтобы на создаваемый список можно было ссылаться по адресу
 		// первого элемента массива L, этот элемент (по семантике)
 		// должен быть последней ссылкой в списке ссылок
@@ -672,15 +566,4 @@ void formlist(List L[], const Ref R[], const unsigned N)
 		L[N - 1].next = &L[0];
 		L[0].ref = R[N - 1];
 	}
-}
-
-char *listtostr(const Array *const U, const List *const l)
-{
-	char *buf= NULL;
-	size_t sz = 0;
-	FILE *const f = newmemstream(&buf, &sz);
-	dumplist(f, U, l);
-	fclose(f);
-
-	return buf;
 }

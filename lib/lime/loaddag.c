@@ -56,7 +56,8 @@ typedef struct
 	List *refs;
 } LoadCurrent;
 
-static LoadCurrent LC(List *const nodes, List *const refs) {
+static LoadCurrent LC(List *const nodes, List *const refs)
+{
 	return (LoadCurrent) { .nodes = nodes, .refs = refs };
 }
 
@@ -157,7 +158,7 @@ static LoadCurrent list(
 
 		const LoadCurrent lc = core(ctx, lenv, nodes, NULL);
 
-		assert(popenvironment(lenv) == env);
+		assert(popenvironment(&lenv) == env);
 
 		return lc;
 	}
@@ -258,12 +259,6 @@ static LoadCurrent core(
 	if(isfirstid(c))
 	{
 		assert(ungetc(c, f) == c);
-
-// 		const List l =
-// 		{
-// 			.ref = refatom(loadtoken(U, f, 0, "[0-9A-Za-z]")),
-// 			.next = (List *)&l
-// 		};
 
 		DL(l, RS(refatom(loadtoken(U, f, 0, "[0-9A-Za-z]"))));
 		const Ref *const r = keytoref(env, l, -1);
@@ -384,7 +379,6 @@ static LoadCurrent node(
 
 	const unsigned isdag = uireverse(ctx->dagmap, verb) != -1;
 	const LoadCurrent lc
-// 		= (uireverse(ctx->dagmap, verb) == -1 ?
 		= (!isdag ? loadattr : loadsubdag)(ctx, env, nodes);
 
 	if(DBGFLAGS & DBGNODE)

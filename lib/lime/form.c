@@ -25,9 +25,6 @@ static Form *tipoffform(Form **const fptr)
 	return g;
 }
 
-
-// void freeform(Form *const f)
-
 void freeform(const Ref r)
 {
 	assert(r.code == FORM);
@@ -39,7 +36,6 @@ void freeform(const Ref r)
 	{
 		freelist((List *)f->signature);
 		freedag((List *)f->u.dag);
-		// , f->map);
 	}
 
 	// Плата за наличие const полей в структуре
@@ -47,8 +43,6 @@ void freeform(const Ref r)
 	memcpy(f,
 		&(Form) {
 			.signature = NULL,
-// 			.map = NULL,
-//			.goal = 0,
 			.count = FREE }, sizeof(Form));
 
 	if(freeforms == NULL)
@@ -65,9 +59,6 @@ void freeform(const Ref r)
 
 static int freeone(List *const f, void *const ptr)
 {
-// 	assert(f && f->ref.code == FORM);
-// 	freeform(f->ref.u.form);
-
 	assert(f);
 	freeform(f->ref);
 
@@ -79,12 +70,8 @@ void freeformlist(List *const forms)
 	forlist(forms, freeone, NULL, 0);
 }
 
-// Form *newform(
 
-Ref newform(
-	const List *const dag,
-// 	const Array *const map,
-	const List *const signature)
+Ref newform(const List *const dag, const List *const signature)
 {
 	Form *f = NULL;
 
@@ -92,9 +79,7 @@ Ref newform(
 	{
 		f = tipoffform(&freeforms);
 		assert(f->count == FREE
-//			&& f->goal == 0
 			&& f->signature == NULL);
-// 			&& f->map == NULL);
 	}
 	else
 	{
@@ -104,20 +89,11 @@ Ref newform(
 
 	// Плата за const поля в структуре
 
-// 	memcpy(f,
-// 		&(Form) {
-// 		.u.dag = forkdag(dag, map),
-// 		.signature = forklist(signature),
-// 		.map = map,
-// 		.count = 0,
-// 		.goal = 0 }, sizeof(Form));
-
 	memcpy(f,
 		&(Form)
 		{
 			.u.dag = dag,
 			.signature = signature,
-// 			.map = map,
 			.count = 0 }, sizeof(Form));
 
 	return refform(f);

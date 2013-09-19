@@ -61,7 +61,8 @@ static int cmpitems(const List *const k, const List *const l)
 // отладки полезно было бы ставить рядом друг с дружкой. Поэтому, порядок будет
 // просто лексикографический. Это оправданное усложнение.
 
-static int cmplists(const List *const k, const List *const l) {
+static int cmplists(const List *const k, const List *const l)
+{
 	assert(k != NULL);
 	assert(l != NULL);
 
@@ -71,7 +72,8 @@ static int cmplists(const List *const k, const List *const l) {
 
 	unsigned r;
 
-	do {
+	do
+	{
 		ck = ck->next;
 		cl = cl->next;
 		r = cmpitems(ck, cl);
@@ -85,16 +87,32 @@ static int cmplists(const List *const k, const List *const l) {
 	return 1 - (ck == k && cl == l) - ((ck == k && cl != l) << 1);
 }
 
-static int kcmp(const void *const D, const unsigned i, const void *const key) {
+static int kcmp(const void *const D, const unsigned i, const void *const key)
+{
 	return cmplists(((const Binding *)D)[i].key, key);
 }
 
-static int icmp(const void *const D, const unsigned i, const unsigned j) {
+static int icmp(const void *const D, const unsigned i, const unsigned j)
+{
 	return kcmp(D, i, ((const Binding *)D)[j].key);
 }
 
-static Array makeenvironment(void) {
-	return makearray(ENV, sizeof(Binding), icmp, kcmp);
+// Типы индексируются теми же ключами, что и окружения. Поэтому функция не
+// статическая, будет использоваться и в types.c
+
+Array makekeyedarray(const unsigned code)
+{
+	switch(code)
+	{
+	case TYPE:
+	case ENV:
+		break;
+	
+	default:
+		assert(0);
+	}
+
+	return makearray(code, sizeof(Binding), icmp, kcmp);
 }
 
 static void freeone(Array *const env)
@@ -141,29 +159,24 @@ extern List *pushenvironment(List *const env)
 	Array *const new = malloc(sizeof(Array));
 	assert(new);
 
-// Таков уж стандарт
-// 
-// 	*new = makeenvironment();	
-
 	{
-		const Array fresh = makeenvironment();
+		const Array fresh = makekeyedarray(ENV);
 		memcpy(new, &fresh, sizeof(Array));
 	}
 
 	return append(RL(refenv(new)), env);
 }
 
-extern List *popenvironment(List *const env)
+extern List *popenvironment(List **const penv)
 {
-	assert(env != NULL && env->ref.code == ENV);
+	assert(*penv != NULL && (*penv)->ref.code == ENV);
 
-	List *e = env;
-	List *t = tipoff(&e);
+	List *t = tipoff(penv);
 
 	freeone(t->ref.u.environment);
 	freelist(t);
 
-	return e;
+	return *penv;
 }
 
 typedef struct
@@ -333,69 +346,6 @@ void freeenvironment(List *env)
 {
 	while(env)
 	{
-		env = popenvironment(env);
+		env = popenvironment(&env);
 	}
 }
-
-// typedef struct
-// {
-// 	FILE *const file;
-// 	const Array *const universe;
-// 	unsigned depth;
-// } DState;
-// 
-// static int dumpone(List *const l, void *const ptr)
-// {
-// 	assert(ptr);
-// 	assert(l && l->ref.code == ENV && l->ref.u.environment);
-// 
-// 	DState *const st = ptr;
-// 	FILE *const f = st->file;
-// 	const Array *const U = st->universe;
-// 	assert(f);
-// 	assert(U);
-// 
-// 	const Array *const E = l->ref.u.environment;
-// 	const Binding *const B = E->data;
-// 
-// 	assert(fprintf(f, "ENV{%u}:", st->depth) > 0);
-// 
-// 	for(unsigned i = 0; i < E->count; i += 1)
-// 	{
-// 		switch(B[i].ref.code)
-// 		{
-// 		case FORM:
-// 			assert(fprintf(f, "\n\tform-key: ") > 0);
-// 			dumplist(f, U, B[i].key);
-// 
-// 			assert(fprintf(f, "\n\tform-signature: ") > 0);
-// 			dumplist(f, U, B[i].ref.u.form->signature);
-// 
-// 			assert(fprintf(f, "\n\tform-dag: ") > 0);
-// 			dumpdag(f, 1, U,
-// 				B[i].ref.u.form->u.dag,
-// 				B[i].ref.u.form->map);
-// 
-// 			assert(fputc('\n', f) == '\n');
-// 
-// 			break;
-// 		}
-// 	}
-// 
-// 	st->depth += 1;
-// 
-// 	return 0;
-// }
-// 
-// void dumpenvironment(
-// 	FILE *const f, const Array *const U, const List *const env)
-// {
-// 	const DState st =
-// 	{
-// 		.file = f,
-// 		.universe = U,
-// 		.depth = 0
-// 	};
-// 
-// 	forlist((List *)env, dumpone, (void *)&st, 0);
-// }

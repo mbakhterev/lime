@@ -11,15 +11,18 @@
 
 #define DBGFLAGS 0
 
-unsigned middle(const unsigned a, const unsigned b) {
+unsigned middle(const unsigned a, const unsigned b)
+{
 	return a + (b - a) / 2;
 }
 
-unsigned min(const unsigned a, const unsigned b) {
+unsigned min(const unsigned a, const unsigned b)
+{
 	return a < b ? a : b;
 }
 
-int cmpui(const unsigned a, const unsigned b) {
+int cmpui(const unsigned a, const unsigned b)
+{
 	return 1 - (a == b) - ((a < b) << 1);
 }
 
@@ -28,7 +31,8 @@ int cmpptr(const void *const a, const void *const b)
 	return 1 - (a == b) - ((a < b) << 1);
 }
 
-static unsigned clp2(unsigned n) {
+static unsigned clp2(unsigned n)
+{
 	assert(sizeof(unsigned) == 4);
 
 	n -= 1;
@@ -40,13 +44,16 @@ static unsigned clp2(unsigned n) {
 	return n + 1;
 }
 
-void *expogrow(void *const buf, const unsigned ilen, const unsigned cnt) {
+void *expogrow(void *const buf, const unsigned ilen, const unsigned cnt)
+{
 	const unsigned curlen = clp2(ilen * cnt);
 	assert(curlen < MAXNUM);
+
 	const unsigned len = clp2(ilen * (cnt + 1));
 	assert(len && len < MAXNUM);
 
-	if(len <= curlen) {
+	if(len <= curlen)
+	{
 		return buf;
 	}
 

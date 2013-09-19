@@ -112,7 +112,6 @@ void progress(
 	intakeform(
 		U, tip(ctx)->ref.u.context, 0,
 		f->u.dag,
-// 		f->map,
 		f->signature, ITEXTERNAL);
 
 	// Забираем ((key); cmd.atom), в outs текущего реактора. Сначала

@@ -16,8 +16,8 @@ static Reactor emptyreactor(void)
 
 static void purgereactor(Reactor *const r)
 {
-	assert(popenvironment(r->outs) == NULL);
-	assert(popenvironment(r->ins) == NULL);
+	assert(popenvironment(&r->outs) == NULL);
+	assert(popenvironment(&r->ins) == NULL);
 
 	// freeformlist работает через freeform, которая отличает различает 
 	// external-формы. Формы из окружений не будут затронуты
@@ -29,16 +29,6 @@ static void purgereactor(Reactor *const r)
 
 static Context makecontext(const unsigned state, const unsigned marker)
 {
-// 	return (Context)
-// 	{
-// 		.dag = NULL,
-// 		.state = state,
-// 		.marker = marker,
-// 		.outs = pushenvironment(NULL),
-// 		.forms = NULL,
-// 		.ins = pushenvironment(NULL),
-// 	};
-
 	return (Context)
 	{
 		.dag = NULL,
@@ -66,7 +56,6 @@ List *pushcontext(
 }
 
 static void freectx(Context *const ctx)
-// const Array *const map)
 {
 	assert(ctx);
 
@@ -76,20 +65,16 @@ static void freectx(Context *const ctx)
 	free(ctx);
 }
 
-extern List *popcontext(List *const ctx)
-// , const Array *const map)
+extern List *popcontext(List **const pctx)
 {
-	assert(ctx && ctx->ref.code == CTX);
+	assert(*pctx && (*pctx)->ref.code == CTX);
 
-	List *c = ctx;
-	List *t = tipoff(&c);
+	List *t = tipoff(pctx);
 
 	freectx(t->ref.u.context);
-	// , map);
-
 	freelist(t);
 
-	return c;
+	return *pctx;
 }
 
 static unsigned isemptyenv(const List *const env)

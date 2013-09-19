@@ -26,9 +26,9 @@ struct arraytag
 	void *data;
 	unsigned *index;
 	unsigned capacity;
-	unsigned itemlength;
 	unsigned count;
 
+	const unsigned itemlength;
 	const int code;
 };
 
@@ -245,7 +245,7 @@ extern unsigned iscomparable(const List *const);
 // Для создания нового стека окружений можно выполнить pushenvironment(NULL)
 
 extern List *pushenvironment(List *const);
-extern List *popenvironment(List *const);
+extern List *popenvironment(List **const);
 
 extern void freeenvironment(List *const);
 
@@ -305,20 +305,6 @@ extern const void *const ptrdirect(const Array *const, const unsigned);
 
 // Семантические функции
 
-// // Во многих нижеследующих процедурах используется два особых параметра,
-// // описывающих структуру обрабатываемого графа: map и go. Параметр map - это
-// // uimap, которая задаёт verb-ы узлов, в атрибутах которых записаны графы.
-// // Параметр go - это указание на verb-ы тех узлов с графами, в которые алгоритм
-// // должен рекурсивно спускаться. Если параметр go не указан, значит, алгоритм
-// // рекурсивно спускается в графы во всех узлах с ними.
-// // 
-// // Например, пройтись по всем графам в узлах, имена которых в массиве verbs:
-// // 	const Array map = keymap(U, 0, verbs); 
-// // 	walkdag(dag, &map, &map, walkone, ptr);
-// //	freemap((Array *)map);
-
-// Отказываемся от параметра map в нижеследующих функциях
-
 // Некоторые нижеследующие функции содержат параметр go. Он является uimap,
 // которая задаёт verb-ы тех узлов (N) с графами в атрибутах (N.dag == 1), в
 // которые алгоритм должен рекурсивно спускаться. Если параметр go не задан для
@@ -337,43 +323,34 @@ extern List *loaddag(
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
 	const Array *const U, const List *const dag);
-// 	, const Array *const map);
 
 // Создать согласованную с таблицей атомов keymap по списку строк. Список строк,
 // оканчивающийся NULL. В полученной uimap на i-том месте будет стоять номер
 // атома, который описывается (hint; strlen(atoms(i)); atoms(i))
 
-extern Array keymap(Array *const universe,
-	const unsigned hint, const char *const atoms[]);
+extern Array keymap(
+	Array *const universe, const unsigned hint, const char *const atoms[]);
 
 extern List *forkdag(const List *const dag);
-// , const Array *const map);
 
 extern void freedag(List *const dag);
-// , const Array *const map);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
 // uimap-отображением nonroots.
 
 extern List *gcnodes(
-	List **const dag,
-//	const Array *const map,
-	const Array *const go,
+	List **const dag, const Array *const go,
 	const Array *const nonroots);
 
 typedef void (*WalkOne)(List *const, void *const);
 
 extern void walkdag(
-	const List *const dag,
-// 	const Array *const map,
-	const Array *const go,
+	const List *const dag, const Array *const go,
 	const WalkOne, void *const);
 
 extern List *evallists(
 	Array *const U,
-	List **const dag,
-// 	const Array *const map,
-	const Array *const go,
+	List **const dag, const Array *const go,
 	const List *const arguments);
 
 // Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
@@ -390,9 +367,8 @@ struct formtag
 		struct formtag *nextfree;
 	} u;
 	const List *const signature;
-//	const Array *const map;
+
 	unsigned count;
-//	const unsigned goal;
 };
 
 // Из-за сложной жизни форм (cf. txt/worklog.txt:2690 2013-09-04 11:55:50) имеет
@@ -402,10 +378,7 @@ struct formtag
 
 extern void freeform(const Ref);
 
-extern Ref newform(
-	const List *const dag,
-// 	const Array *const map,
-	const List *const signature);
+extern Ref newform(const List *const dag, const List *const signature);
 
 extern void freeformlist(List *const forms);
 
@@ -455,8 +428,7 @@ extern List *pushcontext(
 // понятно наперёд, какая именно это карта должна быть (взятая из форм или что?
 // любые гипотезы приветствуются). Поэтому просто параметр
 
-extern List *popcontext(List *const ctx);
-// , const Array *const map);
+extern List *popcontext(List **const pctx);
 
 // Слияние двух контекстов на вершине стека. Тот, что сверху дописывается к
 // тому, что снизу - это описание формирования порядка dag-ов
@@ -476,9 +448,7 @@ extern void dumpcontext(FILE *const, const Array *const, const List *const ctx);
 
 extern void evalforms(
 	Array *const universe,
-	const List *const dag,
-// 	const Array *const map,
-	const Array *const go,
+	const List *const dag, const Array *const go,
 	const List *const env, const List *const ctx);
 
 // Синтаксические команды. Тут и дальше получается некий свободный поток
@@ -530,11 +500,48 @@ extern void intakeform(
 	const Array *const U,
 	Context *const, const unsigned level,
 	const List *const dag,
-// 	const Array *const map,
 	const List *const signature, const unsigned external);
 
 extern void intakeout(
 	const Array *const U,
 	Context *const, const unsigned level, const List *const outs);
+
+// Новый вариант окружений, способных быть кактусовым стеком, которые придут на
+// замену стандартным environment выше
+
+typedef struct envtag
+{
+	const Array *const types;
+	const Array *const self;
+	const Binding *const location;
+
+	const struct envtag *const up;
+	const List *const down;
+} Environment;
+
+extern Environment cropenvironment(List **const dag);
+
+extern Array maketypetab(void);
+
+// const List тонко намекает на то, что собственно сам List изменён не будет. В
+// атрибутах же узлов, кое что, естественно, будет подправлено
+
+extern void croptypes(const List *const dag, Array *const typetab);
+
+// Представление типа в виде списка с Ref-ами на составляющие его типы. Этот
+// список - собственность таблицы типов, его не следует освобождать
+
+extern const List *typeat(const Array *const typetab, const unsigned N);
+
+// Для отладочных целей тип t в "раскрытом" виде, то есть, где все ссылки на
+// другие типы заменены на списки (ну, мы-то понимаем, что речь об
+// s-выражениях) из атомов, чисел или составляющих t типов в "раскрытом" в
+// списке виде. Этот список надо освобождать
+
+extern const List *dicovertypeat(const Array *const T, const unsigned N);
+
+// Похоже, не избежать сей участи. Функция, которая возвращает содержимое N-ной
+// ссылки в списке. Счёт от нуля
+extern Ref listnth(const List *const, const unsigned N);
 
 #endif

@@ -92,7 +92,6 @@ typedef struct
 {
 	List *L;
 	const Array *const nonroots;
-// 	const Array *const map;
 	const Array *const go;
 	Array marks;
 } GCState;
@@ -171,12 +170,9 @@ static int rebuildone(List *const l, void *const state)
 	if(ptrreverse(&st->marks, n) != -1)
 	{
 		DBG(DBGGC,
-// 			"keeping: %p:rmap(%u)=%u; map: %p",
 			"keepind (%p:dag(%u)=%u)",
 			(void *)n, n->verb,
-//			uireverse(st->map, n->verb),
 			n->dag);
-//			(void *)st->map);
 
 		// Приписываем отмеченный узел к результату
 		st->L = append(st->L, l);
@@ -184,14 +180,10 @@ static int rebuildone(List *const l, void *const state)
 		// Если в этом узле подграф, который надо пройти, собираем мусор
 		// в нём
 
-// 		if(inmap(st->map, n->verb) && inmap(st->go, n->verb))
 		if(n->dag && inmap(st->go, n->verb))
 		{
 			DBG(DBGGC, "gc dag on node (%u:%p)",
 				n->verb, (void *)n);
-// 			gcnodes(
-// 				&n->u.attributes, st->map, st->go,
-// 				st->nonroots);
 
 			gcnodes(&n->u.attributes, st->go, st->nonroots);
 		}
@@ -199,7 +191,6 @@ static int rebuildone(List *const l, void *const state)
 	else
 	{
 		freedag(l);
-		// , st->map);
 	}
 
 	return 0;
@@ -207,15 +198,12 @@ static int rebuildone(List *const l, void *const state)
 
 List *gcnodes(
 	List **const dptr,
-//	const Array *const map,
-	const Array *const go,
-	const Array *const nonroots)
+	const Array *const go, const Array *const nonroots)
 {
 	GCState st =
 	{
 		.nonroots = nonroots,
 		.go = go,
-// 		.map = map,
 		.marks = makeptrmap(),
 		.L = NULL
 	};
@@ -241,8 +229,6 @@ List *gcnodes(
 
 		const Node *const n = k->ref.u.node;
 
-//		if(!isdag(dagmap, n->verb))
-//		if(!inmap(map, n->verb))
 		if(!n->dag)
 		{
 			forlist(n->u.attributes, expandone, &st, 0);
@@ -266,7 +252,6 @@ static int freeone(List *const l, void *const ptr)
 
 	Node *const n = l->ref.u.node;
 
-// 	if(!inmap(dagmap, n->verb))
 	if(!n->dag)
 	{
 		freelist(n->u.attributes);
@@ -274,7 +259,6 @@ static int freeone(List *const l, void *const ptr)
 	else
 	{
 		freedag(n->u.attributes);
-		// , dagmap);
 	}
 
 	freenode(n);
@@ -283,7 +267,6 @@ static int freeone(List *const l, void *const ptr)
 }
 
 void freedag(List *const dag)
-// , const Array *const map)
 {
 	forlist(dag, freeone, NULL, 0);
 	freelist(dag);
@@ -311,10 +294,7 @@ typedef struct
 } FState;
 
 List *forkdag(const List *const dag)
-// , const Array *const map)
 {
-// 	assert(dag);
-
 	Array M = makeptrmap();
 	forlist((List *)dag, mapone, &M, 0);
 
@@ -329,14 +309,10 @@ List *forkdag(const List *const dag)
 		const Node *const n = nsrc[i];
 
 		N[i] = refnode(newnode(		
-			n->line,
-			n->verb,
-//			inmap(map, n->verb) == 0 ?
-//			n->dag,
+			n->line, n->verb,
 			!n->dag ?
 				  transforklist(n->u.attributes, &M, N, i)
 				: forkdag(n->u.attributes), n->dag));
-					// , map)));
 	}
 
 	return readrefs(N);

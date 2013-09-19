@@ -314,7 +314,6 @@ static List *deconstructlist(List *const l, const Array *const verbs)
 	DCState st =
 	{
 		.verbs = verbs,
-//		.L = forklist(R[0].u.node->u.attributes)
 		.L = forklist(extractlist(R[0].u.node->u.attributes, verb))
 	};
 
@@ -363,14 +362,6 @@ static void rewriteone(List *const l, void *const ptr)
 			ERR("%s", ".FIn node argument list should be NULL");
 		}
 
-// 		// FIXME: мягко говоря, не самое эффективное решение. Вообще,
-// 		// можно по всему алгоритму при встрече с .FIn смотреть на
-// 		// st->L, но это дорогое исправление. Пока просто копируем
-// 		// список. Это важно при сборке мусора. st->L нельзя удалять,
-// 		// это список извне текущего кусочка графа
-// 
-// 		n->u.attributes = forklist(st->L);
-
 		// Создаём в атрибутах .FIn список, содержащий
 		// external-подсписок st->L. Это должно защитить последний от
 		// очистки при сборке мусора:
@@ -395,7 +386,6 @@ static const char *const listverbs[] =
 List *evallists(
 	Array *const U,
 	List **const dag,
-// 	const Array *const map,
 	const Array *const go,
 	const List *const arguments)
 {
@@ -407,7 +397,6 @@ List *evallists(
 		.L = (List *)arguments
 	};
 
-// 	walkdag(*dag, map, go, rewriteone, (void *)&st);
 	walkdag(*dag, go, rewriteone, (void *)&st);
 	freeuimap((Array *)&verbs);
 

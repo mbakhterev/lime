@@ -18,7 +18,6 @@ typedef struct
 {
 	FILE *file;
 	const Array *universe;
-//	const Array *map;
 } DumpContext;
 
 typedef struct
@@ -151,79 +150,6 @@ static int dumpattrone(List *const l, void *const ptr)
 
 	DBG(DBGATTR, "f: %p; code: %u", (void *)f, l->ref.code);
 
-// 	switch(l->ref.code)
-// 	{
-// 	case NUMBER:
-// 		assert(fprintf(f, "%u", l->ref.u.number) > 0);
-// 		break;
-// 
-// 	case ATOM:
-// 	{
-// 		const Array *const U = st->universe;
-// 
-// // 		assert(U);
-// 		if(U)
-// 		{
-// 			const Atom a = atomat(U, l->ref.u.number);
-// 			const unsigned len = atomlen(a);
-// 
-// 			assert(fprintf(f, "'%02x.%u.\"", atomhint(a), len) > 0);
-// 			assert(fwrite(atombytes(a), 1, len, f) == len);
-// 			assert(fputc('"', f) == '"');
-// 		}
-// 		else
-// 		{
-// 			assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
-// 		}
-// 
-// 		break;
-// 	}
-// 
-// 	case TYPE:
-// 		assert(fprintf(f, "T:%u", l->ref.u.number) > 0);
-// 		break;
-// 
-// 	case LIST:
-// 		dumpattrlist(l->ref.u.list, st->universe, f, st->nodes);
-// 		break;
-// 
-// 	case NODE:
-// 	{
-// 		const Node *const n = l->ref.u.node;
-// 		assert(n);
-// 
-// 		const Array *const map = st->nodes;
-// // 		assert(map);
-// 		const unsigned k = ptrreverse(map, n);
-// 
-// 		// Когда печатаем узел в списке, то не важно, в каком режиме
-// 		// печатаем, в отладочном или нет. Адреса узлов надо указать для
-// 		// узлов, а не для ссылок на них, которые могут быть текущими
-// 		// N-номерами. Если же узел находится вне nodes (например, когда
-// 		// nodes == NULL во время печати просто списка), то будет
-// 		// выведен адрес узла, которой поможет его идентифицировать
-// 
-// 		if(k != -1)
-// 		{
-// 			assert(fprintf(f, "n%u", k) > 0);
-// 		}
-// 		else
-// 		{
-// 			assert(fprintf(f, "N:%p", (void *)n) > 0);
-// 		}
-// 
-// // Немного фантазий о высоком уровне LiME
-// // 		(if (k != -1)
-// // 			(assert (fprintf f "N%u" k > 0))
-// // 			(assert (fprintf f "N:%p" (val void.ptr = n) > 0))
-// 
-// 		break;
-// 	}
-// 
-// 	default:
-// 		assert(0);
-// 	}
-
 	dumpref(f, st->universe, st->nodes, l->ref);
 
 	if(l != st->last)
@@ -238,8 +164,6 @@ static void dumpattrlist(
 	List *const l, const Array *const U,
 	FILE *const f, const Array *const nodes)
 {
-//	assert(f && nodes);
-
 	assert(f);
 
 	DBG(DBGATTR, "f: %p", (void *)f);
@@ -287,13 +211,11 @@ static void dumpsubdag(
 
 	assert(fputc('\n', f) == '\n');
 	dumpdag(dc->dbg, f, dc->tabs + 1, U, dag);
-	// , ctx->map);
 }
 
 void dumpdag(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
 	const Array *const U, const List *const dag)
-// 	, const Array *const map)
 {
 	assert(f);
 
@@ -304,7 +226,6 @@ void dumpdag(
 	{
 		.file = f,
 		.universe = U
-// 		.map = map
 	};
 
 	DBG(DBGDAG, "f: %p", (void *)ctx.file);
@@ -339,7 +260,6 @@ void dumpdag(
 				atombytes(atomat(U, n->verb)), i));
 		}
 
-// 		(uireverse(map, n->verb) == -1 ?
 		(!n->dag ?
 			dumpattr : dumpsubdag)(&ctx, &dc, n->u.attributes);
 
@@ -355,104 +275,6 @@ void dumpdag(
 
 	freeptrmap(&nodes);
 }
-
-// static int dumper(List *const l, void *const file);
-// 
-// typedef struct {
-// 	FILE *const file;
-// 	const List *const first;
-// 	const Array *const universe;
-// } DumpState;
-// 
-// static int dumper(List *const l, void *const state)
-// {
-// 	DumpState *const s = state;
-// 	assert(s);
-// 
-// 	FILE *const f = s->file;
-// 	assert(f);
-// 
-// 	const Array *const U = s->universe;
-// 
-// 	const unsigned isfinal = l->next == s->first;
-// 
-// 	switch(l->ref.code)
-// 	{
-// 	case NUMBER:
-// 		assert(fprintf(f, "%u", l->ref.u.number) > 0);
-// 		break;
-// 	
-// 	case ATOM:
-// 		if(U)
-// 		{
-// 			const Atom a = atomat(U, l->ref.u.number);
-// 			assert(0 < 
-// 				fprintf(f, "%02x.\"%s\"",
-// 					atomhint(a), atombytes(a)));
-// 		}
-// 		else
-// 		{
-// 			assert(fprintf(f, "A:%u", l->ref.u.number) > 0);
-// 		}
-// 
-// 		break;
-// 	
-// 	case TYPE:
-// 		assert(fprintf(f, "T:%u", l->ref.u.number) > 0);
-// 		break;
-// 	
-// 	case NODE:
-// 	{
-// 		const Node *const n = l->ref.u.node;
-// 		assert(n);
-// 		
-// 		if(U)
-// 		{
-// 			const char *const verb
-// 				= (char *)atombytes(atomat(U, n->verb));
-// 
-// 			assert(fprintf(f, "N:%p.%s", (void *)n, verb) > 0);
-// 		}
-// 		else
-// 		{
-// 			assert(fprintf(f, "N:%p.%u", (void *)n, n->verb) > 0);
-// 		}
-// 
-// 		break;
-// 	}
-// 	
-// 	case LIST:
-// 		dumplist(f, U, l->ref.u.list);
-// 		break;
-// 
-// 	default:
-// 		assert(0);
-// 	}
-// 
-// 	if(!isfinal)
-// 	{
-// 		assert(fputc(' ', f) != EOF);
-// 	}
-// 
-// 	return 0;
-// }
-// 
-// void dumplist(
-// 	FILE *const f, const Array *const U, const List *const list)
-// {
-// 	assert(fputc('(', f) != EOF);
-// 
-// 	DumpState s =
-// 	{
-// 		.file = f,
-// 		.first = list != NULL ? list->next : NULL,
-// 		.universe = U
-// 	};
-// 
-// 	forlist((List *)list, dumper, &s, 0);
-// 
-// 	assert(fputc(')', f) != EOF);
-// }
 
 void dumplist(FILE *const f, const Array *const U, const List *const l)
 {
@@ -502,29 +324,12 @@ static int dumpenvone(List *const l, void *const ptr)
 
 	for(unsigned i = 0; i < E->count; i += 1)
 	{
-// 		switch(B[i].ref.code)
-// 		{
-// 		case FORM:
-// 			assert(fprintf(f, "\n%s\tform-key: ", tabs) > 0);
-// 			dumplist(f, U, B[i].key);
-// 
-// 			assert(fprintf(f, "\n%s\tform-signature: ", tabs) > 0);
-// 			dumplist(f, U, B[i].ref.u.form->signature);
-// 
-// 			assert(fprintf(f, "\n%s\tform-dag:\n", tabs) > 0);
-// 			dumpdag(1, f, st->tabs + 1, U,
-// 				B[i].ref.u.form->u.dag,
-// 				B[i].ref.u.form->map);
-// 
-// 			assert(fputc('\n', f) == '\n');
-// 
-// 			break;
-// 		}
-
 		assert(fprintf(f, "\n%s\tkey: ", tabs) > 0);
 		dumplist(f, U, B[i].key);
+
 		assert(fprintf(f, "\n%s\tvalue: ", tabs) > 0);
 		dumpref(f, U, NULL, B[i].ref);
+
 		assert(fputc('\n', f) == '\n');
 	}
 
@@ -637,7 +442,6 @@ static int dumpformone(List *const l, void *const ptr)
 
 	assert(fprintf(f, "\n%sdag %p:\n", st->tabstr, (void *)frm->u.dag) > 0);
 	dumpdag(1, f, st->tabs, st->U, frm->u.dag);
-	// , frm->map);
 
 	assert(fputc('\n', f) == '\n');
 
@@ -655,4 +459,3 @@ void dumpforms(
 
 	forlist((List *)forms, dumpformone, &st, 0);
 }
-

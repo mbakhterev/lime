@@ -1,5 +1,4 @@
 #include "construct.h"
-
 #include "util.h"
 #include "rune.h"
 
@@ -53,22 +52,28 @@ static int kcmp(const void *const D, const unsigned i, const void *const key)
 	return 1 - (al == len) - ((al < len) << 1);
 }
 
-static int icmp(const void *const D, const unsigned i, const unsigned j) {
+static int icmp(const void *const D, const unsigned i, const unsigned j)
+{
 	const AtomPack ap = atompack(((Atom *)D)[j]);
 	return kcmp(D, i, &ap);
 }
 
-Array makeatomtab(void) {
+Array makeatomtab(void)
+{
 	return makearray(ATOM, sizeof(Atom), icmp, kcmp);
 }
 
-void freeatomtab(Array *const t) {
+void freeatomtab(Array *const t)
+{
 	assert(t->code == ATOM);
 
-	if(t->data) {
+	if(t->data)
+	{
 		assert(t->count && t->index);
+
 		Atom *const D = t->data;
-		for(unsigned i = 0; i < t->count; i += 1) {
+		for(unsigned i = 0; i < t->count; i += 1)
+		{
 			free((void *)atombytes(D[i]));
 		}
 	}
@@ -101,8 +106,10 @@ const unsigned char * atombytes(const Atom a)
 	return (const unsigned char *)a - atomlen(a) - 1;
 }
 
-AtomPack atompack(const Atom a) {
-	return (AtomPack) {
+AtomPack atompack(const Atom a)
+{
+	return (AtomPack)
+	{
 		.bytes = atombytes(a),
 		.length = atomlen(a),
 		.hint = atomhint(a)
@@ -216,7 +223,8 @@ unsigned readpack(Array *const t, const AtomPack ap)
 	return grabpack(t, &a);
 }
 
-unsigned loadtoken(Array *const t, FILE *const f,
+unsigned loadtoken(
+	Array *const t, FILE *const f,
 	const unsigned char hint, const char *const format)
 {
 	assert(f);

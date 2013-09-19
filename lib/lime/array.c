@@ -8,9 +8,12 @@
 #include <assert.h>
 #include <stdlib.h>
 
-Array makearray(const int code, const unsigned ilen,
-	const ItemCmp icmp, const KeyCmp kcmp) {
-	return (Array) {
+Array makearray(
+	const int code, const unsigned ilen,
+	const ItemCmp icmp, const KeyCmp kcmp)
+{
+	return (Array)
+	{
 		.keycmp = kcmp,
 		.itemcmp = icmp,
 		.data = NULL,
@@ -31,8 +34,6 @@ void freearray(Array *const a)
 		free(a->data);
 		free(a->index);
 
-// 		*a = makearray(a->code, a->itemlength, a->itemcmp, a->keycmp);
-		
 		const Array fresh
 			= makearray(a->code,
 				a->itemlength, a->itemcmp, a->keycmp);
@@ -41,12 +42,14 @@ void freearray(Array *const a)
 	}
 }
 
-void *itemat(const Array *const a, const unsigned i) {
+void *itemat(const Array *const a, const unsigned i)
+{
 	unsigned char *ptr = a->data;
 	return ptr + i * a->itemlength;
 }
 
-unsigned readin(Array *const a, const void *const p) {
+unsigned readin(Array *const a, const void *const p)
+{
 	const unsigned count = a->count;
 	const unsigned ilen = a->itemlength;
 

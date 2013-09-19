@@ -213,17 +213,8 @@ static void feputeval(const Node *const n, const EState *const st)
 		ERR("%s", "Form with key exists");
 	}
 
-// 	*r = (Ref)
-// 	{
-// 		.code = FORM,
-// 		.u.form = newform(fe.dag, st->map, fe.signature)
-// 	};
-
 	// fork-и, потому что отправляем в окружение, где нужна твёрдая копия
-	*r = newform(
-		forkdag(fe.dag),
-		// , st->map), st->map,
-		forklist(fe.signature));
+	*r = newform(forkdag(fe.dag), forklist(fe.signature));
 }
 
 static void evalone(List *const l, void *const ptr)
@@ -249,28 +240,19 @@ static void evalone(List *const l, void *const ptr)
 void evalforms(
 	Array *const U,
 	const List *const dag,
-// 	const Array *const map,
 	const Array *const go,
 	const List *const env, const List *const ctx)
 {
-// Это надо проверять по ходу дела. В ситуации больше динамики, чем
-// предполагают эти проверки. Откладываем их до конкретных функций
-// 
-// 	assert(env && env->ref.code == ENV);
-// 	assert(ctx && ctx->ref.code == CTX);
-
 	const Array verbs = keymap(U, 0, formverbs);
 
 	const EState st =
 	{
 		.env = env,
 		.ctx = ctx,
-// 		.map = map,
 		.verbs = &verbs,
 		.universe = U
 	};
 	
-//	walkdag(dag, map, go, evalone, (void *)&st);
 	walkdag(dag, go, evalone, (void *)&st);
 
 	freeuimap((Array *)&verbs);
@@ -289,58 +271,6 @@ typedef struct
 	// Флаг external
 	const unsigned ext;
 } IIState;
-
-// static int intakesigone(List *const sig, void *const ptr)
-// {
-// 	IIState *const st = ptr;
-// 	assert(st);
-// 	assert(st->ins
-// 		&& st->ins->ref.code == ENV && st->ins->ref.u.environment);
-// 	assert(st->U);
-// 	
-// 	// Сигнатуру глубоко не assert-им по максимуму, потому что, есть assert
-// 	// в keytoref, ну и она пришла извне, там должны быть проверки тоже
-// 
-// 	assert(sig && sig->ref.code == LIST);
-// 	
-// 	// FIXME: надо ещё раз разобраться с режимом поиска в keytox
-// 
-// 	Binding *const B = keytobinding(st->ins, sig->ref.u.list, -1);
-// //	Ref *const r = keytoref(st->ins, sig->ref.u.list, -1);
-// 	Ref *const r = &B->ref;
-// 
-// 	if(r->code != FREE)
-// 	{
-// 		char *const str = listtostr(st->U, sig->ref.u.list);
-// 		DBG(DBGITERR, "signature: %s\n", str);
-// 		free(str);
-// 
-// 		ERR("%s", "input signature conflict");
-// 
-// 		return 1;
-// 	}
-// 
-// 	// Если место пустое, добавляем ссылку на форму... FIXME: МЛИН, а
-// 	// формы-то тут и нет
-// 
-// 	return 0;
-// }
-// 
-// static const List *intakesig(
-// 	const Array *const U,
-// 	const List *const ins, const List *const sig, const unsigned ext)
-// {
-// 	assert(U);
-// 
-// 	IIState st =
-// 	{
-// 		.ins =  ins, .ext = ext, .U = U, .L = NULL
-// 	};
-// 
-// 	forlist((List *)sig, intakesigone, &st, 0);
-// 
-// 	return ext ? sig : st.L;
-// }
 
 // Перечислить все Binding-и в окружении env, которые соответствуют ключам в
 // списке signature
@@ -392,7 +322,6 @@ static Ref refpass(const Ref r)
 }
 
 static List *dagpass(const List *const dag)
-// , const Array *const map)
 {
 	return (List *)dag;
 }
@@ -432,7 +361,6 @@ void intakeform(
 	const Array *const U,
 	Context *const ctx, const unsigned level,
 	const List *const dag,
-// 	const Array *const map,
 	const List *const signature, const unsigned external)
 {
 	Reactor *const R = getreactor(ctx, level);

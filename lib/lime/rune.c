@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
-unsigned runerun(const unsigned char *const p) {
+unsigned runerun(const unsigned char *const p)
+{
 	unsigned t = ~*p;
 
 	if(t & 0x80) { return 1; }
@@ -20,7 +21,8 @@ unsigned runerun(const unsigned char *const p) {
 	return n;
 }
 
-unsigned runelen(unsigned v) {
+unsigned runelen(unsigned v)
+{
 	if(v < 1 << 07) { return 1; }
 	if(v < 1 << 11) { return 2; }
 	if(v < 1 << 16) { return 3; }
@@ -31,16 +33,19 @@ unsigned runelen(unsigned v) {
 	assert(0);
 }
 
-static unsigned bitzero(const unsigned v, const unsigned n) {
+static unsigned bitzero(const unsigned v, const unsigned n)
+{
 	return !(v & (1 << n));
 }
 
-static unsigned append(const unsigned v, const unsigned n) {
+static unsigned append(const unsigned v, const unsigned n)
+{
 	assert((n & 0xc0) == 0x80);
 	return (v << 6) | (n & 0x3f);
 }
 
-const unsigned char * readrune(const unsigned char * p, unsigned *const vp) {
+const unsigned char * readrune(const unsigned char * p, unsigned *const vp)
+{
 	unsigned v = *p;
 	p += 1;
 
@@ -58,7 +63,8 @@ const unsigned char * readrune(const unsigned char * p, unsigned *const vp) {
 	// номер анализируемого бита
 	unsigned shift = 6;
 
-	if(bitzero(v, shift)) {
+	if(bitzero(v, shift))
+	{
 		// 2nd байт должен быть
 		assert(0);	
 	}
@@ -68,7 +74,8 @@ const unsigned char * readrune(const unsigned char * p, unsigned *const vp) {
 	p += 1;
 	shift += 5;
 
-	if(bitzero(v, shift)) {
+	if(bitzero(v, shift))
+	{
 		*vp = v;
 		return p;
 	}
@@ -80,20 +87,23 @@ const unsigned char * readrune(const unsigned char * p, unsigned *const vp) {
 	p += 1;
 	shift += 5;
 
-	if(bitzero(v, shift)) {
+	if(bitzero(v, shift))
+	{
 		*vp = v;
 		return p;
 	}
 
 	assert(sizeof(unsigned) >= 4);
 
-	for(unsigned i = 4; i <= 6; i += 1) {
+	for(unsigned i = 4; i <= 6; i += 1)
+	{
 		v ^= 1 << shift;
 		v = append(v, *p);
 		p += 1;
 		shift += 5;
 
-		if(bitzero(v, shift)) {
+		if(bitzero(v, shift))
+		{
 			*vp = v;
 			return p;
 		}
@@ -102,8 +112,10 @@ const unsigned char * readrune(const unsigned char * p, unsigned *const vp) {
 	assert(0);
 }
 
-unsigned char * writerune(unsigned char *const p, unsigned v) {
-	if(v < 1 << 7) {
+unsigned char * writerune(unsigned char *const p, unsigned v)
+{
+	if(v < 1 << 7)
+	{
 		*p = v;
 		return p + 1;
 	}
@@ -113,7 +125,8 @@ unsigned char * writerune(unsigned char *const p, unsigned v) {
 
 	unsigned char * t = p + l;
 
-	while(p != (t -= 1)) {
+	while(p != (t -= 1))
+	{
 		*t = 0x80 | (v & 0x3f);
 		v >>= 6;
 	}
