@@ -10,108 +10,28 @@ enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 
 // Имена для основных типов
 
-typedef struct nodetag Node;
-typedef struct listtag List;
-typedef struct arraytag Array;
-typedef struct formtag Form;
-typedef struct contexttag Context;
+typedef struct Node Node;
+typedef struct List List;
+typedef struct Form Form;
+typedef struct Context Context;
 
-// Автоматически индексируемые массивы
+// Типы различных значений, используемых в алгоритмах
 
-struct arraytag
+enum
 {
-	const KeyCmp keycmp;
-	const ItemCmp itemcmp;
+	// Основные значения, используемые в процессе вывода. ATOM и TYPE
+	// отмечают и соответствующие Array-и
 
-	void *data;
-	unsigned *index;
-	unsigned capacity;
-	unsigned count;
+	NUMBER, ATOM, TYPE, LIST, NODE, FORM,
 
-	const unsigned itemlength;
-	const int code;
+	// Метка для представляющих окружения Array-ев
+	ENV,
+	
+	// Указатель на нечто
+	PTR, 
+
+	FREE = -1
 };
-
-extern Array makearray(const int code, const unsigned itemlen,
-	const ItemCmp, const KeyCmp);
-
-extern void freearray(Array *const);
-
-extern unsigned readin(Array *const, const void *const val);
-extern unsigned lookup(const Array *const, const void *const key);
-extern void *itemat(const Array *const, const unsigned);
-
-// Таблицы атомов
-
-typedef const unsigned char *Atom;
-
-typedef struct
-{
-	const unsigned char *bytes;
-	unsigned length;
-	unsigned char hint;
-} AtomPack;
-
-extern unsigned atomlen(const Atom);
-extern unsigned atomhint(const Atom);
-extern AtomPack atompack(const Atom);
-extern const unsigned char *atombytes(const Atom);
-
-extern AtomPack strpack(const unsigned hint, const char *const str);
-
-extern Array makeatomtab(void);
-extern void freeatomtab(Array *const);
-
-extern unsigned readpack(Array *const, const AtomPack);
-extern unsigned lookpack(Array *const, const AtomPack);
-
-extern unsigned loadatom(Array *const, FILE *const);
-extern unsigned loadtoken(Array *const, FILE *const,
-	const unsigned char hint, const char *const format);
-
-extern Atom atomat(const Array *const, const unsigned id);
-
-// Узлы
-
-struct nodetag
-{
-	union
-	{
-		Node *nextfree;
-		List *attributes;
-	} u;
-
-	const unsigned verb;
-
-	// В какой строке начинается описание узла. Важно для отладки
-	const unsigned line;
-
-	// Признак того, что в атрибутах узла записан dag со своими внутренними
-	// ссылками
-
-	const unsigned dag:1;
-};
-
-extern Node *newnode(
-	const unsigned line,
-	const unsigned verb, const List *const attributes, const unsigned dag);
-
-extern void freenode(Node *const);
-
-// Списки
-
-// Основное предназначение списков - быть структурированными (имеется в виду,
-// что с под-списками) ссылки на другие объекты: числа, атомы, типы, узлы. Числа
-// могут быть заданы прямо в элементе списка (это ссылки на объективную
-// численную реальность), атомы и типы тоже могут быть заданы прямо в элементе
-// своими номерами в таблицах. Узлы задаются ссылкой на соответствующую
-// структуру данных.
-
-// Списки могут быть использованы и для специальных случаев: стэк областей
-// видимости, например (Environment).
-
-// Имеет смысл отдельно вынести описание вариантов ссылок, которые могут быть в
-// элементе списка
 
 typedef struct
 {
@@ -120,7 +40,7 @@ typedef struct
 		void *pointer;
 		List *list;
 		Node *node;
-		Array *environment;
+		Array *array;
 		Form *form;
 		Context *context;
 		unsigned number;
@@ -152,15 +72,103 @@ extern Ref refctx(Context *const);
 
 extern Ref markext(const Ref);
 
-enum
+// Автоматически индексируемые массивы
+
+typedef struct Array
 {
-	NUMBER, ATOM, TYPE, LIST, NODE,
-	ENV, MAP, PTR, CTX,
-	FORM,
-	FREE = -1
+	const KeyCmp keycmp;
+	const ItemCmp itemcmp;
+
+	union
+	{
+		void *data;
+		struct Array *next;
+	} u;
+
+	unsigned *index;
+	unsigned capacity;
+	unsigned count;
+
+	const unsigned itemlength;
+	const int code;
+} Array;
+
+extern Array *newarray(
+	const int code, const unsigned itemlen, const ItemCmp, const KeyCmp);
+
+extern void freearray(Array *const);
+
+extern unsigned readin(Array *const, const void *const val);
+extern unsigned lookup(Array *const, const void *const key);
+
+extern void *itemat(Array *const, const unsigned);
+
+// Таблицы атомов
+
+typedef const unsigned char *Atom;
+
+typedef struct
+{
+	const unsigned char *bytes;
+	unsigned length;
+	unsigned char hint;
+} AtomPack;
+
+extern unsigned atomlen(const Atom);
+extern unsigned atomhint(const Atom);
+extern AtomPack atompack(const Atom);
+extern const unsigned char *atombytes(const Atom);
+
+extern AtomPack strpack(const unsigned hint, const char *const str);
+
+extern Ref newatomtab(void);
+extern void freeatomtab(const Ref);
+
+extern unsigned readpack(Array *const, const AtomPack);
+extern unsigned lookpack(Array *const, const AtomPack);
+
+extern unsigned loadatom(Array *const, FILE *const);
+
+extern unsigned loadtoken(
+	Array *const, FILE *const,
+	const unsigned char hint, const char *const format);
+
+extern Atom atomat(Array *const, const unsigned id);
+
+// Узлы
+
+struct Node 
+{
+	union
+	{
+		Node *nextfree;
+		List *attributes;
+	} u;
+
+	const unsigned verb;
+
+	// В какой строке начинается описание узла. Важно для отладки
+	const unsigned line;
+
+	// Признак того, что в атрибутах узла записан dag со своими внутренними
+	// ссылками
+
+	const unsigned dag:1;
 };
 
-struct listtag
+// Вроде, уже понятно, что узлы чаще бывают под Ref-ами. Для упрощения
+// синтаксиса разумно возвращать здесь Ref
+
+extern Ref newnode(
+	const unsigned line,
+	const unsigned verb, const List *const attributes, const unsigned dag);
+
+extern void freenode(const Ref);
+
+// Списки. Наши списки - это на деле s-выражения. Они связывают в структуры
+// различные значения задаваемые Ref-ами
+
+struct List 
 {
 	List * next;
 	Ref ref;
@@ -206,16 +214,11 @@ extern List *append(List *const, List *const);
 extern List *tipoff(List **const);
 extern List *tip(const List *const);
 
-// Копирование списка с заменой ссылок на узлы (NODE). Если nodemap - это NULL,
-// то должно быть: (nodes == NULL && bound == 0). И в этом случае получается
-// реализация forklist. nodemap (M) и nodes (N) задают отображение ссылок в
-// исходном списке на новые узлы таким образом: m -> N[ptrreverse(M, m)]. При
-// этом должно выполняться: ptrreverse(M, m) < bound. Условие нужно для контроля
-// корректности в процедуре forkdag.
+// Копирование списка с заменой ссылок на узлы (NODE). Отображение для замены
+// определяется map - Array-ем структуры ENV. Ссылки они сохраняются в Ref-ах,
+// поэтому так
 
-extern List *transforklist(
-	const List *const,
-	const Array *const nodemap, const Ref nodes[], const unsigned bound);
+extern List *transforklist(const List *const, const Ref map);
 
 extern List *forklistcut(
 	const List *const, const unsigned from, const unsigned to,
@@ -226,6 +229,7 @@ extern List *forklist(const List *const);
 extern void freelist(List *const);
 
 extern char *strlist(const Array *const universe, const List *const list);
+
 extern void dumplist(
 	FILE *const, const Array *const universe, const List *const list);
 
@@ -238,20 +242,33 @@ extern int forlist(List *const, Oneach, void *const, const int key);
 
 extern unsigned listlen(const List *const);
 
-// Плавный переход к окружениям. Вписывается ли список в линейный порядок
+extern Ref *listnth(const List *const, const unsigned);
 
-extern unsigned iscomparable(const List *const);
+// Окружения сейчас видятся более универсальными. В них могут быть и
+// отображения, например, узел -> узел. Но процедура для фильтрации списков,
+// которыми оперирует LiME, может быть полезной для контроля. "Базовые" ключи -
+// это списки (вместе с подсписками) из ATOM, TYPE, NUMBER
 
-// Для создания нового стека окружений можно выполнить pushenvironment(NULL)
+extern unsigned isbasickey(const List *const);
 
-extern List *pushenvironment(List *const);
-extern List *popenvironment(List **const);
+// Конструктор для окружений, который сразу возвращает Ref, которую можно
+// отправить либо в Binding, либо в список. Этот случай будет встречаться чаще
 
-extern void freeenvironment(List *const);
+extern Ref newenv(const Ref parent);
 
-extern void dumpenvironment(
-	FILE *const, const unsigned tabs,
-	const Array *const U, const List *const env);
+extern freeenv(const Ref env);
+
+extern void dumpenv(
+	FILE *const, const unsigned tabs, const Array *const U, const Ref env);
+
+// Забыл, как расшифровывается GDI, но суть в том, что это указание на положение
+// элемента в некотором Array. Всё это специализировано под окружения
+
+typedef struct
+{
+	const Array *const env;
+	const unsigned N;
+} GDI;
 
 typedef struct
 {
@@ -259,63 +276,62 @@ typedef struct
 	Ref ref;
 } Binding;
 
-extern Ref *keytoref(
-	const List *const env, const List *const key, const unsigned depth);
+// Названия короткие, потому что функции будут постоянно использоваться.
+// Параметр env - это стек окружений (список от самого вложенного к корню).
+// Если ничего по указанному ключу в стеке не найдено, то на вершине стека будет
+// создана соответствующая FREE-запись
 
-extern Binding *keytobinding(
-	const List *const env, const List *const key, const unsigned depth);
+extern GDI atkey(const List *const env, const List *const key);
+extern Ref *ref(const GDI);
+extern Binding *binding(const GDI);
 
-// Набор специальных функций, которые дополнительно декорируют ключи
+// Ответ на то, где расположена GDI: не в глубине ли? Глубиной считается всё,
+// что не на вершине
+
+extern unsigned indepth(const List *const env, const GDI gdi);
+
+// Набор специальных процедур, которые дополнительно декорируют ключи
 // определёнными атомами, чтобы имена различных по назначению структур не
 // перемешивались. Декорация осуществляется атомами, поэтому появляется
 // дополнительный параметр - U
 
-extern Ref *formkeytoref(
-	Array *const U,
-	const List *const env, const List *const key, const unsigned depth);
+extern GDI atformkey(
+	Array *const U, const List *const env, const List *const key);
 
-extern const Binding *topbindings(const List *const, unsigned *const length);
+// Окружение на вершине стека. Иногда нужно засунуть нечто на вершину стека
+// окружений, даже если Binding с аналогичным ключом существует где-то в
+// глубине. Предполагаемые выражение:
+//
+//	DL(top, tipenv(stack));
+//	GDI gdi = atkey(top, key);
 
-// Биективное unsigned -> unsigned отображение. Предназначение двойное.
+extern Ref tipenv(const List *const env);
 
-// 1. Нужно для того, чтобы создавать локальные "карты" атомов и типов. Когда
-// нужно загружать модуль поверх уже загруженных (или инициализированных)
-// структур данных для атомов и типов, то ссылки на атомы и типы по номерам в
-// загружаемом модуле не будут соответствовать накопленной информации. Нужно эти
-// локальные номера отображать в глобальные. Это прямое отображение.
+// Специальная процедура для работы по ключу из одной Ref-ы
 
-// 2. Иногда нужно выделять особые типы и атомы, чтобы специально их
-// обрабатывать. Тогда можно перенумеровать эти атомы при помощи обратного
-// отображения. Например, узнать локальный порядковый номер атома должно помочь
-// выражение: reverse(&map, lookpack(&atoms, &atompack));
+extern GDI atrefkey(const Ref env, const Ref refkey);
 
-extern Array makeuimap(void);
-extern void freeuimap(Array *const);
+// Возвращает i-тую (в порядке их загрузки) Ref-у из окружения
 
-extern unsigned uimap(Array *const, const unsigned);
-extern unsigned uidirect(const Array *const, const unsigned);
-extern unsigned uireverse(const Array *const, const unsigned);
-
-extern Array makeptrmap(void);
-extern void freeptrmap(Array *const);
-
-extern unsigned ptrmap(Array *const, const void *const);
-extern unsigned ptrreverse(const Array *const, const void *const);
-extern const void *const ptrdirect(const Array *const, const unsigned);
+extern Ref envnth(const Ref env, const unsigned N);
 
 // Семантические функции
 
-// Некоторые нижеследующие функции содержат параметр go. Он является uimap,
-// которая задаёт verb-ы тех узлов (N) с графами в атрибутах (N.dag == 1), в
-// которые алгоритм должен рекурсивно спускаться. Если параметр go не задан для
-// процедуры, значит, алгоритм рекурсивно спускается во все такие графы.
+// Некоторые нижеследующие функции содержат параметр go. Он является
+// отображением verb -> (set 0 1), задающие verb-ы тех узлов (N) с графами в
+// атрибутах (N.dag == 1), в которые алгоритм должен рекурсивно спускаться. Если
+// параметр go не задан для процедуры, значит, алгоритм рекурсивно спускается во
+// все такие графы. Отображение реализовано Array-ем со структурой ENV, поэтому
+// задаётся Ref-ой
 
-// Загрузка dag-а. Атомы загружаются в universe. map отмечает узлы, которые
-// должны содержать другие dag-и в своих атрибутах. У каждого dag-а своя область
-// видимости по ссылкам, они не могут явно ссылаться на узлы друг друга.
+// Далее отображения verb -> (set 0 1) будем называть verbmap-ами
 
-extern List *loaddag(
-	FILE *const, Array *const universe, const Array *const map);
+// Загрузка dag-а. Атомы загружаются в universe. Отображение map - это verbmap,
+// отмечающая узлы, которые должны содержать другие dag-и в своих атрибутах. У
+// каждого dag-а своя область видимости по ссылкам, они не могут явно ссылаться
+// на узлы друг друга
+
+extern List *loaddag(FILE *const, Array *const universe, const Ref map);
 
 // Выгрузка dag-а. tabs - для красивой печати с отступами. dbg - выдавать ли
 // указатели на узлы в выводе графов (это нужно для отладки)
@@ -324,34 +340,30 @@ extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
 	const Array *const U, const List *const dag);
 
-// Создать согласованную с таблицей атомов keymap по списку строк. Список строк,
-// оканчивающийся NULL. В полученной uimap на i-том месте будет стоять номер
-// атома, который описывается (hint; strlen(atoms(i)); atoms(i))
+// Создать согласованную с таблицей атомов U отображение verbmap по списку
+// строк, оканчивающемуся NULL. В полученной verbmap на i-том месте будет стоять
+// номер атома, который описывается (hint (strlen (atoms i)) (atoms i))
 
-extern Array keymap(
-	Array *const universe, const unsigned hint, const char *const atoms[]);
+extern Ref keymap(
+	Array *const U, const unsigned hint, const char *const atoms[]);
 
 extern List *forkdag(const List *const dag);
 
 extern void freedag(List *const dag);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
-// uimap-отображением nonroots.
+// verbmap-ой.
 
-extern List *gcnodes(
-	List **const dag, const Array *const go,
-	const Array *const nonroots);
+extern List *gcnodes(List **const dag, const Ref go, const Ref nonroots);
 
 typedef void (*WalkOne)(List *const, void *const);
 
 extern void walkdag(
-	const List *const dag, const Array *const go,
-	const WalkOne, void *const);
+	const List *const dag, const Ref go, const WalkOne, void *const);
 
 extern List *evallists(
 	Array *const U,
-	List **const dag, const Array *const go,
-	const List *const arguments);
+	List **const dag, const Ref go, const List *const arguments);
 
 // Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
 // выводимый граф и dag с описанием тела формы.  Счётчик необходим для
@@ -366,6 +378,7 @@ struct formtag
 		const List *const dag;
 		struct formtag *nextfree;
 	} u;
+
 	const List *const signature;
 
 	unsigned count;
@@ -379,8 +392,6 @@ struct formtag
 extern void freeform(const Ref);
 
 extern Ref newform(const List *const dag, const List *const signature);
-
-extern void freeformlist(List *const forms);
 
 // Структура контекста вывода
 
@@ -447,8 +458,7 @@ extern void dumpcontext(FILE *const, const Array *const, const List *const ctx);
 // evalforms
 
 extern void evalforms(
-	Array *const universe,
-	const List *const dag, const Array *const go,
+	Array *const U, const List *const dag, const Ref go,
 	const List *const env, const List *const ctx);
 
 // Синтаксические команды. Тут и дальше получается некий свободный поток
@@ -505,43 +515,5 @@ extern void intakeform(
 extern void intakeout(
 	const Array *const U,
 	Context *const, const unsigned level, const List *const outs);
-
-// Новый вариант окружений, способных быть кактусовым стеком, которые придут на
-// замену стандартным environment выше
-
-typedef struct envtag
-{
-	const Array *const types;
-	const Array *const self;
-	const Binding *const location;
-
-	const struct envtag *const up;
-	const List *const down;
-} Environment;
-
-extern Environment cropenvironment(List **const dag);
-
-extern Array maketypetab(void);
-
-// const List тонко намекает на то, что собственно сам List изменён не будет. В
-// атрибутах же узлов, кое что, естественно, будет подправлено
-
-extern void croptypes(const List *const dag, Array *const typetab);
-
-// Представление типа в виде списка с Ref-ами на составляющие его типы. Этот
-// список - собственность таблицы типов, его не следует освобождать
-
-extern const List *typeat(const Array *const typetab, const unsigned N);
-
-// Для отладочных целей тип t в "раскрытом" виде, то есть, где все ссылки на
-// другие типы заменены на списки (ну, мы-то понимаем, что речь об
-// s-выражениях) из атомов, чисел или составляющих t типов в "раскрытом" в
-// списке виде. Этот список надо освобождать
-
-extern const List *dicovertypeat(const Array *const T, const unsigned N);
-
-// Похоже, не избежать сей участи. Функция, которая возвращает содержимое N-ной
-// ссылки в списке. Счёт от нуля
-extern Ref listnth(const List *const, const unsigned N);
 
 #endif

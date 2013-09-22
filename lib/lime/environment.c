@@ -207,12 +207,6 @@ static int looker(List *const env, void *const ptr)
 	return (s->depth -= 1) ? NOTFOUND : HITDEPTH;
 }
 
-typedef struct
-{
-	const Array *const array;
-	const unsigned position;
-} GDI;
-
 static GDI lookbinding(
 	const List *const env, const List *const key, const unsigned depth)
 {
