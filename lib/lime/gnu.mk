@@ -8,8 +8,6 @@ lmsrc = \
 	atomtab.c	\
 	list.c		\
 	environment.c	\
-	uimap.c		\
-	ptrmap.c	\
 	loaddag.c	\
 	dump.c		\
 	dag.c		\
@@ -20,6 +18,9 @@ lmsrc = \
 	evalforms.c	\
 	progress.c	\
 	checkpoint.c
+
+#	uimap.c		\
+#	ptrmap.c	\
 
 lminc = \
 	$(I)/lime/construct.h	\

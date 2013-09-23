@@ -58,20 +58,20 @@ static int icmp(const void *const D, const unsigned i, const unsigned j)
 	return kcmp(D, i, &ap);
 }
 
-Array makeatomtab(void)
+Array *newatomtab(void)
 {
-	return makearray(ATOM, sizeof(Atom), icmp, kcmp);
+	return newarray(ATOM, sizeof(Atom), icmp, kcmp);
 }
 
 void freeatomtab(Array *const t)
 {
 	assert(t->code == ATOM);
 
-	if(t->data)
+	if(t->u.data)
 	{
 		assert(t->count && t->index);
 
-		Atom *const D = t->data;
+		Atom *const D = t->u.data;
 		for(unsigned i = 0; i < t->count; i += 1)
 		{
 			free((void *)atombytes(D[i]));
@@ -282,7 +282,7 @@ Atom atomat(const Array *const A, const unsigned id)
 {
 	assert(A->code == ATOM);
 	assert(id < A->count);
-	return ((const Atom *const)A->data)[id];
+	return ((const Atom *const)A->u.data)[id];
 }
 
 AtomPack strpack(const unsigned hint, const char *const str)

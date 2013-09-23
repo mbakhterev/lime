@@ -10,9 +10,10 @@ enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 
 // Имена для основных типов
 
-typedef struct Node Node;
 typedef struct List List;
+typedef struct Node Node;
 typedef struct Form Form;
+typedef struct Array Array;
 typedef struct Context Context;
 
 // Типы различных значений, используемых в алгоритмах
@@ -22,13 +23,13 @@ enum
 	// Основные значения, используемые в процессе вывода. ATOM и TYPE
 	// отмечают и соответствующие Array-и
 
-	NUMBER, ATOM, TYPE, LIST, NODE, FORM,
+	NUMBER, ATOM, TYPE, PTR, NODE, LIST, FORM,
 
 	// Метка для представляющих окружения Array-ев
 	ENV,
-	
-	// Указатель на нечто
-	PTR, 
+
+	// Метки, которые в будущем не понадобятся
+	CTX,
 
 	FREE = -1
 };
@@ -56,6 +57,8 @@ typedef struct
 
 // Конструкторы для Ref
 
+extern Ref reffree(void);
+
 extern Ref refnat(const unsigned code, const unsigned);
 
 extern Ref refnum(const unsigned);
@@ -74,7 +77,7 @@ extern Ref markext(const Ref);
 
 // Автоматически индексируемые массивы
 
-typedef struct Array
+struct Array
 {
 	const KeyCmp keycmp;
 	const ItemCmp itemcmp;
@@ -82,7 +85,7 @@ typedef struct Array
 	union
 	{
 		void *data;
-		struct Array *next;
+		struct Array *nextfree;
 	} u;
 
 	unsigned *index;
@@ -91,7 +94,7 @@ typedef struct Array
 
 	const unsigned itemlength;
 	const int code;
-} Array;
+};
 
 extern Array *newarray(
 	const int code, const unsigned itemlen, const ItemCmp, const KeyCmp);
@@ -99,9 +102,9 @@ extern Array *newarray(
 extern void freearray(Array *const);
 
 extern unsigned readin(Array *const, const void *const val);
-extern unsigned lookup(Array *const, const void *const key);
+extern unsigned lookup(const Array *const, const void *const key);
 
-extern void *itemat(Array *const, const unsigned);
+extern void *itemat(const Array *const, const unsigned);
 
 // Таблицы атомов
 
@@ -121,8 +124,8 @@ extern const unsigned char *atombytes(const Atom);
 
 extern AtomPack strpack(const unsigned hint, const char *const str);
 
-extern Ref newatomtab(void);
-extern void freeatomtab(const Ref);
+extern Array *newatomtab(void);
+extern void freeatomtab(Array *const);
 
 extern unsigned readpack(Array *const, const AtomPack);
 extern unsigned lookpack(Array *const, const AtomPack);
@@ -133,7 +136,7 @@ extern unsigned loadtoken(
 	Array *const, FILE *const,
 	const unsigned char hint, const char *const format);
 
-extern Atom atomat(Array *const, const unsigned id);
+extern Atom atomat(const Array *const, const unsigned id);
 
 // Узлы
 
@@ -215,8 +218,8 @@ extern List *tipoff(List **const);
 extern List *tip(const List *const);
 
 // Копирование списка с заменой ссылок на узлы (NODE). Отображение для замены
-// определяется map - Array-ем структуры ENV. Ссылки они сохраняются в Ref-ах,
-// поэтому так
+// определяется map - Array-ем структуры ENV. При конструировании таких Array-ев
+// (см. ниже) ссылки на них записываются в Ref-ы, поэтому map и имеет такой тип
 
 extern List *transforklist(const List *const, const Ref map);
 
@@ -256,7 +259,7 @@ extern unsigned isbasickey(const List *const);
 
 extern Ref newenv(const Ref parent);
 
-extern freeenv(const Ref env);
+extern int freeenv(const Ref env);
 
 extern void dumpenv(
 	FILE *const, const unsigned tabs, const Array *const U, const Ref env);

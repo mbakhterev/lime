@@ -54,6 +54,11 @@ List *tipoff(List **const lptr)
 	return n;
 }
 
+Ref reffree(void)
+{
+	return (Ref) { .code = FREE, .u.pointer = NULL, .external = 0 };
+}
+
 Ref refnat(const unsigned code, const unsigned n)
 {
 	switch(code) {
@@ -82,7 +87,7 @@ Ref refatom(const unsigned n)
 Ref refenv(Array *const e)
 {
 	assert(e && e->code == ENV);
-	return (Ref) { .code = ENV, .u.environment = e, .external = 0 };
+	return (Ref) { .code = ENV, .u.array = e, .external = 0 };
 }
 
 Ref refnode(Node *const n)
@@ -173,9 +178,12 @@ static List *newlist(const Ref r)
 	return l;
 }
 
-List *readrefs(const Ref R[]) {
+List *readrefs(const Ref R[])
+{
 	List *l = NULL;
-	for(unsigned i = 0; R[i].code != FREE; i += 1) {
+
+	for(unsigned i = 0; R[i].code != FREE; i += 1)
+	{
 		l = append(l, newlist(R[i]));
 	}
 	return l;
@@ -215,7 +223,8 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key)
 	List *p = k;
 	List *q = k->next;
 	int r;
-	do {
+	do
+	{
 		DBG(DBGFE, "k: %p; p: %p", (void *)k, (void *)p);
 
 		p = q;
@@ -231,36 +240,36 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key)
 typedef struct 
 {
 	List *list;
-	const Array *const nodemap;
-	const Ref *const nodes;
+	const Ref nodemap;
 	const unsigned bound;
 	const unsigned from;
 	const unsigned to;
 	unsigned count;
 } FState;
 
-static void assertmap(
-	const Array *const M, const Ref N[], const unsigned bnd)
-{
-	if(M)
-	{
-		assert(N);
-	}
-	else
-	{
-		assert(N == NULL && bnd == 0);
-	}
-}
-
 static int forkitem(List *const k, void *const ptr)
 {
 	assert(k);
 
-	// external-маркер только для особых ситуаций, с ручным контролем за
-	// составлением списков. Поэтому проверяем, что пользователь не
-	// разошёлся уж слишком
+	// Проверка того, что пользователь не разошёлся с external-флагом.
+	// Им могут быть помечены только списки, что сэкономит память в
+	// окружениях
 
-	assert(!k->ref.external);
+	switch(k->ref.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+	case NODE:
+		assert(!k->ref.external);
+		break;
+	
+	case LIST:
+		break;
+	
+	default:
+		assert(0);
+	}
 
 	FState *const fs = ptr;
 	assert(fs);
@@ -287,21 +296,14 @@ static int forkitem(List *const k, void *const ptr)
 
 	case NODE:
 	{
-		const Array *const M = fs->nodemap;
-		const Ref *const N = fs->nodes;
-		const unsigned bnd = fs->bound;
+		const Ref M = fs->nodemap;
+		assert(k->ref.u.node);
 
-		assertmap(M, N, bnd);
-
-		const Node *const n = k->ref.u.node;
- 		assert(n);
-	
-		if(M)
+		if(M.code != FREE)
 		{
-			const unsigned i = ptrreverse(M, n);
-			assert(i < bnd);
-			assert(N[i].code == NODE && N[i].u.node);
-			l = newlist(N[i]);
+			const Ref *r = ref(atrefkey(M, k->ref));
+			assert(r->code != FREE);
+			l = newlist(*r);
 		}
 		else
 		{
@@ -312,14 +314,28 @@ static int forkitem(List *const k, void *const ptr)
 
 	case LIST:
 	{
-		const Array *const M = fs->nodemap;
-		const Ref *const N = fs->nodes;
-		const unsigned bnd = fs->bound;
+		const Ref M = fs->nodemap;
 
-		// from и to работают для списка верхнего уровня. Под-списки
-		// надо копировать целиком
+		// from и to работают для списка верхнего уровня. На подсписки
+		// это не распространяется. Однако, не всё так просто. Если
+		// M.code != FREE, то список надо транслировать. При этом,
+		// должно быть !k->ref.external. Если M.code == FREE, то ничего
+		// не транслируется, и можно ориентироваться на k->ref.external
 
-		l = newlist(reflist(transforklist(k->ref.u.list, M, N, bnd)));
+		if(M.code != FREE)
+		{
+			assert(!k->ref.external);
+			l = newlist(reflist(transforklist(k->ref.u.list, M)));
+		}
+		else if(!k->ref.external)
+		{
+			l = newlist(reflist(forklist(k->ref.u.list)));
+		}
+		else
+		{
+			l = newlist(k->ref);
+		}
+
 		break;
 	}
 	
@@ -344,20 +360,18 @@ static int forkitem(List *const k, void *const ptr)
 
 static List *megafork(
 	const List *const k, const unsigned from, const unsigned to,
-	const Array *const M, const Ref N[], const unsigned bnd,
+	const Ref map,
 	unsigned *const correct);
 
 List *forklist(const List *const k)
 {
-	return transforklist(k, NULL, NULL, 0);
+	return transforklist(k, reffree());
 }
 
-List *transforklist(
-	const List *const k,
-	const Array *const M, const Ref N[], const unsigned bnd)
+List *transforklist(const List *const k, const Ref map)
 {
 	unsigned correct = 0;
-	List *const l = megafork(k, 0, -1, M, N, bnd, &correct);
+	List *const l = megafork(k, 0, -1, map, &correct);
 	assert(correct);
 
 	return l;
@@ -367,16 +381,14 @@ List *forklistcut(
 	const List *const k, const unsigned from, const unsigned to,
 	unsigned *const correct)
 {
-	return megafork(k, from, to, NULL, NULL, 0, correct);
+	return megafork(k, from, to, reffree(), correct);
 }
 
 List *megafork(
 	const List *const k, const unsigned from, const unsigned to,
-	const Array *const M, const Ref N[], const unsigned bnd,
+	const Ref map,
 	unsigned *const correct)
 {
-	assertmap(M, N, bnd);
-
 	// Диапазон должен быть задан корректно. -1 -- самый большой unsigned
 
 	if(from <= to && (to < MAXLEN || to == -1))
@@ -416,9 +428,7 @@ List *megafork(
 	FState fs =
 	{
 		.list = NULL,
-		.nodemap = M,
-		.nodes = N,
-		.bound = bnd,
+		.nodemap = map,
 		.from = from,
 		.to = to,
 		.count = 0
@@ -462,6 +472,12 @@ static int releaser(List *const l, void *const p)
 			freelist(l->ref.u.list);
 		}
 
+		break;
+	
+	case FORM:
+		// freeform сама реагирует на external-бит
+
+		freeform(l->ref);
 		break;
 	}
 

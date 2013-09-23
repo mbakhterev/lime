@@ -12,32 +12,54 @@
 
 static int cmplists(const List *const, const List *const);
 
-// Сравнение элементов списка. Без лукавых мудростей: сравниваются только узлы с
-// числовым содержимым (NUMBER, ATOM, TYPE) и подсписки похожей структуры.
-// Попытка сравнить узлы другой строкутуры - баг. Порядок между числами из
-// различных классов определяется порядком классов в соответствующем enum (cf.
-// lib/lime/construct.h)
+// Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
+// которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
+// PTR и NODE. Эти все коды упорядочены так, что проверку на соответствие типа
+// можно свести к сравнению. Базовые ключи - это Ref.code <= TYPE. Обобщённые -
+// это Ref.code <= NODE. Всё это регулируется через limit, чтобы не плодить
+// много разных функций. В LIST уходим рекурсивно
 
-static int isitemcomparable(List *const k, void *const ptr)
+static unsigned iskey(const List *const, const unsigned limit);
+
+static int iskeyitem(List *const k, void *const ptr)
 {
-	assert(ptr == NULL);
 	assert(k);
-	return k->ref.code <= LIST;
+	assert(ptr);
+
+	const unsigned limit = *(unsigned *)ptr;
+	
+	switch(k->ref.code)
+	{
+	case LIST:
+		return iskey(k->ref.u.list, limit);
+	}
+
+	return k->ref.code <= limit;
 }
 
 // !0 - это числовое значение для True. Оно, вроде, должно быть равным 1. Но
 // что-то я уже ни в чём не уверен, когда речь заходит о GCC. forlist будет
-// продолжаться, пока k->ref.code <= LIST
+// продолжаться, пока k->ref.code <= limit
 
-unsigned iscomparable(const List *const l)
+unsigned iskey(const List *const l, const unsigned limit)
 {
-	return forlist((List *)l, isitemcomparable, NULL, !0) == !0;
+	return forlist((List *)l, iskeyitem, (void *)&limit, !0) == !0;
+}
+
+unsigned isbasickey(const List *const l)
+{
+	return iskey(l, TYPE);
+}
+
+static unsigned isgenerickey(const List *const l)
+{
+	return iskey(l, NODE);
 }
 
 static int cmpitems(const List *const k, const List *const l)
 {
-	assert(isitemcomparable((List *)k, NULL));
-	assert(isitemcomparable((List *)l, NULL));
+	assert(k && k->ref.code <= LIST);
+	assert(l && l->ref.code <= LIST);
 
 	unsigned r = cmpui(k->ref.code, l->ref.code);
 	if(r)
@@ -45,9 +67,14 @@ static int cmpitems(const List *const k, const List *const l)
 		return r;
 	}
 
-	if(k->ref.code < LIST)
+	if(k->ref.code <= TYPE)
 	{
 		return cmpui(k->ref.u.number, l->ref.u.number);
+	}
+
+	if(k->ref.code <= NODE)
+	{
+		return cmpptr(k->ref.u.pointer, l->ref.u.pointer);
 	}
 
 	return cmplists(k->ref.u.list, l->ref.u.list);
@@ -100,7 +127,7 @@ static int icmp(const void *const D, const unsigned i, const unsigned j)
 // Типы индексируются теми же ключами, что и окружения. Поэтому функция не
 // статическая, будет использоваться и в types.c
 
-Array makekeyedarray(const unsigned code)
+Array *newkeyedarray(const unsigned code)
 {
 	switch(code)
 	{
@@ -112,16 +139,49 @@ Array makekeyedarray(const unsigned code)
 		assert(0);
 	}
 
-	return makearray(code, sizeof(Binding), icmp, kcmp);
+	return newarray(code, sizeof(Binding), icmp, kcmp);
 }
 
-static void freeone(Array *const env)
+static void unregister(Array *const U, const Ref E)
 {
-	assert(env->code == ENV);
+	// Список из окружения E
+	DL(self, E);
+
+	// Список из root-окружения, в котором живёт наше E. Плюс немного
+	// паранойи
+
+	DL(rootkey, readpack(U, strpack(0, "Root")));
+	DL(root, *ref(atenvkey(self, rootkey)));
+
+	assert(root->ref.external
+		&& root->ref.code == ENV
+		&& root->ref.u.array && root->ref.u.array == ENV);
+
+	// Список, который идентифицирует текущее окружение. Плюс немного
+	// паранойи
+
+	DL(idkey, readpack(U, strpack(0, "ID")));
+	const Ref id = *ref(atenvkey(self, idkey));
+
+	assert(id.external && id->.code == LIST);
+	
+	// Ref-а, которая соответствует E в root-окружении
+
+	Ref *const re = ref(atenvkey(root, id->u.list));
+	assert(re->code == ENV && re->u.array == E.array);
+
+	*re = reffree();
+}
+
+static void freeenv(const Ref ref)
+{
+	assert(r.code == ENV
+		&& r.u.array && r.u.array->code == ENV);
 
 	DBG(DBGFREE, "env->count: %u", env->count);
 
 	Binding *const B = env->data;
+
 	for(unsigned i = 0; i < env->count; i += 1)
 	{
 		freelist((List *)B[i].key);
