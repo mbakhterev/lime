@@ -75,6 +75,11 @@ extern Ref refctx(Context *const);
 
 extern Ref markext(const Ref);
 
+// Ориентируясь на Ref.code вызвать соответствующее freexxx из доступных, если
+// необходимо
+
+extern void freeref(const Ref);
+
 // Автоматически индексируемые массивы
 
 struct Array
@@ -128,7 +133,7 @@ extern Array *newatomtab(void);
 extern void freeatomtab(Array *const);
 
 extern unsigned readpack(Array *const, const AtomPack);
-extern unsigned lookpack(Array *const, const AtomPack);
+extern unsigned lookpack(const Array *const, const AtomPack);
 
 extern unsigned loadatom(Array *const, FILE *const);
 
@@ -247,76 +252,122 @@ extern unsigned listlen(const List *const);
 
 extern Ref *listnth(const List *const, const unsigned);
 
-// Окружения сейчас видятся более универсальными. В них могут быть и
-// отображения, например, узел -> узел. Но процедура для фильтрации списков,
-// которыми оперирует LiME, может быть полезной для контроля. "Базовые" ключи -
-// это списки (вместе с подсписками) из ATOM, TYPE, NUMBER
 
-extern unsigned isbasickey(const List *const);
+// Базовая конструкция для окружений - это ассоциативная по ключам таблица. Эти
+// таблицы, как и пингвины из Мадагаскара, в одиночку ходить не любят, а любят
+// группировки в списки, чаще в LIFO, поэтому конструируются сразу в таком виде
 
-// Конструктор для окружений, который сразу возвращает Ref, которую можно
-// отправить либо в Binding, либо в список. Этот случай будет встречаться чаще
+extern List *pushkeytab(List *const stack);
+extern List *popkeytab(List *const stack);
 
-extern Ref newenv(const Ref parent);
+// Для массовой зачистки окружений в списках имеет смысл открыть доступ к
+// процедуре. freekeytab реагирует на external-бит
 
-extern int freeenv(const Ref env);
+extern void freekeytab(const Ref);
 
-extern void dumpenv(
-	FILE *const, const unsigned tabs, const Array *const U, const Ref env);
+extern void dumpkeytab(
+	FILE *const, const unsigned tabs, const Array *const U, 
+	const Array *const env);
 
-// Забыл, как расшифровывается GDI, но суть в том, что это указание на положение
-// элемента в некотором Array. Всё это специализировано под окружения
-
-typedef struct
-{
-	const Array *const env;
-	const unsigned N;
-} GDI;
+// keytobind - основная процедура для поиска ассоциаций в стеке таблиц с
+// ключами.  Ассоциации устроены так
 
 typedef struct
 {
-	const List *const key;
+	const Ref key;
 	Ref ref;
 } Binding;
 
-// Названия короткие, потому что функции будут постоянно использоваться.
-// Параметр env - это стек окружений (список от самого вложенного к корню).
-// Если ничего по указанному ключу в стеке не найдено, то на вершине стека будет
-// создана соответствующая FREE-запись
+// Поиск может быть глубоким или поверхностным (то есть, только на вершине
+// стека), сама найденная ассоциация может быть в глубине или на поверхности
 
-extern GDI atkey(const List *const env, const List *const key);
-extern Ref *ref(const GDI);
-extern Binding *binding(const GDI);
+enum { DEEP, SHALLOW };
 
-// Ответ на то, где расположена GDI: не в глубине ли? Глубиной считается всё,
-// что не на вершине
-
-extern unsigned indepth(const List *const env, const GDI gdi);
-
-// Набор специальных процедур, которые дополнительно декорируют ключи
-// определёнными атомами, чтобы имена различных по назначению структур не
-// перемешивались. Декорация осуществляется атомами, поэтому появляется
-// дополнительный параметр - U
-
-extern GDI atformkey(
-	Array *const U, const List *const env, const List *const key);
-
-// Окружение на вершине стека. Иногда нужно засунуть нечто на вершину стека
-// окружений, даже если Binding с аналогичным ключом существует где-то в
-// глубине. Предполагаемые выражение:
+// Параметр depth на входе указывает глубину поиска. На выходе в него
+// записывается глубина (в терминах DEEP и SHALLOW) результата. Если в стеке на
+// указанной глубине нет соответствующего key Binding-а, то он создаётся в
+// таблице на вершине стека и инициируется с ref.code == FREE.
+// 
+// Параметр key описывает ключ для поиска. Ключами для поиска могут быть
+// одиночные значения с Ref.code из { NUMBER, ATOM, TYPE, NODE, PTR } или же
+// списки (s-выражения) из таких значений.
 //
-//	DL(top, tipenv(stack));
-//	GDI gdi = atkey(top, key);
+// Ref-а ключа будет скопирована в соответствующий Binding при его
+// создании. При освобождении таблицы для этой Ref-ы ключа будет вызвана
+// процедура freeref, которая реагирует на external-бит. Это надо учитывать и
+// при помощи fork-ов и markext-ов управлять ответственностью за ключ
 
-extern Ref tipenv(const List *const env);
+extern Binding *keytobind(
+	const List *const stack, unsigned *const depth, const Ref key);
 
-// Специальная процедура для работы по ключу из одной Ref-ы
+// В некоторых случаях необходима уверенность в том, что ключ состоит только из
+// { NUMBER, ATOM, TYPE } элементов. Это позволяет проверить процедура
 
-extern GDI atrefkey(const Ref env, const Ref refkey);
+extern unsigned isbasickey(const List *const);
 
-// Возвращает i-тую (в порядке их загрузки) Ref-у из окружения
+// Получить массив Binding-ов из таблицы на вершине стеков. Это порой может быть
+// полезно для прохода по всем
 
-extern Ref envnth(const Ref env, const unsigned N);
+extern Binding *tipbindings(const List *const stack, unsigned *const length);
+
+// Специальные процедуры, которые декорирую ключи определёнными атомами, перед
+// осуществлением поиска. Декорация происходит в виде ("some atom" key). Для
+// этого нужен параметр U
+
+extern Binding *formkeytobind(
+	Array *const U,
+	const List *const stack, unsigned *const depth, const Ref);
+
+extern Binding *envkeytobind(
+	Array *const U,
+	const List *const stack, unsigned *const depth, const Ref);
+
+// Окружения из "деревьев" ассоциативных по ключам таблиц. Нечто вроде
+// cactus stack-ов. Всё просто: есть собственная таблица, есть окружение ниже
+// (ближе к корню дерева или дну стека), если окружения выше
+
+typedef struct Environment
+{
+	const List *const keytab;
+
+	Environment *const down;
+	List *up;
+} Environment;
+
+// Окружения конструируются вверх по дереву (стеку)
+
+extern Environment *upenv(Environment *const down);
+extern void freeenv(Environment *const env);
+
+// Поиск в окружениях сводится к поиску в стеке, состоящем из keytab-ов на пути
+// от узла дерева к его вершине. Отвечает за keytab-ы само окружение, поэтому
+// все Ref-ы в полученном списке-стеке будут отмечены external-битом. Список
+// можно будет очистить freelist-ой
+
+extern List *stackenv(Environment *const env);
+
+// Для сбора данных о том, что есть в окружении по нему надо уметь ходить сверху
+// вниз. Разумно иметь два варианта прохода. (1) просто по самим окружениям
+
+typedef void WalkEnvironment(
+	Environment *const, const List *const envid, void *const ptr);
+
+extern void walkenv(
+	Environment *const env, const WalkBinding, void *const ptr);
+
+// (2) по каждому Binding-у в каждом окружении
+
+typedef void WalkBinding(
+	Binding *const, const List *const envid, void *const ptr);
+
+extern void walkbind(
+	Environment *const env, const WalkEnvironment, void *const ptr);
+
+// Вариант (1) нужен, по крайней мере, для распечатки окружений
+
+extern void dumpenv(
+	FILE *const, const unsigned tabs, const Array *const U,
+	const Environment *const env);
 
 // Семантические функции
 
