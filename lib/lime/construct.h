@@ -218,40 +218,45 @@ extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 
 extern unsigned writerefs(const List *const, Ref refs[], const unsigned N);
 
+extern void freelist(List *const);
+
 extern List *append(List *const, List *const);
 extern List *tipoff(List **const);
 extern List *tip(const List *const);
+extern Ref *listnth(const List *const, const unsigned);
+extern unsigned listlen(const List *const);
 
-// Копирование списка с заменой ссылок на узлы (NODE). Отображение для замены
-// определяется map - Array-ем структуры ENV. При конструировании таких Array-ев
-// (см. ниже) ссылки на них записываются в Ref-ы, поэтому map и имеет такой тип
+// Различные варианты копирования списков. Самый простой вариант. Все ссылки
+// будут повторены, под-списки будут скопированы, если для них не установлен
+// external-бит
+
+extern List *forklist(const List *const);
+
+// Копирование списка с заменой узлов по отображению map. В скопированном списке
+// вместо узла n будет узел (map n). Отображение конструируется как список из
+// keytab-ов (см. ниже). Под-списки рекурсивно копируются, если для них не
+// установлен external-бит
 
 extern List *transforklist(const List *const, const Ref map);
+
+// Копирование кусочка списка, с позиции from до позиции to. -1 означает
+// последний элемент в списке
 
 extern List *forklistcut(
 	const List *const, const unsigned from, const unsigned to,
 	unsigned *const correct);
 
-extern List *forklist(const List *const);
-
-extern void freelist(List *const);
-
-extern char *strlist(const Array *const universe, const List *const list);
-
-extern void dumplist(
-	FILE *const, const Array *const universe, const List *const list);
-
-// Функция forlist применяет другую функцию типа Oneach к каждому элементу
+// Процедура forlist применяет другую функцию типа Oneach к каждому элементу
 // списка, пока последняя возвращает значение, равное key. foreach устроена так,
 // что позволяет менять ->next в обрабатываемом элементе списка.
 
 typedef int (*Oneach)(List *const, void *const);
 extern int forlist(List *const, Oneach, void *const, const int key);
 
-extern unsigned listlen(const List *const);
+extern char *strlist(const Array *const universe, const List *const list);
 
-extern Ref *listnth(const List *const, const unsigned);
-
+extern void dumplist(
+	FILE *const, const Array *const universe, const List *const list);
 
 // Базовая конструкция для окружений - это ассоциативная по ключам таблица. Эти
 // таблицы, как и пингвины из Мадагаскара, в одиночку ходить не любят, а любят
