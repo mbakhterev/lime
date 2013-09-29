@@ -25,7 +25,10 @@ enum
 
 	NUMBER, ATOM, TYPE, PTR, NODE, LIST, FORM,
 
-	// Метка для представляющих окружения Array-ев
+	// Метки для двух видов таблиц
+	ATOMTAB, KEYTAB,
+
+	// Деревья окружений
 	ENV,
 
 	// Метки, которые в будущем не понадобятся
@@ -38,13 +41,14 @@ typedef struct
 {
 	union
 	{
+		unsigned number;
 		void *pointer;
 		List *list;
 		Node *node;
-		Array *array;
 		Form *form;
+		Array *array;
 		Context *context;
-		unsigned number;
+		Environment *environment;
 	} u;
 
 	unsigned code;
@@ -63,13 +67,16 @@ extern Ref refnat(const unsigned code, const unsigned);
 
 extern Ref refnum(const unsigned);
 extern Ref refatom(const unsigned);
+extern Ref reftype(const unsigned);
+
 extern Ref refptr(void *const);
 
-extern Ref refenv(Array *const);
-extern Ref reflist(List *const);
 extern Ref refnode(Node *const);
-
+extern Ref reflist(List *const);
 extern Ref refform(Form *const);
+
+extern Ref reftab(const unsigned code, Array *const);
+extern Ref refenv(Environment *const);
 
 extern Ref refctx(Context *const);
 
@@ -93,16 +100,16 @@ struct Array
 		struct Array *nextfree;
 	} u;
 
+	const unsigned code;
+	const unsigned itemlength;
+
 	unsigned *index;
 	unsigned capacity;
 	unsigned count;
-
-	const unsigned itemlength;
-	const int code;
 };
 
 extern Array *newarray(
-	const int code, const unsigned itemlen, const ItemCmp, const KeyCmp);
+	const unsigned itemlen, const ItemCmp, const KeyCmp);
 
 extern void freearray(Array *const);
 
@@ -129,19 +136,19 @@ extern const unsigned char *atombytes(const Atom);
 
 extern AtomPack strpack(const unsigned hint, const char *const str);
 
-extern Array *newatomtab(void);
-extern void freeatomtab(Array *const);
+extern Ref newatomtab(void);
+extern void freeatomtab(const Ref);
 
-extern unsigned readpack(Array *const, const AtomPack);
-extern unsigned lookpack(const Array *const, const AtomPack);
+extern unsigned readpack(const Ref, const AtomPack);
+extern unsigned lookpack(const Ref, const AtomPack);
 
-extern unsigned loadatom(Array *const, FILE *const);
+extern unsigned loadatom(const Ref, FILE *const);
 
 extern unsigned loadtoken(
-	Array *const, FILE *const,
+	const Ref, FILE *const,
 	const unsigned char hint, const char *const format);
 
-extern Atom atomat(const Array *const, const unsigned id);
+extern Atom atomat(const Ref, const unsigned id);
 
 // Узлы
 
@@ -190,7 +197,7 @@ struct List
 // Конструктор списка из массива ссылок. Чтобы сконструировать список из одной
 // ссылки нужно написать: list = readrefs(RS(refnum(NUMBER, 42)))
 
-extern List *readrefs(const Ref refs[]);
+extern Ref readrefs(const Ref refs[]);
 
 // Для упрощения синтаксиса RL - Ref List
 
@@ -205,8 +212,12 @@ extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 // Для упрощения синтаксиса DL - Define List (не особо удачное название)
 
 #define DL(DLNAME, REFS) \
-	const List DLNAME[sizeof(REFS)/sizeof(Ref) - 1]; \
-	formlist((List *)DLNAME, REFS, sizeof(DLNAME)/sizeof(List))
+	const Ref DLNAME = \
+	{ \
+		.code = LIST, \
+		.u.list = (List[sizeof(REFS)/sizeof(Ref) - 1]) { 0 } \
+	}; \
+	formlist(DLNAME.u.list, REFS, sizeof(REFS)/sizeof(Ref) - 1)
 
 // Записывает ссылки из списка (не рекурсивно, и не спускаясь в подсписки) в
 // массив. Записывает не более N элементов, с учётом последнего с кодом FREE.
@@ -216,34 +227,37 @@ extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 //
 // то список выдан полностью.
 
-extern unsigned writerefs(const List *const, Ref refs[], const unsigned N);
+extern unsigned writerefs(const Ref list, Ref refs[], const unsigned N);
 
-extern void freelist(List *const);
+extern void freelist(const Ref);
 
-extern List *append(List *const, List *const);
-extern List *tipoff(List **const);
-extern List *tip(const List *const);
-extern Ref *listnth(const List *const, const unsigned);
-extern unsigned listlen(const List *const);
+// Ссылки получить Ref-ы из первого элемента списка или из N-ного (счёт от 0) 
+
+extern Ref tip(const Ref);
+extern Ref listnth(const Ref, const unsigned N);
+
+extern Ref append(const Ref, const Ref);
+extern Ref tipoff(Ref *const);
+extern unsigned listlen(const Ref);
 
 // Различные варианты копирования списков. Самый простой вариант. Все ссылки
 // будут повторены, под-списки будут скопированы, если для них не установлен
 // external-бит
 
-extern List *forklist(const List *const);
+extern Ref forklist(const Ref);
 
 // Копирование списка с заменой узлов по отображению map. В скопированном списке
 // вместо узла n будет узел (map n). Отображение конструируется как список из
 // keytab-ов (см. ниже). Под-списки рекурсивно копируются, если для них не
 // установлен external-бит
 
-extern List *transforklist(const List *const, const Ref map);
+extern Ref transforklist(const Ref list, const Ref map);
 
 // Копирование кусочка списка, с позиции from до позиции to. -1 означает
 // последний элемент в списке
 
-extern List *forklistcut(
-	const List *const, const unsigned from, const unsigned to,
+extern Ref forklistcut(
+	const Ref, const unsigned from, const unsigned to,
 	unsigned *const correct);
 
 // Процедура forlist применяет другую функцию типа Oneach к каждому элементу
@@ -251,19 +265,22 @@ extern List *forklistcut(
 // что позволяет менять ->next в обрабатываемом элементе списка.
 
 typedef int (*Oneach)(List *const, void *const);
-extern int forlist(List *const, Oneach, void *const, const int key);
+extern int forlist(const Ref, Oneach, void *const, const int key);
 
-extern char *strlist(const Array *const universe, const List *const list);
+// Выщипать из списка все звенья, в которых записана ref
+extern void trimlist(const Ref list, const Ref ref);
 
-extern void dumplist(
-	FILE *const, const Array *const universe, const List *const list);
+extern char *strlist(const Ref universe, const Ref list);
+extern void dumplist(FILE *const, const Ref universe, const Ref list);
 
 // Базовая конструкция для окружений - это ассоциативная по ключам таблица. Эти
 // таблицы, как и пингвины из Мадагаскара, в одиночку ходить не любят, а любят
-// группировки в списки, чаще в LIFO, поэтому конструируются сразу в таком виде
+// группировки в списки, чаще в LIFO, поэтому конструируются сразу в таком виде.
+// Напоминание, всё у нас через Ref-ы. Здесь должны стоять Ref-ы на списки из
+// Ref-ов с Ref.code == KEYTAB
 
-extern List *pushkeytab(List *const stack);
-extern List *popkeytab(List *const stack);
+extern Ref pushkeytab(const Ref stack);
+extern Ref popkeytab(const Ref stack);
 
 // Для массовой зачистки окружений в списках имеет смысл открыть доступ к
 // процедуре. freekeytab реагирует на external-бит
@@ -271,8 +288,7 @@ extern List *popkeytab(List *const stack);
 extern void freekeytab(const Ref);
 
 extern void dumpkeytab(
-	FILE *const, const unsigned tabs, const Array *const U, 
-	const Array *const env);
+	FILE *const, const unsigned tabs, const Ref U, const Ref keytab);
 
 // keytobind - основная процедура для поиска ассоциаций в стеке таблиц с
 // ключами.  Ассоциации устроены так
@@ -303,29 +319,27 @@ enum { DEEP, SHALLOW };
 // при помощи fork-ов и markext-ов управлять ответственностью за ключ
 
 extern Binding *keytobind(
-	const List *const stack, unsigned *const depth, const Ref key);
+	const Ref stack, unsigned *const depth, const Ref key);
 
 // В некоторых случаях необходима уверенность в том, что ключ состоит только из
 // { NUMBER, ATOM, TYPE } элементов. Это позволяет проверить процедура
 
-extern unsigned isbasickey(const List *const);
+extern unsigned isbasickey(const Ref);
 
 // Получить массив Binding-ов из таблицы на вершине стеков. Это порой может быть
 // полезно для прохода по всем
 
-extern Binding *tipbindings(const List *const stack, unsigned *const length);
+extern Binding *tipbindings(const Ref stack, unsigned *const length);
 
 // Специальные процедуры, которые декорирую ключи определёнными атомами, перед
 // осуществлением поиска. Декорация происходит в виде ("some atom" key). Для
 // этого нужен параметр U
 
 extern Binding *formkeytobind(
-	Array *const U,
-	const List *const stack, unsigned *const depth, const Ref);
+	const Ref U, const Ref stack, unsigned *const depth, const Ref);
 
 extern Binding *envkeytobind(
-	Array *const U,
-	const List *const stack, unsigned *const depth, const Ref);
+	const Ref U, const Ref stack, unsigned *const depth, const Ref);
 
 // Окружения из "деревьев" ассоциативных по ключам таблиц. Нечто вроде
 // cactus stack-ов. Всё просто: есть собственная таблица, есть окружение ниже
@@ -333,29 +347,27 @@ extern Binding *envkeytobind(
 
 typedef struct Environment
 {
-	const List *const keytab;
-
-	Environment *const down;
-	List *up;
+	const Ref self;
+	const Ref down;
+	const Ref up;
 } Environment;
 
 // Окружения конструируются вверх по дереву (стеку)
 
-extern Environment *upenv(Environment *const down);
-extern void freeenv(Environment *const env);
+extern Ref envup(const Ref down);
+extern void freeenv(const Ref env);
 
 // Поиск в окружениях сводится к поиску в стеке, состоящем из keytab-ов на пути
 // от узла дерева к его вершине. Отвечает за keytab-ы само окружение, поэтому
 // все Ref-ы в полученном списке-стеке будут отмечены external-битом. Список
 // можно будет очистить freelist-ой
 
-extern List *stackenv(Environment *const env);
+extern Ref stackenv(const Ref env);
 
 // Для сбора данных о том, что есть в окружении по нему надо уметь ходить сверху
 // вниз. Разумно иметь два варианта прохода. (1) просто по самим окружениям
 
-typedef void WalkEnvironment(
-	Environment *const, const List *const envid, void *const ptr);
+typedef void WalkEnvironment(const Ref, const Ref envid, void *const ptr);
 
 extern void walkenv(
 	Environment *const env, const WalkBinding, void *const ptr);
