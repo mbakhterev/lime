@@ -4,24 +4,23 @@ lmsrc = \
 	rune.c		\
 	util.c		\
 	heap.c		\
+	checkpoint.c	\
+	ref.c		\
 	array.c		\
 	atomtab.c	\
-	list.c		\
-	environment.c	\
-	loaddag.c	\
-	dump.c		\
-	dag.c		\
-	walkdag.c	\
-	evallists.c	\
-	context.c	\
-	form.c		\
-	evalforms.c	\
-	progress.c	\
-	checkpoint.c
 
-#	uimap.c		\
-#	ptrmap.c	\
-
+#	list.c		\
+# 	environment.c	\
+# 	loaddag.c	\
+# 	dump.c		\
+# 	dag.c		\
+# 	walkdag.c	\
+# 	evallists.c	\
+# 	context.c	\
+# 	form.c		\
+# 	evalforms.c	\
+# 	progress.c	\
+	
 lminc = \
 	$(I)/lime/construct.h	\
 	$(I)/lime/util.h	\

@@ -26,13 +26,14 @@ lmtstbin = \
 	$(T)/tst-loadtoken	\
 	$(T)/gen-atomtab	\
 	$(T)/tst-atomtab.sh	\
-	$(T)/tst-list		\
-	$(T)/tst-loaddag	\
-	$(T)/tst-gcnodes	\
-	$(T)/tst-forkdag	\
-	$(T)/tst-evallists	\
-	$(T)/tst-evalforms	\
-	$(T)/tst-knl.sh
+
+# 	$(T)/tst-list		\
+# 	$(T)/tst-loaddag	\
+# 	$(T)/tst-gcnodes	\
+# 	$(T)/tst-forkdag	\
+# 	$(T)/tst-evallists	\
+# 	$(T)/tst-evalforms	\
+# 	$(T)/tst-knl.sh
 
 lmlib = $(L)/liblime.a
 

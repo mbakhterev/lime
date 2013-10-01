@@ -14,6 +14,7 @@ typedef struct List List;
 typedef struct Form Form;
 typedef struct Array Array;
 typedef struct Context Context;
+typedef struct Environment Environment;
 
 // Типы различных значений, используемых в алгоритмах. Метки записываются в поля
 // с именем code в структурах Ref и Array
@@ -39,7 +40,7 @@ enum
 	NUMBER, ATOM, TYPE, PTR, NODE, LIST, FORM,
 
 	// Метка для обозначения окружений. Отмечает и Ref-ы и Array-и
-	ENV,
+	KEYTAB, ENV,
 
 	// Метки, которые в будущем не понадобятся
 	CTX,
@@ -80,7 +81,9 @@ extern Ref reftype(const unsigned);
 
 extern Ref refptr(void *const);
 
+// Особенность refnode в том, что она УСТАНАВЛИВАЕТ external-бит
 extern Ref refnode(List *const);
+
 extern Ref reflist(List *const);
 extern Ref refform(Form *const);
 
@@ -90,6 +93,7 @@ extern Ref refenv(Environment *const);
 extern Ref refctx(Context *const);
 
 extern Ref markext(const Ref);
+extern Ref cleanext(const Ref);
 
 // Ориентируясь на Ref.code вызвать соответствующее freexxx из доступных, если
 // необходимо
@@ -327,6 +331,9 @@ extern Binding *envkeytobind(
 // 1-элементные стеки, поэтому освободить их можно выражением
 // 
 //	assert(popkeytab(map) == NULL);
+// 
+// Процедуры применения этих отображений к значениям (типа (map n)) реагируют на
+// NULL, переданный в качеств ссылки на map, как на пустое отображение.
 
 // Создать согласованное с таблицей атомов U отображение verbmap по списку
 // строк, оканчивающемуся NULL. В полученной verbmap, являющейся keytab-ом, по
@@ -337,7 +344,7 @@ extern List *newverbmap(
 	Array *const U, const unsigned hint, const char *const atoms[]);
 
 // Возвращает по ключу - атому с номером verb - число i из соответствующей ему
-// записи (NUMBER i)
+// записи (NUMBER i). Если атом не в отображении, то возвращается -1
 
 extern unsigned verbmap(const List *const vm, const unsigned verb);
 
@@ -351,6 +358,14 @@ extern void setmap(List *const map, const Ref elem);
 
 // Процедура inmap отображает элемент в 0 или 1
 extern unsigned inmap(const List *const map, const Ref elem);
+
+// Отображения указателей
+
+extern unsigned ptrsetmap(List *const map, const Ref key, void *ptr);
+
+// Если в отображении нет соответствующего ключа, то возвращается NULL
+
+extern void *ptrmap(List *const map, const Ref key);
 
 // Узлы.
 // 
@@ -370,16 +385,19 @@ extern Ref nodeattribute(const Ref exp);
 
 extern Ref newnode(const unsigned verb, const Ref attribute);
 
+// Проверка структуры списка на то, что она действительно задаёт выражение
+unsigned isnode(const List *const exp);
+
 // Окружения из "деревьев" ассоциативных по ключам таблиц. Нечто вроде
 // cactus stack-ов. Всё просто: есть собственная таблица, есть окружение ниже
 // (ближе к корню дерева или дну стека), если окружения выше
 
-typedef struct Environment
+struct Environment
 {
 	const List *const self;
 	Environment *const down;
 	List *up;
-} Environment;
+};
 
 // Окружения конструируются вверх по дереву (стеку)
 
@@ -396,14 +414,14 @@ extern List *stackenv(Environment *const);
 // Для сбора данных о том, что есть в окружении по нему надо уметь ходить сверху
 // вниз. Разумно иметь два варианта прохода. (1) просто по самим окружениям
 
-typedef void WalkEnvironment(
+typedef void (*WalkEnvironment)(
 	Environment *const, const List *const envid, void *const ptr);
 
-extern void walkenv(Environment *const, const WalkBinding, void *const ptr);
+extern void walkenv(Environment *const, const WalkEnvironment, void *const ptr);
 
 // (2) по каждому Binding-у в каждом окружении
 
-typedef void WalkBinding(
+typedef void (*WalkBinding)(
 	Binding *const, const List *const envid, void *const ptr);
 
 extern void walkbind(

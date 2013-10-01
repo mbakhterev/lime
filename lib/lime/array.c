@@ -30,7 +30,7 @@ static Array *tipoffarray(Array **const lptr)
 }
 
 Array *newarray(
-	const int code, const unsigned ilen,
+	const unsigned code, const unsigned ilen,
 	const ItemCmp icmp, const KeyCmp kcmp)
 {
 	assert(ilen && icmp && kcmp);
