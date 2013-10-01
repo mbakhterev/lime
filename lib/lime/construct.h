@@ -11,24 +11,34 @@ enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 // Имена для основных типов
 
 typedef struct List List;
-typedef struct Node Node;
 typedef struct Form Form;
 typedef struct Array Array;
 typedef struct Context Context;
 
-// Типы различных значений, используемых в алгоритмах
+// Типы различных значений, используемых в алгоритмах. Метки записываются в поля
+// с именем code в структурах Ref и Array
 
 enum
 {
 	// Основные значения, используемые в процессе вывода. ATOM и TYPE
-	// отмечают и соответствующие Array-и
+	// отмечают и соответствующие Array-и.
+	// 
+	// NUMBER, ATOM, TYPE - это числа и номера значений в таблицах атомов и
+	// типов соответственно.
+	// 	
+	// EXP отмечает выражения, которые представлены списками. Списки
+	// выражений должны иметь формат ("some-verb" (attributes)). Они
+	// моделируют узлы в DAG-е программы.
+	// 
+	// LIST - это списки из разнообразных Ref-ов. Могут содержать Ref-ы на
+	// другие списки. Поэтому используются для представления S-выражений.
+	// 
+	// FORM говорит об указателе на форму - кусочек DAG-а программы,
+	// открытый для подстановки в него некоторых значений
 
 	NUMBER, ATOM, TYPE, PTR, NODE, LIST, FORM,
 
-	// Метки для двух видов таблиц
-	ATOMTAB, KEYTAB,
-
-	// Деревья окружений
+	// Метка для обозначения окружений. Отмечает и Ref-ы и Array-и
 	ENV,
 
 	// Метки, которые в будущем не понадобятся
@@ -44,7 +54,6 @@ typedef struct
 		unsigned number;
 		void *pointer;
 		List *list;
-		Node *node;
 		Form *form;
 		Array *array;
 		Context *context;
@@ -71,11 +80,11 @@ extern Ref reftype(const unsigned);
 
 extern Ref refptr(void *const);
 
-extern Ref refnode(Node *const);
+extern Ref refnode(List *const);
 extern Ref reflist(List *const);
 extern Ref refform(Form *const);
 
-extern Ref reftab(const unsigned code, Array *const);
+extern Ref reftab(Array *const);
 extern Ref refenv(Environment *const);
 
 extern Ref refctx(Context *const);
@@ -109,6 +118,7 @@ struct Array
 };
 
 extern Array *newarray(
+	const unsigned code,
 	const unsigned itemlen, const ItemCmp, const KeyCmp);
 
 extern void freearray(Array *const);
@@ -136,49 +146,19 @@ extern const unsigned char *atombytes(const Atom);
 
 extern AtomPack strpack(const unsigned hint, const char *const str);
 
-extern Ref newatomtab(void);
-extern void freeatomtab(const Ref);
+extern Array *newatomtab(void);
+extern void freeatomtab(Array *const);
 
-extern unsigned readpack(const Ref, const AtomPack);
-extern unsigned lookpack(const Ref, const AtomPack);
+extern unsigned readpack(Array *const, const AtomPack);
+extern unsigned lookpack(Array *const, const AtomPack);
 
-extern unsigned loadatom(const Ref, FILE *const);
+extern unsigned loadatom(Array *const, FILE *const);
 
 extern unsigned loadtoken(
-	const Ref, FILE *const,
+	Array *const, FILE *const,
 	const unsigned char hint, const char *const format);
 
-extern Atom atomat(const Ref, const unsigned id);
-
-// Узлы
-
-struct Node 
-{
-	union
-	{
-		Node *nextfree;
-		List *attributes;
-	} u;
-
-	const unsigned verb;
-
-	// В какой строке начинается описание узла. Важно для отладки
-	const unsigned line;
-
-	// Признак того, что в атрибутах узла записан dag со своими внутренними
-	// ссылками
-
-	const unsigned dag:1;
-};
-
-// Вроде, уже понятно, что узлы чаще бывают под Ref-ами. Для упрощения
-// синтаксиса разумно возвращать здесь Ref
-
-extern Ref newnode(
-	const unsigned line,
-	const unsigned verb, const List *const attributes, const unsigned dag);
-
-extern void freenode(const Ref);
+extern Atom atomat(const Array *const, const unsigned id);
 
 // Списки. Наши списки - это на деле s-выражения. Они связывают в структуры
 // различные значения задаваемые Ref-ами
@@ -197,7 +177,7 @@ struct List
 // Конструктор списка из массива ссылок. Чтобы сконструировать список из одной
 // ссылки нужно написать: list = readrefs(RS(refnum(NUMBER, 42)))
 
-extern Ref readrefs(const Ref refs[]);
+extern List *readrefs(const Ref refs[]);
 
 // Для упрощения синтаксиса RL - Ref List
 
@@ -227,37 +207,37 @@ extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 //
 // то список выдан полностью.
 
-extern unsigned writerefs(const Ref list, Ref refs[], const unsigned N);
+extern unsigned writerefs(const List *const, Ref refs[], const unsigned N);
 
-extern void freelist(const Ref);
+extern void freelist(const List *const);
 
-// Ссылки получить Ref-ы из первого элемента списка или из N-ного (счёт от 0) 
+// Получить первый элемент списка или N-ный (счёт от 0)
 
-extern Ref tip(const Ref);
-extern Ref listnth(const Ref, const unsigned N);
+extern List *tip(const List *const);
+extern List *listnth(const List *const, const unsigned N);
 
-extern Ref append(const Ref, const Ref);
-extern Ref tipoff(Ref *const);
-extern unsigned listlen(const Ref);
+extern List *append(List *const, List *const);
+extern List *tipoff(List **const);
+extern unsigned listlen(const List *const);
 
 // Различные варианты копирования списков. Самый простой вариант. Все ссылки
 // будут повторены, под-списки будут скопированы, если для них не установлен
 // external-бит
 
-extern Ref forklist(const Ref);
+extern List *forklist(const List *const);
 
 // Копирование списка с заменой узлов по отображению map. В скопированном списке
-// вместо узла n будет узел (map n). Отображение конструируется как список из
-// keytab-ов (см. ниже). Под-списки рекурсивно копируются, если для них не
-// установлен external-бит
+// вместо узла n будет узел (map n != -1 -> map n : n). Отображение
+// конструируется как список из keytab-ов (см. ниже). Под-списки рекурсивно
+// копируются, если для них не установлен external-бит
 
-extern Ref transforklist(const Ref list, const Ref map);
+extern List *transforklist(const List *const, const List *const map);
 
 // Копирование кусочка списка, с позиции from до позиции to. -1 означает
 // последний элемент в списке
 
-extern Ref forklistcut(
-	const Ref, const unsigned from, const unsigned to,
+extern List *forklistcut(
+	const List *const, const unsigned from, const unsigned to,
 	unsigned *const correct);
 
 // Процедура forlist применяет другую функцию типа Oneach к каждому элементу
@@ -265,22 +245,21 @@ extern Ref forklistcut(
 // что позволяет менять ->next в обрабатываемом элементе списка.
 
 typedef int (*Oneach)(List *const, void *const);
-extern int forlist(const Ref, Oneach, void *const, const int key);
+extern int forlist(List *const, Oneach, void *const, const int key);
 
 // Выщипать из списка все звенья, в которых записана ref
-extern void trimlist(const Ref list, const Ref ref);
+extern void trimlist(List *const, const Ref);
 
-extern char *strlist(const Ref universe, const Ref list);
-extern void dumplist(FILE *const, const Ref universe, const Ref list);
+extern char *strlist(const Array *const universe, const List *const);
+extern void dumplist(
+	FILE *const, const Array *const, const List *const);
 
 // Базовая конструкция для окружений - это ассоциативная по ключам таблица. Эти
 // таблицы, как и пингвины из Мадагаскара, в одиночку ходить не любят, а любят
-// группировки в списки, чаще в LIFO, поэтому конструируются сразу в таком виде.
-// Напоминание, всё у нас через Ref-ы. Здесь должны стоять Ref-ы на списки из
-// Ref-ов с Ref.code == KEYTAB
+// группировки в списки, чаще в LIFO, поэтому конструируются сразу в таком виде
 
-extern Ref pushkeytab(const Ref stack);
-extern Ref popkeytab(const Ref stack);
+extern List *pushkeytab(List *const tab);
+extern List *popkeytab(List *const tab);
 
 // Для массовой зачистки окружений в списках имеет смысл открыть доступ к
 // процедуре. freekeytab реагирует на external-бит
@@ -288,7 +267,8 @@ extern Ref popkeytab(const Ref stack);
 extern void freekeytab(const Ref);
 
 extern void dumpkeytab(
-	FILE *const, const unsigned tabs, const Ref U, const Ref keytab);
+	FILE *const, const unsigned tabs, const Array *const U,
+	const List *const keytab);
 
 // keytobind - основная процедура для поиска ассоциаций в стеке таблиц с
 // ключами.  Ассоциации устроены так
@@ -319,7 +299,7 @@ enum { DEEP, SHALLOW };
 // при помощи fork-ов и markext-ов управлять ответственностью за ключ
 
 extern Binding *keytobind(
-	const Ref stack, unsigned *const depth, const Ref key);
+	const List *const stack, unsigned *const depth, const Ref key);
 
 // В некоторых случаях необходима уверенность в том, что ключ состоит только из
 // { NUMBER, ATOM, TYPE } элементов. Это позволяет проверить процедура
@@ -329,17 +309,66 @@ extern unsigned isbasickey(const Ref);
 // Получить массив Binding-ов из таблицы на вершине стеков. Это порой может быть
 // полезно для прохода по всем
 
-extern Binding *tipbindings(const Ref stack, unsigned *const length);
+extern Binding *tipbindings(const List *const, unsigned *const length);
 
 // Специальные процедуры, которые декорирую ключи определёнными атомами, перед
 // осуществлением поиска. Декорация происходит в виде ("some atom" key). Для
 // этого нужен параметр U
 
 extern Binding *formkeytobind(
-	const Ref U, const Ref stack, unsigned *const depth, const Ref);
+	Array *const U,
+	const List *const stack, unsigned *const depth, const Ref);
 
 extern Binding *envkeytobind(
-	const Ref U, const Ref stack, unsigned *const depth, const Ref);
+	Array *const U,
+	const List *const stack, unsigned *const depth, const Ref);
+
+// Конструкторы отображений, которые задаются keytab-ами. Они конструируются как
+// 1-элементные стеки, поэтому освободить их можно выражением
+// 
+//	assert(popkeytab(map) == NULL);
+
+// Создать согласованное с таблицей атомов U отображение verbmap по списку
+// строк, оканчивающемуся NULL. В полученной verbmap, являющейся keytab-ом, по
+// ключу - атому (hint (strlen atoms.i) (atoms.i)) из U - будет записана Ref-а
+// (NUMBER i). Строки в atoms должны быть уникальными
+
+extern List *newverbmap(
+	Array *const U, const unsigned hint, const char *const atoms[]);
+
+// Возвращает по ключу - атому с номером verb - число i из соответствующей ему
+// записи (NUMBER i)
+
+extern unsigned verbmap(const List *const vm, const unsigned verb);
+
+// Задание множества характеристическим отображением. Сконструировать такую map
+// можно стандартно
+// 
+// 	List *const map = pushkeytab(NULL);
+
+// Процедура setmap записывает в отображение информацию о элементе
+extern void setmap(List *const map, const Ref elem);
+
+// Процедура inmap отображает элемент в 0 или 1
+extern unsigned inmap(const List *const map, const Ref elem);
+
+// Узлы.
+// 
+// Узлы представлены выражениями вида (ll.h."some verb atom" attribute).
+// Необходимо уметь их распаковывать. Параметр exp - само выражение для узла.
+// Его удобнее сделать Ref-ой, потому что узлы в одиночку почти не ходят.
+// 
+// Параметр vm (если не NULL) задаёт трансляцию для verb-а узла в некоторое
+// NUMBER-значение: (vm != NULL -> vm exp.verb : exp.verb)
+
+extern unsigned nodeverb(const Ref exp, const List *const vm);
+extern Ref nodeattribute(const Ref exp);
+
+// Конструирование узла. Процедура вернёт Ref-у со сброшенным external-битом,
+// что будет трактоваться как ссылка на определение узла, а не просто ссылка на
+// узел (случай (Ref.code == NODE && Ref.external)
+
+extern Ref newnode(const unsigned verb, const Ref attribute);
 
 // Окружения из "деревьев" ассоциативных по ключам таблиц. Нечто вроде
 // cactus stack-ов. Всё просто: есть собственная таблица, есть окружение ниже
@@ -347,30 +376,30 @@ extern Binding *envkeytobind(
 
 typedef struct Environment
 {
-	const Ref self;
-	const Ref down;
-	const Ref up;
+	const List *const self;
+	Environment *const down;
+	List *up;
 } Environment;
 
 // Окружения конструируются вверх по дереву (стеку)
 
-extern Ref envup(const Ref down);
-extern void freeenv(const Ref env);
+extern Environment *envup(Environment *const);
+extern void freeenv(Environment *const);
 
 // Поиск в окружениях сводится к поиску в стеке, состоящем из keytab-ов на пути
 // от узла дерева к его вершине. Отвечает за keytab-ы само окружение, поэтому
 // все Ref-ы в полученном списке-стеке будут отмечены external-битом. Список
 // можно будет очистить freelist-ой
 
-extern Ref stackenv(const Ref env);
+extern List *stackenv(Environment *const);
 
 // Для сбора данных о том, что есть в окружении по нему надо уметь ходить сверху
 // вниз. Разумно иметь два варианта прохода. (1) просто по самим окружениям
 
-typedef void WalkEnvironment(const Ref, const Ref envid, void *const ptr);
+typedef void WalkEnvironment(
+	Environment *const, const List *const envid, void *const ptr);
 
-extern void walkenv(
-	Environment *const env, const WalkBinding, void *const ptr);
+extern void walkenv(Environment *const, const WalkBinding, void *const ptr);
 
 // (2) по каждому Binding-у в каждом окружении
 
@@ -378,7 +407,7 @@ typedef void WalkBinding(
 	Binding *const, const List *const envid, void *const ptr);
 
 extern void walkbind(
-	Environment *const env, const WalkEnvironment, void *const ptr);
+	Environment *const env, const WalkBinding, void *const ptr);
 
 // Вариант (1) нужен, по крайней мере, для распечатки окружений
 
@@ -386,51 +415,56 @@ extern void dumpenv(
 	FILE *const, const unsigned tabs, const Array *const U,
 	const Environment *const env);
 
-// Семантические функции
+// DAG-и. Устроены как списки узлов в атрибутах которых бывают ссылки на другие
+// узлы
 
-// Некоторые нижеследующие функции содержат параметр go. Он является
-// отображением verb -> (set 0 1), задающие verb-ы тех узлов (N) с графами в
-// атрибутах (N.dag == 1), в которые алгоритм должен рекурсивно спускаться. Если
-// параметр go не задан для процедуры, значит, алгоритм рекурсивно спускается во
-// все такие графы. Отображение реализовано Array-ем со структурой ENV, поэтому
-// задаётся Ref-ой
+// Некоторые нижеследующие процедуры содержат параметр map, который является
+// verbmap-ом. Отображение описывает особые выражения. Особым выражением
+// считается список, описывающий узел N: (verbmap map (nodeverb N) != -1).
 
-// Далее отображения verb -> (set 0 1) будем называть verbmap-ами
+// Загрузка dag-а. Атомы загружаются в U. Особые выражения в данном случае - это
+// узлы, в атрибутах которых должен быть записан замкнутый граф.
+// 
+// Для управления памятью и для обхода 
 
-// Загрузка dag-а. Атомы загружаются в universe. Отображение map - это verbmap,
-// отмечающая узлы, которые должны содержать другие dag-и в своих атрибутах. У
-// каждого dag-а своя область видимости по ссылкам, они не могут явно ссылаться
-// на узлы друг друга
-
-extern List *loaddag(FILE *const, Array *const universe, const Ref map);
+extern Ref loaddag(FILE *const, Array *const U, const List *const map);
 
 // Выгрузка dag-а. tabs - для красивой печати с отступами. dbg - выдавать ли
-// указатели на узлы в выводе графов (это нужно для отладки)
+// указатели на узлы (для закрепления: на особые списки длиной 2) в выводе
+// графов (это нужно для отладки)
 
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
-	const Array *const U, const List *const dag);
+	const Array *const U, const Ref dag, const List *const map);
 
-// Создать согласованную с таблицей атомов U отображение verbmap по списку
-// строк, оканчивающемуся NULL. В полученной verbmap на i-том месте будет стоять
-// номер атома, который описывается (hint (strlen (atoms i)) (atoms i))
+extern Ref forkdag(const Ref dag);
 
-extern Ref keymap(
-	Array *const U, const unsigned hint, const char *const atoms[]);
-
-extern List *forkdag(const List *const dag);
-
-extern void freedag(List *const dag);
+extern void freedag(const Ref dag);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
 // verbmap-ой.
 
-extern List *gcnodes(List **const dag, const Ref go, const Ref nonroots);
+extern void gcnodes(
+	const Ref dag, const List *const map,
+	const List *const nonroots, const List *const marks);
 
-typedef void (*WalkOne)(List *const, void *const);
+// Узел передаётся в WalkOne в разобранном виде. На атрибут передаётся ссылка,
+// потому что в некоторых случаях walkone будет его переписывать
+
+typedef int (*WalkOne)(
+	const unsigned verb, Ref *const attribute, void *const);
+
+// Процедура walkdag проходит по объявлениям выражений
+// 
+// 	(Ref.code == NULL && !Ref.external)
+// 
+// в графе (ну, граф условный у нас теперь). Для каждого такого объявления
+// вызывается процедура walkone, в которую выражение передаётся в разобранном
+// виде. Если walkone возвращает истину, то walkdag рекурсивно повторяется для
+// атрибутов этого узла.
 
 extern void walkdag(
-	const List *const dag, const Ref go, const WalkOne, void *const);
+	const Ref dag, const WalkOne, void *const, const List *const verbmap);
 
 extern List *evallists(
 	Array *const U,
