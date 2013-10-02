@@ -54,8 +54,6 @@ List *tipoff(List **const lptr)
 	return n;
 }
 
-
-
 static List *newlist(const Ref r)
 {
 	switch(r.code)
@@ -168,19 +166,19 @@ static int forkitem(List *const k, void *const ptr)
 {
 	assert(k);
 
-	// Проверка того, что пользователь не разошёлся с external-флагом.
-	// Им могут быть помечены только списки, что сэкономит память в
-	// окружениях
+	// Проверка того, что всё аккуратно со структурой списка и
+	// external-флагом.  Внутри списков им могут быть помечены только списки
+	// и узлы
 
 	switch(k->ref.code)
 	{
 	case NUMBER:
 	case ATOM:
 	case TYPE:
-	case NODE:
 		assert(!k->ref.external);
 		break;
 	
+	case NODE:
 	case LIST:
 		break;
 	

@@ -65,7 +65,7 @@ Array *newatomtab(void)
 
 void freeatomtab(Array *const t)
 {
-	assert(t->code == ATOM);
+	assert(t && t->code == ATOM);
 
 	if(t->u.data)
 	{
@@ -87,11 +87,14 @@ void freeatomtab(Array *const t)
 
 unsigned atomhint(const Atom a)
 {
+	assert(a);
 	return ((const unsigned char *)a)[0];
 }
 
 unsigned atomlen(const Atom a)
 {
+	assert(a);
+
 	unsigned n;
 	readrune((const unsigned char *)a + 1, &n);
 
@@ -102,6 +105,8 @@ unsigned atomlen(const Atom a)
 
 const unsigned char * atombytes(const Atom a)
 {
+	assert(a);
+
 	// - 1 -- это поправка на дополнительный \0
 	return (const unsigned char *)a - atomlen(a) - 1;
 }
@@ -144,7 +149,7 @@ static unsigned grabpack(Array *const t, const AtomPack *const ap)
 
 unsigned loadatom(Array *const t, FILE *const f)
 {
-	assert(t->code == ATOM);
+	assert(t && t->code == ATOM);
 
 	int n;
 	unsigned k;
@@ -199,7 +204,7 @@ unsigned loadatom(Array *const t, FILE *const f)
 
 unsigned lookpack(Array *const t, const AtomPack ap)
 {
-	assert(t->code == ATOM);
+	assert(t && t->code == ATOM);
 	assert(ap.bytes && ap.length <= MAXLEN && ap.hint <= MAXHINT);
 
 	DBG(DBGLOOK, "t->count: %u", t->count);
@@ -209,7 +214,7 @@ unsigned lookpack(Array *const t, const AtomPack ap)
 
 unsigned readpack(Array *const t, const AtomPack ap)
 {
-	assert(t->code == ATOM);
+	assert(t && t->code == ATOM);
 
 	const unsigned k = lookpack(t, ap);
 	if(k != -1) { return k; }
@@ -228,7 +233,7 @@ unsigned loadtoken(
 	const unsigned char hint, const char *const format)
 {
 	assert(f);
-	assert(t->code == ATOM);
+	assert(t && t->code == ATOM);
 	assert(strlen(format) <= 32);
 
 	// С учётом места под последний '\0'
@@ -280,8 +285,9 @@ unsigned loadtoken(
 
 Atom atomat(const Array *const A, const unsigned id)
 {
-	assert(A->code == ATOM);
+	assert(t && A->code == ATOM);
 	assert(id < A->count);
+
 	return ((const Atom *const)A->u.data)[id];
 }
 

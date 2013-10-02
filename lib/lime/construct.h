@@ -327,66 +327,70 @@ extern Binding *envkeytobind(
 	Array *const U,
 	const List *const stack, unsigned *const depth, const Ref);
 
-// Конструкторы отображений, которые задаются keytab-ами. Они конструируются как
-// 1-элементные стеки, поэтому освободить их можно выражением
-// 
-//	assert(popkeytab(map) == NULL);
-// 
-// Процедуры применения этих отображений к значениям (типа (map n)) реагируют на
-// NULL, переданный в качеств ссылки на map, как на пустое отображение.
+// Для упрощения выражений процедуры для работы с задаваемыми keytab-ами
+// отображениями. Они создаются в виде 1-элементных стеков таблиц с ключами. В
+// каждое отображение можно добавить информации вызовом соответствующей
+// tune-процедуры. Соответствующая map-процедура работает как применение
+// отображение к аргументу. Добавлять в отображение можно только ту информацию,
+// которой в нём ещё не было, иначе сработает assert. NULL-евое значение для
+// параметра map процедуры трактуют как пустое отображение
 
-// Создать согласованное с таблицей атомов U отображение verbmap по списку
-// строк, оканчивающемуся NULL. В полученной verbmap, являющейся keytab-ом, по
-// ключу - атому (hint (strlen atoms.i) (atoms.i)) из U - будет записана Ref-а
-// (NUMBER i). Строки в atoms должны быть уникальными
+// Базовое (в некотором смысле) отображение Ref -> Ref. Если отображение не
+// знает про соответствующий аргумент, оно вернёт reffree
+
+extern void tunerefmap(const List *const map, const Ref key, const Ref val);
+extern Ref refmap(const List *const map, const Ref key);
+
+// Отображение Ref -> (set 0 1). То есть, характеристическое для множества. Если
+// отображение не знает о соответствующем аргументе, оно возвращает 0
+
+extern void tunesetmap(const List *const map, const Ref key);
+extern unsigned setmap(const List *const map, const Ref key);
+
+// Отображение Ref -> void.ptr. Если отображение не знает об аргументе, оно
+// возвращает NULL
+
+extern void tuneptrmap(const List *const map, const Ref key, void *const ptr);
+extern void *ptrmap(const List *const map, const Ref key);
+
+// Отображения unsigned -> unsigned. Основное предназначение: осмысливание
+// разных verb-ов выражений в разных контекстах. Чаще всего оно наполняется
+// информацией по списку строчек, которые переводятся в атомы. Поэтому для него
+// свой конструктор.
+// 
+// Если отображение не знает о своём аргументе, оно возвращает -1
 
 extern List *newverbmap(
 	Array *const U, const unsigned hint, const char *const atoms[]);
 
-// Возвращает по ключу - атому с номером verb - число i из соответствующей ему
-// записи (NUMBER i). Если атом не в отображении, то возвращается -1
+extern unsigned verbmap(const List *const, const unsigned verb);
 
-extern unsigned verbmap(const List *const vm, const unsigned verb);
+// Ресурсы всех отображений освобождаются одинаково (это вообще простой
+// (assert (popkeytab map == NULL))
 
-// Задание множества характеристическим отображением. Сконструировать такую map
-// можно стандартно
-// 
-// 	List *const map = pushkeytab(NULL);
-
-// Процедура setmap записывает в отображение информацию о элементе
-extern void setmap(List *const map, const Ref elem);
-
-// Процедура inmap отображает элемент в 0 или 1
-extern unsigned inmap(const List *const map, const Ref elem);
-
-// Отображения указателей
-
-extern unsigned ptrsetmap(List *const map, const Ref key, void *ptr);
-
-// Если в отображении нет соответствующего ключа, то возвращается NULL
-
-extern void *ptrmap(List *const map, const Ref key);
+extern void freemap(List *const map);
 
 // Узлы.
-// 
+
 // Узлы представлены выражениями вида (ll.h."some verb atom" attribute).
 // Необходимо уметь их распаковывать. Параметр exp - само выражение для узла.
 // Его удобнее сделать Ref-ой, потому что узлы в одиночку почти не ходят.
-// 
-// Параметр vm (если не NULL) задаёт трансляцию для verb-а узла в некоторое
-// NUMBER-значение: (vm != NULL -> vm exp.verb : exp.verb)
+// Параметр vm (verbmap), если не NULL, задаёт отображение оригинального verb-а
+// узла в некоторое числовое значение. Почти всегда на verb-ы нужно смотреть
+// через такое отображение. Если vm == NULL, то verb возвращается так, как есть:
+// (vm != NULL -> vm verb : verb)
 
 extern unsigned nodeverb(const Ref exp, const List *const vm);
 extern Ref nodeattribute(const Ref exp);
 
 // Конструирование узла. Процедура вернёт Ref-у со сброшенным external-битом,
 // что будет трактоваться как ссылка на определение узла, а не просто ссылка на
-// узел (случай (Ref.code == NODE && Ref.external)
+// узел (случай (Ref.code == NODE && Ref.external))
 
 extern Ref newnode(const unsigned verb, const Ref attribute);
 
 // Проверка структуры списка на то, что она действительно задаёт выражение
-unsigned isnode(const List *const exp);
+unsigned isnode(const List *const);
 
 // Окружения из "деревьев" ассоциативных по ключам таблиц. Нечто вроде
 // cactus stack-ов. Всё просто: есть собственная таблица, есть окружение ниже

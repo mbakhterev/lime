@@ -4,12 +4,13 @@ lmsrc = \
 	rune.c		\
 	util.c		\
 	heap.c		\
-	checkpoint.c	\
 	ref.c		\
 	array.c		\
+	list.c		\
+	keytab.c	\
+	checkpoint.c	\
 	atomtab.c	\
 
-#	list.c		\
 # 	environment.c	\
 # 	loaddag.c	\
 # 	dump.c		\
