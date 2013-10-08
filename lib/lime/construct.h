@@ -22,7 +22,8 @@ typedef struct Environment Environment;
 enum
 {
 	// Основные значения, используемые в процессе вывода. ATOM и TYPE
-	// отмечают и соответствующие Array-и.
+	// отмечают и соответствующие Array-и. Из этих значений состоят
+	// выражения.
 	// 
 	// NUMBER, ATOM, TYPE - это числа и номера значений в таблицах атомов и
 	// типов соответственно.
@@ -39,12 +40,13 @@ enum
 
 	NUMBER, ATOM, TYPE, PTR, NODE, LIST, FORM,
 
-	// Метка для обозначения окружений. Отмечает и Ref-ы и Array-и
-	KEYTAB, ENV,
+	// Метка для обозначения окружений
+	MAP,
 
 	// Метки, которые в будущем не понадобятся
 	CTX,
 
+	// Свободная ссылка, в которой ничего нет
 	FREE = -1
 };
 
@@ -99,6 +101,11 @@ extern Ref cleanext(const Ref);
 // необходимо
 
 extern void freeref(const Ref);
+
+// Копирование отдельной Ref-ы. Ориентируясь по значению в Ref.code вызвать
+// соответствующий forkxxx
+
+extern Ref forkref(const Ref);
 
 // Автоматически индексируемые массивы
 
@@ -193,7 +200,9 @@ extern List *readrefs(const Ref refs[]);
 
 extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 
-// Для упрощения синтаксиса DL - Define List (не особо удачное название)
+// Для упрощения синтаксиса DL - Define List (не особо удачное название). Чаще
+// всего DL требуется для конструирования выражений, поэтому сразу возвращает
+// Ref-у
 
 #define DL(DLNAME, REFS) \
 	const Ref DLNAME = \
@@ -224,9 +233,10 @@ extern List *append(List *const, List *const);
 extern List *tipoff(List **const);
 extern unsigned listlen(const List *const);
 
-// Различные варианты копирования списков. Самый простой вариант. Все ссылки
-// будут повторены, под-списки будут скопированы, если для них не установлен
-// external-бит
+// Различные варианты копирования списков
+
+// Самый простой вариант. Все ссылки будут повторены, под-списки будут
+// скопированы, если для них не установлен external-бит
 
 extern List *forklist(const List *const);
 
@@ -258,24 +268,26 @@ extern char *strlist(const Array *const universe, const List *const);
 extern void dumplist(
 	FILE *const, const Array *const, const List *const);
 
-// Базовая конструкция для окружений - это ассоциативная по ключам таблица. Эти
-// таблицы, как и пингвины из Мадагаскара, в одиночку ходить не любят, а любят
-// группировки в списки, чаще в LIFO, поэтому конструируются сразу в таком виде
+// Базовый элемент конструкции окружений - локальное отображение выражений
+// (ключей) в некоторые значения. Создаются пустыми. Привязывать к другим
+// окружениям и формировать общий атлас (набор из map-ов) нужно явно
 
-extern List *pushkeytab(List *const tab);
-extern List *popkeytab(List *const tab);
+extern Array *newkeymap(void);
 
-// Для массовой зачистки окружений в списках имеет смысл открыть доступ к
-// процедуре. freekeytab реагирует на external-бит
+// Освобождение работает рекурсивно. Если в окружении есть другие окружения,
+// в Ref-ах на которые не установлен external-бит, то они будут так же
+// освобождены. Это произойдёт через freeref
 
-extern void freekeytab(const Ref);
+extern void freekeymap(Array *const);
 
-extern void dumpkeytab(
+// Печать окружения keymap. Рекурсивная по тому же принципу, что и freekeymap
+
+extern void dumpkeymap(
 	FILE *const, const unsigned tabs, const Array *const U,
-	const List *const keytab);
+	const Array *const keymap);
 
-// keytobind - основная процедура для поиска ассоциаций в стеке таблиц с
-// ключами.  Ассоциации устроены так
+// Запись в отображение новой информации (процедура tunekeymap) и её поиск
+// (keymap). Информация хранится в виде связок
 
 typedef struct
 {
@@ -283,75 +295,96 @@ typedef struct
 	Ref ref;
 } Binding;
 
-// Поиск может быть глубоким или поверхностным (то есть, только на вершине
-// стека), сама найденная ассоциация может быть в глубине или на поверхности
+// Процедуры возвращают указатели на созданную Binding или на искомую.
+// tunekeymap ожидает (через assert), что повторений ключей в отображении быть
+// не должно. keymap вернёт NULL, если ничего не найдёт. Параметр decoration
+// задаёт формирование дополнительной структуры для ключа (чтобы различать
+// окружения, символы, формы, типы). Если он будет равен FREE, никакой
+// трансформации с ключом не случится. Процедура tunekeymap просто скопирует
+// Ref-ы key и ref в структуру Binding. За правильной установкой external-бита и
+// копированием структур данных должна следить вызывающая процедура
 
-enum { DEEP, SHALLOW };
+extern Binding *tunekeymap(
+	Array *const map,
+	const Ref key, const unsigned decoration, const Ref ref);
 
-// Параметр depth на входе указывает глубину поиска. На выходе в него
-// записывается глубина (в терминах DEEP и SHALLOW) результата. Если в стеке на
-// указанной глубине нет соответствующего key Binding-а, то он создаётся в
-// таблице на вершине стека и инициируется с ref.code == FREE.
-// 
-// Параметр key описывает ключ для поиска. Ключами для поиска могут быть
-// одиночные значения с Ref.code из { NUMBER, ATOM, TYPE, NODE, PTR } или же
-// списки (s-выражения) из таких значений.
+extern Binding *keymap(
+	Array *const map,
+	const Ref key, const unsigned decoration);
+
+// Окружения привязываются друг к другу через именованные атомами ссылки,
+// которые в самих окружениях и хранятся. Например, ссылка отмеченная атомом
+// "parent" может указывать на окружение, содержащее данное. Особенность в том,
+// что таких parent-ов может быть несколько по разным поводам. Поэтому ссылки
+// разбиты на несколько видов, которые можно назвать путями. Пути различаются
+// своими именами-атомами. Поэтому способ порождения структуры из окружений
+// вдоль определённого пути таков, какой он есть
+
+// makepath создаст цепочку окружений связанных по именам из списка names,
+// действуя по правилам команды (mkdir -p) из мира POSIX: (1) если в текущем E
+// окружении есть ссылка на окружение с текущем именем N на пути path, то
+// перейти в окружение E.(path:N) и к имени N.next; (2) если такого окружения
+// нет, то создать его, и перейти в него и к следующему имени.
 //
-// Ref-а ключа будет скопирована в соответствующий Binding при его
-// создании. При освобождении таблицы для этой Ref-ы ключа будет вызвана
-// процедура freeref, которая реагирует на external-бит. Это надо учитывать и
-// при помощи fork-ов и markext-ов управлять ответственностью за ключ
+// С именем N в списке makepath поступает особо. (1) Если в текущем
+// (предпоследнем) окружении под именем зарегистрировано окружение,
+// то должно быть map.code == FREE, и makepath ничего не сделает. (2) Если в
+// текущем окружении ничего под таким именем нет, то должно быт map.code == MAP,
+// и в текущее окружение будет записана ссылка на окружение, задаваемое map. Для
+// этой ссылки будет принудительно установлен флаг external.
+// 
+// Вернёт makepath ссылку на последние из заданных списком окружений
 
-extern Binding *keytobind(
-	const List *const stack, unsigned *const depth, const Ref key);
+extern Array *makepath(
+	const Array *const map,
+	const Ref path, const List *const names, const Ref newmap);
+
+// В некотором смысле обратная операция: которая строит стек окружений,
+// связанных по имени name на пути path, начиная с того, которое в окружении map
+// задаётся именем 0.4."this". Это окружение и будет на вершине стека, в глубине
+// будет то, в котором не найдётся следующего окружения по ключу (path name)
+
+extern List *tracepath(
+	const Array *const map, const Ref path, const Ref name);
+
+// Вдоль таких списков мы тоже умеем искать. В по адресу depth, если он не NULL
+// запишется глубина (вершина стека на глубине 0), на которой найдена
+// соответствующая Binding
+
+extern Binding *pathkeymap(
+	const List *const stack, const Ref key, unsigned *const depth);
 
 // В некоторых случаях необходима уверенность в том, что ключ состоит только из
 // { NUMBER, ATOM, TYPE } элементов. Это позволяет проверить процедура
 
 extern unsigned isbasickey(const Ref);
 
-// Получить массив Binding-ов из таблицы на вершине стеков. Это порой может быть
-// полезно для прохода по всем
+// Для упрощения синтаксиса процедуры для работы с задаваемыми keymap-ами
+// отображениями. Они создаются при помощи newkeymap. В каждое отображение можно
+// добавить информацию вызовом соответствующей tune-процедуры. Соответствующая
+// map-процедура работает как применение отображение к аргументу. Добавлять в
+// отображение можно только ту информацию, которой в нём ещё не было, иначе
+// сработает assert. NULL-евое значение для параметра map процедуры трактуют как
+// пустое отображение
 
-extern Binding *tipbindings(const List *const, unsigned *const length);
+// Отображение Ref -> Ref. Без выставления деталей о декорациях и Binding-ах
+// наружу. Если отображение не знает про соответствующий аргумент, оно вернёт
+// reffree
 
-// Специальные процедуры, которые декорирую ключи определёнными атомами, перед
-// осуществлением поиска. Декорация происходит в виде ("some atom" key). Для
-// этого нужен параметр U
-
-extern Binding *formkeytobind(
-	Array *const U,
-	const List *const stack, unsigned *const depth, const Ref);
-
-extern Binding *envkeytobind(
-	Array *const U,
-	const List *const stack, unsigned *const depth, const Ref);
-
-// Для упрощения выражений процедуры для работы с задаваемыми keytab-ами
-// отображениями. Они создаются в виде 1-элементных стеков таблиц с ключами. В
-// каждое отображение можно добавить информации вызовом соответствующей
-// tune-процедуры. Соответствующая map-процедура работает как применение
-// отображение к аргументу. Добавлять в отображение можно только ту информацию,
-// которой в нём ещё не было, иначе сработает assert. NULL-евое значение для
-// параметра map процедуры трактуют как пустое отображение
-
-// Базовое (в некотором смысле) отображение Ref -> Ref. Если отображение не
-// знает про соответствующий аргумент, оно вернёт reffree
-
-extern void tunerefmap(const List *const map, const Ref key, const Ref val);
-extern Ref refmap(const List *const map, const Ref key);
+extern void tunerefmap(Array *const map, const Ref key, const Ref val);
+extern Ref refmap(const Array *const map, const Ref key);
 
 // Отображение Ref -> (set 0 1). То есть, характеристическое для множества. Если
 // отображение не знает о соответствующем аргументе, оно возвращает 0
 
-extern void tunesetmap(const List *const map, const Ref key);
-extern unsigned setmap(const List *const map, const Ref key);
+extern void tunesetmap(Array *const map, const Ref key);
+extern unsigned setmap(const Array *const map, const Ref key);
 
 // Отображение Ref -> void.ptr. Если отображение не знает об аргументе, оно
 // возвращает NULL
 
-extern void tuneptrmap(const List *const map, const Ref key, void *const ptr);
-extern void *ptrmap(const List *const map, const Ref key);
+extern void tuneptrmap(Array *const map, const Ref key, void *const ptr);
+extern void *ptrmap(const Array *const map, const Ref key);
 
 // Отображения unsigned -> unsigned. Основное предназначение: осмысливание
 // разных verb-ов выражений в разных контекстах. Чаще всего оно наполняется
@@ -360,19 +393,24 @@ extern void *ptrmap(const List *const map, const Ref key);
 // 
 // Если отображение не знает о своём аргументе, оно возвращает -1
 
-extern List *newverbmap(
+extern Array *newverbmap(
 	Array *const U, const unsigned hint, const char *const atoms[]);
 
-extern unsigned verbmap(const List *const, const unsigned verb);
+extern unsigned verbmap(const Array *const, const unsigned verb);
 
-// Ресурсы всех отображений освобождаются одинаково (это вообще простой
-// (assert (popkeytab map == NULL))
+// Процедура прохода по окружениям. Идёт в ширину от this-окружения в пути path
+// по (Ref.external != 1) ссылкам на другие окружения. Для каждой Binding
+// вызывает соответствующую процедуру
 
-extern void freemap(List *const map);
+typedef void WalkBinding(
+	const Array *const map, const Binding *const bnd, void *const ptr);
+
+typedef void walkbindings(
+	const Array *const map, const Ref path, WalkBinding, void *const);
 
 // Узлы.
 
-// Узлы представлены выражениями вида (ll.h."some verb atom" attribute).
+// Узлы представлены выражениями вида (hh.l."some verb atom" attribute ...).
 // Необходимо уметь их распаковывать. Параметр exp - само выражение для узла.
 // Его удобнее сделать Ref-ой, потому что узлы в одиночку почти не ходят.
 // Параметр vm (verbmap), если не NULL, задаёт отображение оригинального verb-а
@@ -382,60 +420,21 @@ extern void freemap(List *const map);
 
 extern unsigned nodeverb(const Ref exp, const List *const vm);
 extern Ref nodeattribute(const Ref exp);
+extern unsigned nodeline(const Ref exp);
 
 // Конструирование узла. Процедура вернёт Ref-у со сброшенным external-битом,
 // что будет трактоваться как ссылка на определение узла, а не просто ссылка на
 // узел (случай (Ref.code == NODE && Ref.external))
 
-extern Ref newnode(const unsigned verb, const Ref attribute);
+extern Ref newnode(
+	const unsigned verb, const Ref attribute, const unsigned line);
 
 // Проверка структуры списка на то, что она действительно задаёт выражение
-unsigned isnode(const List *const);
+extern unsigned isnode(const Ref);
+extern unsigned isnodelist(const List *const);
 
-// Окружения из "деревьев" ассоциативных по ключам таблиц. Нечто вроде
-// cactus stack-ов. Всё просто: есть собственная таблица, есть окружение ниже
-// (ближе к корню дерева или дну стека), если окружения выше
-
-struct Environment
-{
-	const List *const self;
-	Environment *const down;
-	List *up;
-};
-
-// Окружения конструируются вверх по дереву (стеку)
-
-extern Environment *envup(Environment *const);
-extern void freeenv(Environment *const);
-
-// Поиск в окружениях сводится к поиску в стеке, состоящем из keytab-ов на пути
-// от узла дерева к его вершине. Отвечает за keytab-ы само окружение, поэтому
-// все Ref-ы в полученном списке-стеке будут отмечены external-битом. Список
-// можно будет очистить freelist-ой
-
-extern List *stackenv(Environment *const);
-
-// Для сбора данных о том, что есть в окружении по нему надо уметь ходить сверху
-// вниз. Разумно иметь два варианта прохода. (1) просто по самим окружениям
-
-typedef void (*WalkEnvironment)(
-	Environment *const, const List *const envid, void *const ptr);
-
-extern void walkenv(Environment *const, const WalkEnvironment, void *const ptr);
-
-// (2) по каждому Binding-у в каждом окружении
-
-typedef void (*WalkBinding)(
-	Binding *const, const List *const envid, void *const ptr);
-
-extern void walkbind(
-	Environment *const env, const WalkBinding, void *const ptr);
-
-// Вариант (1) нужен, по крайней мере, для распечатки окружений
-
-extern void dumpenv(
-	FILE *const, const unsigned tabs, const Array *const U,
-	const Environment *const env);
+// Процедура для копирования выражений (узлов)
+extern Ref forknode(const Ref);
 
 // DAG-и. Устроены как списки узлов в атрибутах которых бывают ссылки на другие
 // узлы
@@ -445,15 +444,13 @@ extern void dumpenv(
 // считается список, описывающий узел N: (verbmap map (nodeverb N) != -1).
 
 // Загрузка dag-а. Атомы загружаются в U. Особые выражения в данном случае - это
-// узлы, в атрибутах которых должен быть записан замкнутый граф.
-// 
-// Для управления памятью и для обхода 
+// узлы, в атрибутах которых должен быть записан замкнутый граф
 
 extern Ref loaddag(FILE *const, Array *const U, const List *const map);
 
 // Выгрузка dag-а. tabs - для красивой печати с отступами. dbg - выдавать ли
-// указатели на узлы (для закрепления: на особые списки длиной 2) в выводе
-// графов (это нужно для отладки)
+// указатели на узлы (для закрепления: на списки особого формата) в выводе
+// графов (это нужно для отладки). Особые узлы трактуются так же, как в loaddag
 
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
@@ -464,7 +461,9 @@ extern Ref forkdag(const Ref dag);
 extern void freedag(const Ref dag);
 
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
-// verbmap-ой.
+// verbmap-ой. После обработки структура графа поменяется, но это затронет
+// только атрибуты выражения dag. Поэтому Ref-а на узел с графом может быть
+// константой
 
 extern void gcnodes(
 	const Ref dag, const List *const map,
@@ -473,7 +472,7 @@ extern void gcnodes(
 // Узел передаётся в WalkOne в разобранном виде. На атрибут передаётся ссылка,
 // потому что в некоторых случаях walkone будет его переписывать
 
-typedef int (*WalkOne)(
+typedef int WalkOne(
 	const unsigned verb, Ref *const attribute, void *const);
 
 // Процедура walkdag проходит по объявлениям выражений
@@ -486,24 +485,27 @@ typedef int (*WalkOne)(
 // атрибутов этого узла.
 
 extern void walkdag(
-	const Ref dag, const WalkOne, void *const, const List *const verbmap);
+	const Ref dag, WalkOne, void *const, const List *const verbmap);
+
+// Оценка узлов L, LNth и FIn. Параметр map описывает те выражения, в которых
+// оценку проводить не следует
 
 extern List *evallists(
 	Array *const U,
-	List **const dag, const Ref go, const List *const arguments);
+	const Ref dag, const Array *const map, const List *const arguments);
 
 // Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
-// выводимый граф и dag с описанием тела формы.  Счётчик необходим для
+// выводимый граф и dag с описанием тела формы. Счётчик необходим для
 // отслеживания процесса активации формы. Форма активируется, когда в контексте
 // вывода появляется необходимое количество выходов, соответствующих её
-// сигнатуре. Метка goal отмечает целевые формы
+// сигнатуре
 
-struct formtag
+struct Form 
 {
 	union
 	{
-		const List *const dag;
-		struct formtag *nextfree;
+		const Ref dag;
+		struct Form *nextfree;
 	} u;
 
 	const List *const signature;
@@ -513,8 +515,8 @@ struct formtag
 
 // Из-за сложной жизни форм (cf. txt/worklog.txt:2690 2013-09-04 11:55:50) имеет
 // смысл во freeform передавать Ref и, соответственно, возвращать Ref из
-// newform. Потому что они всегда связаны, получается: формы бывают либо в
-// окружениях (там Ref-ы), либо в списках (тоже Ref-ы)
+// newform. Потому что они всегда связаны: формы бывают либо в окружениях (там
+// Ref-ы), либо в списках (тоже Ref-ы)
 
 extern void freeform(const Ref);
 

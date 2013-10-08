@@ -150,12 +150,63 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key)
 	return r;
 }
 
+static List *forknode(const Ref node, const List *const M)
+{
+	assert(node.code == NODE && isnode(node.u.list));
+
+	// Есть два варианта по M. Когда M != NULL нас просят от-fork-ать узлы и
+	// в новом корректно расставить на них ссылки. Если M == NULL, то нас
+	// простят просто скопировать ссылки
+
+	if(!M)
+	{
+		// Простой вариант: просто копировать ссылки. И ссылка должна
+		// быть ссылкой
+
+		assert(node.external);
+		return newlist(node);
+	}
+
+	// Сложный вариант. Может быть два варианта по Ref.external.
+	// Если Ref.external, то речь идёт о ссылке и её отображение
+	// надо просто скопировать
+
+	if(node.external)
+	{
+		// Смотрим на то, куда отображается эта ссылка. Надо
+		// быть уверенными, что отображение знает о node. Иначе
+		// ошибка. Это всё проверит isnode
+
+		const Ref n = refmap(M, node);
+		assert(n.code == NODE && isnode(n.u.list));
+
+		return newlist(markext(n));
+	}
+
+	// Наконец, определение узла. Сначала создаём копию
+	// выражения. Делаем это рекурсивно
+
+	const Ref n
+		= newnode(
+			nodeverb(node, NULL),
+			forkref(nodeattribute(node), M),
+			nodeline(node));
+
+	// Процедура tunerefmap сама за-assert-ит попытку
+	// сделать не-уникальное отображение
+
+	tunerefmap(M, node, n);
+
+	// Процедура newnode вернёт верную Ref-у
+	return newlist(n);
+}
+
 // FState - fork/free state
 
 typedef struct 
 {
 	List *list;
-	const Ref nodemap;
+	const List *const nodemap;
 	const unsigned bound;
 	const unsigned from;
 	const unsigned to;
@@ -167,8 +218,8 @@ static int forkitem(List *const k, void *const ptr)
 	assert(k);
 
 	// Проверка того, что всё аккуратно со структурой списка и
-	// external-флагом.  Внутри списков им могут быть помечены только списки
-	// и узлы
+	// external-битом. Внутри списков им могут быть помечены только списки и
+	// узлы
 
 	switch(k->ref.code)
 	{
@@ -210,34 +261,20 @@ static int forkitem(List *const k, void *const ptr)
 		break;
 
 	case NODE:
-	{
-		const Ref M = fs->nodemap;
-		assert(k->ref.u.node);
-
-		if(M.code != FREE)
-		{
-			const Ref *r = ref(atrefkey(M, k->ref));
-			assert(r->code != FREE);
-			l = newlist(*r);
-		}
-		else
-		{
-			l = newlist(k->ref);
-		}
+		l = forknode(k->ref, fs->nodemap);
 		break;
-	}
 
 	case LIST:
 	{
 		const Ref M = fs->nodemap;
 
 		// from и to работают для списка верхнего уровня. На подсписки
-		// это не распространяется. Однако, не всё так просто. Если
-		// M.code != FREE, то список надо транслировать. При этом,
-		// должно быть !k->ref.external. Если M.code == FREE, то ничего
-		// не транслируется, и можно ориентироваться на k->ref.external
+		// это не распространяется. Однако, есть тонкости. Если (M !=
+		// NULL), то список надо транслировать, поэтому должно быть
+		// (!k->ref.external). В случае (M == NULL) ничего не
+		// транслируется, и можно ориентироваться на (k->ref.external)
 
-		if(M.code != FREE)
+		if(M)
 		{
 			assert(!k->ref.external);
 			l = newlist(reflist(transforklist(k->ref.u.list, M)));
@@ -275,15 +312,14 @@ static int forkitem(List *const k, void *const ptr)
 
 static List *megafork(
 	const List *const k, const unsigned from, const unsigned to,
-	const Ref map,
-	unsigned *const correct);
+	const List *const map, unsigned *const correct);
 
 List *forklist(const List *const k)
 {
-	return transforklist(k, reffree());
+	return transforklist(k, NULL);
 }
 
-List *transforklist(const List *const k, const Ref map)
+List *transforklist(const List *const k, const List *const map)
 {
 	unsigned correct = 0;
 	List *const l = megafork(k, 0, -1, map, &correct);
@@ -296,13 +332,12 @@ List *forklistcut(
 	const List *const k, const unsigned from, const unsigned to,
 	unsigned *const correct)
 {
-	return megafork(k, from, to, reffree(), correct);
+	return megafork(k, from, to, NULL, correct);
 }
 
 List *megafork(
 	const List *const k, const unsigned from, const unsigned to,
-	const Ref map,
-	unsigned *const correct)
+	const List *const map, unsigned *const correct)
 {
 	// Диапазон должен быть задан корректно. -1 -- самый большой unsigned
 
