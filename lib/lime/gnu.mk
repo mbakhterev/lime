@@ -7,7 +7,8 @@ lmsrc = \
 	ref.c		\
 	array.c		\
 	list.c		\
-	keytab.c	\
+	node.c		\
+	keymap.c	\
 	checkpoint.c	\
 	atomtab.c	\
 

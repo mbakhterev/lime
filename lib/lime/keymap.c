@@ -10,7 +10,6 @@
 
 #define DBGFLAGS 0
 
-static int cmplists(const List *const, const List *const);
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -19,7 +18,7 @@ static int cmplists(const List *const, const List *const);
 // это Ref.code <= NODE. Всё это регулируется через limit, чтобы не плодить
 // много разных функций. В LIST уходим рекурсивно
 
-static unsigned iskey(const List *const, const unsigned limit);
+static unsigned iskey(const Ref, const unsigned limit);
 
 static int iskeyitem(List *const k, void *const ptr)
 {
@@ -27,57 +26,58 @@ static int iskeyitem(List *const k, void *const ptr)
 	assert(ptr);
 
 	const unsigned limit = *(unsigned *)ptr;
-	
-	switch(k->ref.code)
+	return iskey(k->ref, limit);	
+}
+
+unsigned iskey(const Ref k, const unsigned limit)
+{
+	switch(k.code)
 	{
 	case LIST:
-		return iskey(k->ref.u.list, limit);
+		// !0 - это числовое значение для True. Оно, вроде, должно быть
+		// равным 1. Но что-то я уже ни в чём не уверен, когда речь
+		// заходит о GCC
+
+		return forlist(k.u.list, iskeyitem, (void *)&limit, !0) == !0;
 	}
 
-	return k->ref.code <= limit;
+	return k.code <= limit;
 }
 
-// !0 - это числовое значение для True. Оно, вроде, должно быть равным 1. Но
-// что-то я уже ни в чём не уверен, когда речь заходит о GCC. forlist будет
-// продолжаться, пока k->ref.code <= limit
-
-unsigned iskey(const List *const l, const unsigned limit)
+unsigned isbasickey(const Ref r)
 {
-	return forlist((List *)l, iskeyitem, (void *)&limit, !0) == !0;
+	return iskey(r, TYPE);
 }
 
-unsigned isbasickey(const List *const l)
+static unsigned isgenerickey(const Ref r)
 {
-	return iskey(l, TYPE);
+	return iskey(r, NODE);
 }
 
-static unsigned isgenerickey(const List *const l)
-{
-	return iskey(l, NODE);
-}
+static int cmplists(const List *const, const List *const);
 
-static int cmpitems(const List *const k, const List *const l)
+static int cmpkeys(const Ref k, const Ref l)
 {
-	assert(k && k->ref.code <= LIST);
-	assert(l && l->ref.code <= LIST);
+	assert(k.code <= LIST);
+	assert(l.code <= LIST);
 
-	unsigned r = cmpui(k->ref.code, l->ref.code);
+	const unsigned r = cmpui(k.code, l.code);
 	if(r)
 	{
 		return r;
 	}
 
-	if(k->ref.code <= TYPE)
+	if(k.code <= TYPE)
 	{
-		return cmpui(k->ref.u.number, l->ref.u.number);
+		return cmpui(k.u.number, l.u.number);
 	}
 
-	if(k->ref.code <= NODE)
+	if(k.code <= NODE)
 	{
-		return cmpptr(k->ref.u.pointer, l->ref.u.pointer);
+		return cmpptr(k.u.pointer, l.u.pointer);
 	}
 
-	return cmplists(k->ref.u.list, l->ref.u.list);
+	return cmplists(k.u.list, l.u.list);
 }
 
 // Для поиска и сортировки важно, чтобы порядок был линейным. Построить его
@@ -86,12 +86,19 @@ static int cmpitems(const List *const k, const List *const l)
 // устанавливается лексикографически. Но это не удобно для пользователя, ибо,
 // скорее всего, близкие по смыслу списки будут и начинаться одинаково. В целях
 // отладки полезно было бы ставить рядом друг с дружкой. Поэтому, порядок будет
-// просто лексикографический. Это оправданное усложнение.
+// просто лексикографический. Это оправданное усложнение
 
 static int cmplists(const List *const k, const List *const l)
 {
-	assert(k != NULL);
-	assert(l != NULL);
+	if(k == NULL)
+	{
+		return 1 - (l == NULL) - ((l != NULL) << 1);
+	}
+
+	if(l == NULL)
+	{
+		return -1 + (k == NULL) + ((k != NULL) << 1);
+	}
 
 	// current указатели
 	const List *ck = k;
@@ -103,7 +110,7 @@ static int cmplists(const List *const k, const List *const l)
 	{
 		ck = ck->next;
 		cl = cl->next;
-		r = cmpitems(ck, cl);
+		r = cmpkeys(ck->ref, cl->ref);
 	} while(!r && ck != k && cl != l);
 
 	if(r) { return r; }
@@ -116,12 +123,12 @@ static int cmplists(const List *const k, const List *const l)
 
 static int kcmp(const void *const D, const unsigned i, const void *const key)
 {
-	return cmplists(((const Binding *)D)[i].key, key);
+	return cmpkeys(((const Binding *)D)[i].key, *(const Ref *)key);
 }
 
 static int icmp(const void *const D, const unsigned i, const unsigned j)
 {
-	return kcmp(D, i, ((const Binding *)D)[j].key);
+	return kcmp(D, i, &((const Binding *)D)[j].key);
 }
 
 // Типы индексируются теми же ключами, что и окружения. Поэтому функция не

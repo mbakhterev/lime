@@ -62,10 +62,10 @@ static List *newlist(const Ref r)
 	case ATOM:
 	case TYPE:
 	case NODE:
+	case PTR:
 	case LIST:
 	case FORM:
-	case ENV:
-	case PTR:
+	case MAP:
 	case CTX:
 		break;
 	
@@ -150,63 +150,14 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key)
 	return r;
 }
 
-static List *forknode(const Ref node, const List *const M)
-{
-	assert(node.code == NODE && isnode(node.u.list));
 
-	// Есть два варианта по M. Когда M != NULL нас просят от-fork-ать узлы и
-	// в новом корректно расставить на них ссылки. Если M == NULL, то нас
-	// простят просто скопировать ссылки
-
-	if(!M)
-	{
-		// Простой вариант: просто копировать ссылки. И ссылка должна
-		// быть ссылкой
-
-		assert(node.external);
-		return newlist(node);
-	}
-
-	// Сложный вариант. Может быть два варианта по Ref.external.
-	// Если Ref.external, то речь идёт о ссылке и её отображение
-	// надо просто скопировать
-
-	if(node.external)
-	{
-		// Смотрим на то, куда отображается эта ссылка. Надо
-		// быть уверенными, что отображение знает о node. Иначе
-		// ошибка. Это всё проверит isnode
-
-		const Ref n = refmap(M, node);
-		assert(n.code == NODE && isnode(n.u.list));
-
-		return newlist(markext(n));
-	}
-
-	// Наконец, определение узла. Сначала создаём копию
-	// выражения. Делаем это рекурсивно
-
-	const Ref n
-		= newnode(
-			nodeverb(node, NULL),
-			forkref(nodeattribute(node), M),
-			nodeline(node));
-
-	// Процедура tunerefmap сама за-assert-ит попытку
-	// сделать не-уникальное отображение
-
-	tunerefmap(M, node, n);
-
-	// Процедура newnode вернёт верную Ref-у
-	return newlist(n);
-}
 
 // FState - fork/free state
 
 typedef struct 
 {
 	List *list;
-	const List *const nodemap;
+	Array *const nodemap;
 	const unsigned bound;
 	const unsigned from;
 	const unsigned to;
@@ -252,48 +203,6 @@ static int forkitem(List *const k, void *const ptr)
 
 	List *l = NULL;
 
-	switch(k->ref.code)
-	{
-	case NUMBER:
-	case ATOM:
-	case TYPE:
-		l = newlist(k->ref);
-		break;
-
-	case NODE:
-		l = forknode(k->ref, fs->nodemap);
-		break;
-
-	case LIST:
-	{
-		const Ref M = fs->nodemap;
-
-		// from и to работают для списка верхнего уровня. На подсписки
-		// это не распространяется. Однако, есть тонкости. Если (M !=
-		// NULL), то список надо транслировать, поэтому должно быть
-		// (!k->ref.external). В случае (M == NULL) ничего не
-		// транслируется, и можно ориентироваться на (k->ref.external)
-
-		if(M)
-		{
-			assert(!k->ref.external);
-			l = newlist(reflist(transforklist(k->ref.u.list, M)));
-		}
-		else if(!k->ref.external)
-		{
-			l = newlist(reflist(forklist(k->ref.u.list)));
-		}
-		else
-		{
-			l = newlist(k->ref);
-		}
-
-		break;
-	}
-	
-	default:
-		assert(0);
-	}
 
 	fs->list = append(fs->list, l);
 
@@ -312,14 +221,14 @@ static int forkitem(List *const k, void *const ptr)
 
 static List *megafork(
 	const List *const k, const unsigned from, const unsigned to,
-	const List *const map, unsigned *const correct);
+	Array *const map, unsigned *const correct);
 
 List *forklist(const List *const k)
 {
 	return transforklist(k, NULL);
 }
 
-List *transforklist(const List *const k, const List *const map)
+List *transforklist(const List *const k, Array *const map)
 {
 	unsigned correct = 0;
 	List *const l = megafork(k, 0, -1, map, &correct);
@@ -337,7 +246,7 @@ List *forklistcut(
 
 List *megafork(
 	const List *const k, const unsigned from, const unsigned to,
-	const List *const map, unsigned *const correct)
+	Array *const map, unsigned *const correct)
 {
 	// Диапазон должен быть задан корректно. -1 -- самый большой unsigned
 

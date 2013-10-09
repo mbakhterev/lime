@@ -89,8 +89,7 @@ extern Ref refnode(List *const);
 extern Ref reflist(List *const);
 extern Ref refform(Form *const);
 
-extern Ref reftab(Array *const);
-extern Ref refenv(Environment *const);
+extern Ref refkeymap(Array *const);
 
 extern Ref refctx(Context *const);
 
@@ -103,9 +102,10 @@ extern Ref cleanext(const Ref);
 extern void freeref(const Ref);
 
 // Копирование отдельной Ref-ы. Ориентируясь по значению в Ref.code вызвать
-// соответствующий forkxxx
+// соответствующий forkxxx. Дополнительные параметры могут понадобится в одном
+// из вариантов
 
-extern Ref forkref(const Ref);
+extern Ref forkref(const Ref, Array *const map);
 
 // Автоматически индексируемые массивы
 
@@ -222,7 +222,7 @@ extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 
 extern unsigned writerefs(const List *const, Ref refs[], const unsigned N);
 
-extern void freelist(const List *const);
+extern void freelist(List *const);
 
 // Получить первый элемент списка или N-ный (счёт от 0)
 
@@ -245,7 +245,7 @@ extern List *forklist(const List *const);
 // конструируется как список из keytab-ов (см. ниже). Под-списки рекурсивно
 // копируются, если для них не установлен external-бит
 
-extern List *transforklist(const List *const, const List *const map);
+extern List *transforklist(const List *const, Array *const map);
 
 // Копирование кусочка списка, с позиции from до позиции to. -1 означает
 // последний элемент в списке
@@ -265,8 +265,9 @@ extern int forlist(List *const, Oneach, void *const, const int key);
 extern void trimlist(List *const, const Ref);
 
 extern char *strlist(const Array *const universe, const List *const);
+
 extern void dumplist(
-	FILE *const, const Array *const, const List *const);
+	FILE *const, const Array *const universe, const List *const);
 
 // Базовый элемент конструкции окружений - локальное отображение выражений
 // (ключей) в некоторые значения. Создаются пустыми. Привязывать к другим
@@ -433,8 +434,10 @@ extern Ref newnode(
 extern unsigned isnode(const Ref);
 extern unsigned isnodelist(const List *const);
 
-// Процедура для копирования выражений (узлов)
-extern Ref forknode(const Ref);
+// Процедура для копирования выражений (узлов). Для воспроизведения ссылок на
+// узлы (подвыражения), ей нужно отображение прежних узлов на новые
+
+extern Ref forknode(const Ref, Array *const nodemap);
 
 // DAG-и. Устроены как списки узлов в атрибутах которых бывают ссылки на другие
 // узлы
@@ -446,7 +449,8 @@ extern Ref forknode(const Ref);
 // Загрузка dag-а. Атомы загружаются в U. Особые выражения в данном случае - это
 // узлы, в атрибутах которых должен быть записан замкнутый граф
 
-extern Ref loaddag(FILE *const, Array *const U, const List *const map);
+extern Ref loaddag(
+	FILE *const, Array *const U, const List *const map, const Ref verb);
 
 // Выгрузка dag-а. tabs - для красивой печати с отступами. dbg - выдавать ли
 // указатели на узлы (для закрепления: на списки особого формата) в выводе

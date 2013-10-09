@@ -45,7 +45,7 @@ Ref refptr(void *const p)
 
 Ref refnode(List *const exp)
 {
-	assert(isnode(exp));
+	assert(isnodelist(exp));
 
 	// Внимание на 1
 	return (Ref) { .code = NODE, .u.list = exp, .external = 1 };
@@ -61,15 +61,10 @@ Ref refform(Form *const f)
 	return (Ref) { .code = FORM, .u.form = f, .external = 0 };
 }
 
-Ref reftab(Array *const a)
+Ref refkeymap(Array *const a)
 {
-	assert(a && a->code == KEYTAB);
-	return (Ref) { .code = KEYTAB, .u.array = a, .external = 0 };
-}
-
-Ref refenv(Environment *const e)
-{
-	return (Ref) { .code = ENV, .u.environment = e, .external = 0 };
+	assert(a && a->code == MAP);
+	return (Ref) { .code = MAP, .u.array = a, .external = 0 };
 }
 
 Ref refctx(Context *const c)
@@ -112,4 +107,44 @@ Ref cleanext(const Ref r)
 	return setbit(r, 0);
 }
 
+Ref forkref(const Ref r, Array *const nodemap)
+{
+	switch(r.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+		return r;
+	
+	case NODE:
+		return forknode(r, nodemap);
 
+	case LIST:
+	{
+		Array *const M = nodemap;
+
+		// Тут есть тонкости. Если (M != NULL), то список надо
+		// транслировать (то есть, копировать узлы), поэтому должно быть
+		// (!r.external). В случае (M == NULL) ничего не транслируется,
+		// и можно ориентироваться на (r.external)
+
+		if(M)
+		{
+			assert(!r.external);
+			return reflist(transforklist(r.u.list, M));
+		}
+
+		if(!r.external)
+		{
+			return reflist(forklist(r.u.list));
+		}
+
+		return r;
+	}
+	
+	default:
+		assert(0);
+	}
+
+	return reffree();
+}
