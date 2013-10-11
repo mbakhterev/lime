@@ -131,119 +131,104 @@ static int icmp(const void *const D, const unsigned i, const unsigned j)
 	return kcmp(D, i, &((const Binding *)D)[j].key);
 }
 
-// Типы индексируются теми же ключами, что и окружения. Поэтому функция не
-// статическая, будет использоваться и в types.c
-
-Array *newkeyedarray(const unsigned code)
+Array *newkeymap(void)
 {
-	switch(code)
-	{
-	case TYPE:
-	case ENV:
-		break;
-	
-	default:
-		assert(0);
-	}
-
-	return newarray(code, sizeof(Binding), icmp, kcmp);
+	return newarray(MAP, sizeof(Binding), icmp, kcmp);
 }
 
-static void unregister(Array *const U, const Ref E)
+void freekeymap(Array *const env)
 {
-	// Список из окружения E
-	DL(self, E);
-
-	// Список из root-окружения, в котором живёт наше E. Плюс немного
-	// паранойи
-
-	DL(rootkey, readpack(U, strpack(0, "Root")));
-	DL(root, *ref(atenvkey(self, rootkey)));
-
-	assert(root->ref.external
-		&& root->ref.code == ENV
-		&& root->ref.u.array && root->ref.u.array == ENV);
-
-	// Список, который идентифицирует текущее окружение. Плюс немного
-	// паранойи
-
-	DL(idkey, readpack(U, strpack(0, "ID")));
-	const Ref id = *ref(atenvkey(self, idkey));
-
-	assert(id.external && id->.code == LIST);
-	
-	// Ref-а, которая соответствует E в root-окружении
-
-	Ref *const re = ref(atenvkey(root, id->u.list));
-	assert(re->code == ENV && re->u.array == E.array);
-
-	*re = reffree();
-}
-
-static void freeenv(const Ref ref)
-{
-	assert(r.code == ENV
-		&& r.u.array && r.u.array->code == ENV);
+	assert(env && env->code == MAP);
 
 	DBG(DBGFREE, "env->count: %u", env->count);
 
-	Binding *const B = env->data;
+	Binding *const B = env->u.data;
 
 	for(unsigned i = 0; i < env->count; i += 1)
 	{
-		freelist((List *)B[i].key);
-		
-		switch(B[i].ref.code)
-		{
-		case FORM:
-			// external-формы из других окружений не должны быть
-			// затронуты. Сотрётся только их структура, но не графы
-			// или сигнатуры
-
-			freeform(B[i].ref);
-			break;
-
-		case LIST:
-			// Будем считать, что если в окружении список, то за
-			// этот список отвечает окружение. Как с формами.
-			// Поэтому, удаляем
-
-			freelist(B[i].ref.u.list);
-			break;
-		}
+		freeref(B[i].key);
+		freeref(B[i].ref);
 
 		DBG(DBGFREE, "i: %u", i);
 	}
 
 	freearray(env);
-	free(env);
 }
 
-extern List *pushenvironment(List *const env)
+static const char *codetostr(const unsigned code)
 {
-	assert(!env || env->ref.code == ENV);
-
-	Array *const new = malloc(sizeof(Array));
-	assert(new);
-
+	switch(code)
 	{
-		const Array fresh = makekeyedarray(ENV);
-		memcpy(new, &fresh, sizeof(Array));
+	case MAP:
+		return "/";
+	
+	case TYPE:
+		return "@";
+	
+	case ATOM:
+		return "$";
 	}
 
-	return append(RL(refenv(new)), env);
+	assert(0);
+	return NULL;
 }
 
-extern List *popenvironment(List **const penv)
+static Ref decoatom(Array *const U, const unsigned code)
 {
-	assert(*penv != NULL && (*penv)->ref.code == ENV);
+	switch(code)
+	{
+	case MAP:
+	case TYPE:
+	case ATOM:
+		return readpack(U, strpack(0, codetostr(code)));
 
-	List *t = tipoff(penv);
+	default:
+		assert(0);
+	}
 
-	freeone(t->ref.u.environment);
-	freelist(t);
+	return reffree();
+}
 
-	return *penv;
+Ref decorate(const Ref key, Array *const U, const unsigned code)
+{
+	return reflist(RL(decoatom(U, code), key));
+}
+
+Binding *keymap(const Array *const map, const Ref key)
+{
+	assert(map && map->code == MAP);
+
+	const unsigned k = lookup(map, &key);
+
+	if(k != -1)
+	{
+		return (Binding *)map->u.data + k;
+	}
+	
+	return k == -1 ? NULL : (Binding *)map->u.data + k;
+}
+
+Binding *tunekeymap(
+	Array *const map,
+	const Ref key, Array *const U, const unsigned code, const Ref ref)
+{
+	assert(map && keymap(map, key, U, code) == NULL);
+
+	const Binding b =
+	{
+		.key = decorate(decorator(U, code), key),
+		.ref = ref
+	};
+
+	const unsigned k = readin(map, &b);
+	return (Binding *)map->u.data + k;
+}
+
+Array *makepath(
+	const Array *const map,
+	const Ref path, const List *const names, Array *const newmap)
+{
+	assert(map && map->code == MAP);
 }
 
 typedef struct
@@ -253,26 +238,6 @@ typedef struct
 	unsigned pos;
 	unsigned depth;
 } LookingState;
-
-enum { NOTFOUND, HITDEPTH, FOUND };
-
-static int looker(List *const env, void *const ptr)
-{
-	assert(env && env->ref.code == ENV);
-	assert(env->ref.code == ENV && env->ref.u.environment);
-
-	LookingState *const s = ptr;
-	const unsigned k = lookup(env->ref.u.environment, s->key);
-
-	if(k != -1)
-	{
-		s->env = env->ref.u.environment;
-		s->pos = k;
-		return FOUND;
-	}
-
-	return (s->depth -= 1) ? NOTFOUND : HITDEPTH;
-}
 
 static GDI lookbinding(
 	const List *const env, const List *const key, const unsigned depth)

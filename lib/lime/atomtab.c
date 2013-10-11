@@ -202,7 +202,7 @@ unsigned loadatom(Array *const t, FILE *const f)
 	return grabpack(t, &ap);
 }
 
-unsigned lookpack(Array *const t, const AtomPack ap)
+static unsigned lookpack(Array *const t, const AtomPack ap)
 {
 	assert(t && t->code == ATOM);
 	assert(ap.bytes && ap.length <= MAXLEN && ap.hint <= MAXHINT);
