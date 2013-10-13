@@ -148,3 +148,36 @@ Ref forkref(const Ref r, Array *const nodemap)
 
 	return reffree();
 }
+
+void freeref(const Ref r)
+{
+	switch(r.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+	case PTR:
+	case FREE:
+		break;
+
+	case NODE:
+	case LIST:
+		if(!r.external)
+		{
+			freelist(r.u.list);
+		}
+
+		break;
+	
+	case MAP:
+		if(!r.external)
+		{
+			freekeymap(r.u.array);
+		}
+
+		break;
+	
+	default:
+		assert(0);
+	}
+}

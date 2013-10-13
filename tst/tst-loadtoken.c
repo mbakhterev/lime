@@ -13,7 +13,7 @@ unsigned field = 0;
 const char *unitname = "test";
 
 int main(int argc, char * argv[]) {
-	Array t = makeatomtab();
+	Array *const t = newatomtab();
 	char fmt[64];
 	mkfmt(fmt);
 
@@ -23,19 +23,19 @@ int main(int argc, char * argv[]) {
 		}
 		if(!feof(stdin)) {
 			ungetc(c, stdin);
-			loadtoken(&t, stdin, 0, fmt);
+			loadtoken(t, stdin, 0, fmt);
 			item += 1;
 		}
 	}
 
-	const unsigned *const I = t.index;
-	for(unsigned i = 0; i < t.count; i += 1) {
-		const unsigned char *const a = *(Atom *)itemat(&t, I[i]);
+	const unsigned *const I = t->index;
+	for(unsigned i = 0; i < t->count; i += 1) {
+		const unsigned char *const a = *(Atom *)itemat(t, I[i]);
 		fwrite(atombytes(a), 1, atomlen(a), stdout);
 		fputc('\n', stdout);
 	}
 
-	freeatomtab(&t);
+	freeatomtab(t);
 
 	return 0;
 }

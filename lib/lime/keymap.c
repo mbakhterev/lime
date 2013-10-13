@@ -10,7 +10,6 @@
 
 #define DBGFLAGS 0
 
-
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
 // PTR и NODE. Эти все коды упорядочены так, что проверку на соответствие типа
@@ -49,10 +48,10 @@ unsigned isbasickey(const Ref r)
 	return iskey(r, TYPE);
 }
 
-static unsigned isgenerickey(const Ref r)
-{
-	return iskey(r, NODE);
-}
+// static unsigned isgenerickey(const Ref r)
+// {
+// 	return iskey(r, NODE);
+// }
 
 static int cmplists(const List *const, const List *const);
 
@@ -136,6 +135,11 @@ Array *newkeymap(void)
 	return newarray(MAP, sizeof(Binding), icmp, kcmp);
 }
 
+unsigned iskeymap(const Ref r)
+{
+	return r.code == MAP && r.u.array && r.u.array->code == MAP;
+}
+
 void freekeymap(Array *const env)
 {
 	assert(env && env->code == MAP);
@@ -194,7 +198,7 @@ Ref decorate(const Ref key, Array *const U, const unsigned code)
 	return reflist(RL(decoatom(U, code), key));
 }
 
-Binding *keymap(const Array *const map, const Ref key)
+static Binding *look(const Array *const map, const Ref key)
 {
 	assert(map && map->code == MAP);
 
@@ -204,174 +208,175 @@ Binding *keymap(const Array *const map, const Ref key)
 	{
 		return (Binding *)map->u.data + k;
 	}
-	
-	return k == -1 ? NULL : (Binding *)map->u.data + k;
+
+	return NULL;
 }
 
-Binding *tunekeymap(
-	Array *const map,
-	const Ref key, Array *const U, const unsigned code, const Ref ref)
+static Binding *allocate(Array *const map, const Ref key)
 {
-	assert(map && keymap(map, key, U, code) == NULL);
+	assert(map && map->code == MAP);
 
 	const Binding b =
 	{
-		.key = decorate(decorator(U, code), key),
-		.ref = ref
+		.key = forkref(key, NULL),
+		.ref = { .code = FREE, .u.pointer = NULL }
 	};
 
 	const unsigned k = readin(map, &b);
+
 	return (Binding *)map->u.data + k;
 }
 
-Array *makepath(
-	const Array *const map,
-	const Ref path, const List *const names, Array *const newmap)
+Binding *keymap(Array *const map, const Ref key)
 {
-	assert(map && map->code == MAP);
+	Binding *const b = look(map, key);
+	if(b)
+	{
+		return b;
+	}
+
+	return allocate(map, key);
 }
 
 typedef struct
 {
-	const List *const key;
-	const Array *env;
-	unsigned pos;
-	unsigned depth;
-} LookingState;
+	Array *const U;
+	List *L;
+	Array *current;
+	const Ref path;
+	const Ref M;
+	unsigned ok;
+} PState;
 
-static GDI lookbinding(
-	const List *const env, const List *const key, const unsigned depth)
+static int makeone(List *const k, void *const ptr)
 {
-	assert(env && env->ref.code == ENV);
-	assert(depth == 1 || depth == -1);
+	PState *const st = ptr;
+	assert(st);
+	assert(k);
 
-	LookingState s =
+	// Поиск в текущем окружении по ключу ("/" (path name)). path и ref
+	// пропускаются через forkref, чтобы ключ можно было удалить без
+	// повреждения оригинала. FIXME: не самая оптимальная логика. В
+	// следующей версии это не понадобится
+
+	const Ref key
+		= decorate(
+			reflist(RL(
+				forkref(st->path, NULL),
+				forkref(k->ref, NULL))),
+			st->U, MAP);
+
+	Binding *const b = keymap(st->current, key);
+
+	// Здесь ключ уже можно освободить, потому что keymap скопирует его себе
+	// при необходимости
+
+	freeref(key);
+
+	if(b->ref.code != FREE)
 	{
-		.key = key,
-		.env = NULL,
-		.pos = -1,
-		.depth = depth
+		// Найденное должно быть keymap-ой
+		assert(iskeymap(b->ref));
+
+		// В любом случае вернуть надо ссылку на эту keymap-у
+		st->current = b->ref.u.array;
+
+		// Но если k - это последнее имя в списке, то нужно убедится,
+		// что (M.code == FREE)
+
+		st->ok = k != st->L || st->M.code == FREE;
+
+		return 0;
+	}
+
+	// Если ничего не нашлось, то в зависимости от k и st->L занимаемся
+	// инициализацией
+
+	if(k != st->L)
+	{
+		// Речь идёт не о последнем имени, поэтому нужно создать пустую
+		// новую keymap. В ней и будем работать на следующей итерации
+
+		b->ref = refkeymap(st->current = newkeymap());
+		return 0;
+	}
+
+	// Ничего не нашлось, имя последнее. Поэтому надо записать st->M в
+	// созданную ячейку b. Подготовится к возврату этой таблицы и проверить,
+	// что всё ОК. То, что st->M корректная ссылка проверено в самой
+	// makepath
+
+	b->ref = st->M;
+	st->current = st->M.u.array;
+
+	st->ok = st->M.code == MAP;
+
+	return 0;
+}
+
+Array *makepath(
+	Array *const map,
+	Array *const U, const Ref path, const List *const names,
+	const Ref M)
+{
+	assert(map && map->code == MAP);
+	assert(M.code == FREE || iskeymap(M));
+
+	PState st =
+	{
+		.U = U,
+		.L = (List *)names,
+		.M = M,
+		.current = map,
+		.path = path,
+		.ok = 0
 	};
 
-	const int reason = forlist((List *)env, looker, &s, 0);
+	forlist((List *)names, makeone, &st, 0);
 
-	switch(reason)
+	if(st.ok)
 	{
-	case FOUND:
-		assert(s.depth);
-		return (GDI) { .array = s.env, .position = s.pos };
-	
-	case NOTFOUND:
-		assert(s.env == NULL && s.pos == -1);
-		break;
-	
-	case HITDEPTH:
-		assert(s.env == NULL && s.pos == -1 && s.depth == 0);
-		break;
-	
-	default:
-		assert(0);
+		return st.current;
 	}
 
-	return (GDI) { .array = NULL, .position = -1 };
+	return NULL;
 }
 
-
-// WARNING: allocate должна вызываться только после того, как lookbinding
-// сообщит, что ничего не найдено.
-
-static GDI allocate(
-	Array *const env, const List *const key)
+static List *tracekey(List *const acc, const Binding *const b, const Ref key)
 {
-	assert(env->code == ENV);
-
-	const Binding b =
+	if(b == NULL)
 	{
-		.key = forklist(key),
-		.ref = { .code = FREE, .u.pointer = NULL }
-	};
-
-	return (GDI) { .array = env, .position = readin(env, &b) };
-}
-
-
-// LOG: Вместе с тем, как конструируются узлы (cf. lib/lime/loaddag.c:node),
-// это важный момент вообще для процесса программирования (правда, не очень
-// понятно, как именно важный). Важность в том, что мы должны иметь возможность
-// передать обратно некие данные, записав их в заранее подготовленную ячейку в
-// некоторой структуре данных. Позиция ячейки вычисляема по аргументам функции
-
-static Ref *gditorefcell(const GDI g)
-{
-	assert(g.array && g.array->code == ENV);
-	assert(g.position != -1 && g.position < g.array->count);
-	Binding *const B = g.array->data;
-	assert(B);
-	return &B[g.position].ref;
-}
-
-static Binding *gditobindcell(const GDI g)
-{
-	assert(g.array && g.array->code == ENV);
-	assert(g.position != -1 && g.position < g.array->count);
-	Binding *const B = g.array->data;
-	assert(B);
-	return &B[g.position];
-}
-
-Ref *keytoref(
-	const List *const env, const List *const key, const unsigned depth)
-{
-	const GDI gdi = lookbinding(env, key, depth);
-
-	if(gdi.position != -1)
-	{
-		return gditorefcell(gdi);
+		return acc;
 	}
 
-	// После lookbinding уже известно, что в env находятся ENV
-	return gditorefcell(allocate(tip(env)->ref.u.environment, key));
+	const Ref M = b->ref;
+	assert(iskeymap(M));
+
+	return tracekey(append(acc, RL(markext(M))), look(M.u.array, key), key);
 }
 
-Binding *keytobinding(
-	const List *const env, const List *const key, const unsigned depth)
+List *tracepath(
+	const Array *const map, Array *const U, const Ref path, const Ref name)
 {
-	const GDI gdi = lookbinding(env, key, depth);
+	assert(map && map->code == MAP);
 
-	if(gdi.position != -1)
-	{
-		return gditobindcell(gdi);
-	}
+	// markext для того, чтобы при удалении ключей не удалить path и name на
+	// стороне пользователя. look ключи не копирует, поэтому не оптимизация
 
-	return gditobindcell(allocate(tip(env)->ref.u.environment, key));
-}
+	const Ref pathkey
+		= decorate(reflist(RL(markext(path), markext(name))), U, MAP);
 
-Ref *formkeytoref(
-	Array *const U,
-	const List *const env, const List *const key, const unsigned depth)
-{
-	DL(fkey, RS(
-		refatom(readpack(U, strpack(0, "#"))),
-		reflist((List *)key)));
+	const Ref thiskey
+		= decorate(
+			reflist(RL(
+				markext(path),
+				readpack(U, strpack(0, "this")))),
+			U, MAP);
 	
-	return keytoref(env, fkey, depth);
-}
+	List *const l = tracekey(NULL, look(map, thiskey), pathkey);
 
-const Binding *topbindings(const List *const env, unsigned *const count)
-{
-	assert(env && env->ref.code == ENV);
+	freeref(thiskey);
+	freeref(pathkey);
 
-	const Array *const E = tip(env)->ref.u.environment;
-	assert(E && E->code == ENV);
-
-	*count = E->count;
-	return (const Binding *)E->data;
-}
-
-void freeenvironment(List *env)
-{
-	while(env)
-	{
-		env = popenvironment(&env);
-	}
+	return l;
 }

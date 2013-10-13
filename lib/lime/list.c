@@ -321,24 +321,7 @@ static int releaser(List *const l, void *const p)
 {
 	assert(l);
 
-	switch(l->ref.code)
-	{
-	case LIST:
-		// Если ссылка не на внешний список, то чистим его рекурсивно
-
-		if(!l->ref.external)
-		{
-			freelist(l->ref.u.list);
-		}
-
-		break;
-	
-	case FORM:
-		// freeform сама реагирует на external-бит
-
-		freeform(l->ref);
-		break;
-	}
+	freeref(l->ref);
 
 	l->ref.code = FREE;
 

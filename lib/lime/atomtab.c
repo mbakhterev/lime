@@ -147,7 +147,7 @@ static unsigned grabpack(Array *const t, const AtomPack *const ap)
 	return readin(t, &a);
 }
 
-unsigned loadatom(Array *const t, FILE *const f)
+Ref loadatom(Array *const t, FILE *const f)
 {
 	assert(t && t->code == ATOM);
 
@@ -194,12 +194,12 @@ unsigned loadatom(Array *const t, FILE *const f)
 	if((k = lookup(t, &ap)) != -1)
 	{
 		free(tmp);
-		return k;
+		return refatom(k);
 	}
 
 	DBG(DBGRDA, "k: %d", k);
 
-	return grabpack(t, &ap);
+	return refatom(grabpack(t, &ap));
 }
 
 static unsigned lookpack(Array *const t, const AtomPack ap)
@@ -212,12 +212,12 @@ static unsigned lookpack(Array *const t, const AtomPack ap)
 	return lookup(t, &ap);
 }
 
-unsigned readpack(Array *const t, const AtomPack ap)
+Ref readpack(Array *const t, const AtomPack ap)
 {
 	assert(t && t->code == ATOM);
 
 	const unsigned k = lookpack(t, ap);
-	if(k != -1) { return k; }
+	if(k != -1) { return refatom(k); }
 
 	const unsigned len = ap.length;
 	unsigned char *const tmp = malloc(atomstorelen(len));	
@@ -225,10 +225,10 @@ unsigned readpack(Array *const t, const AtomPack ap)
 
 	const AtomPack a = { .bytes = tmp, .hint = ap.hint, .length = len };
 
-	return grabpack(t, &a);
+	return refatom(grabpack(t, &a));
 }
 
-unsigned loadtoken(
+Ref loadtoken(
 	Array *const t, FILE *const f,
 	const unsigned char hint, const char *const format)
 {
@@ -271,7 +271,7 @@ unsigned loadtoken(
 	if((l = lookpack(t, ap)) != -1)
 	{
 		free(tmp);
-		return l;
+		return refatom(l);
 	}
 
 	const void *const p
@@ -280,12 +280,12 @@ unsigned loadtoken(
 	assert(p);
 	ap.bytes = p;
 
-	return grabpack(t, &ap);
+	return refatom(grabpack(t, &ap));
 }
 
 Atom atomat(const Array *const A, const unsigned id)
 {
-	assert(t && A->code == ATOM);
+	assert(A && A->code == ATOM);
 	assert(id < A->count);
 
 	return ((const Atom *const)A->u.data)[id];

@@ -273,6 +273,8 @@ extern void dumplist(
 
 extern Array *newkeymap(void);
 
+extern unsigned iskeymap(const Ref);
+
 // Освобождение работает рекурсивно. Если в окружении есть другие окружения,
 // в Ref-ах на которые не установлен external-бит, то они будут так же
 // освобождены. Это произойдёт через freeref
@@ -297,12 +299,11 @@ typedef struct
 // Процедура keymap ищет соответствующую ключу ячейку Binding. Если находит,
 // её и возвращает. Если не находит, то создаёт, копирует в Binding.key параметр
 // key. Binding.ref инициирует через reffree. И возвращает указатель на
-// выделенную ячейку. Различные тонкости копирования списков, представляющих
-// ключи, или копирования значений, которые должны быть записаны в Binding.ref,
-// зависят от контекста применения keymap, поэтому за этим должна следить
-// вызывающая процедура. Она так же должна следить за тем, что (map != NULL)
+// выделенную ячейку. Ключ key копируется через forkref, которая учитывает
+// external-бит. Вызывающая процедура может управлять через это памятью. Она
+// должна следить и за (map != NULL)
 
-extern Binding *keymap(const Array *const map, const Ref key);
+extern Binding *keymap(Array *const map, const Ref key);
 
 // Процедура декорирует ключи специальными атомами. Это нужно для удобства
 // отладки (в основном). Дополнительный плюс, что различно декорированные ключи
@@ -334,11 +335,12 @@ extern Ref decorate(const Ref key, Array *const U, const unsigned code);
 // текущее окружение будет записана ссылка на окружение, задаваемое map.
 // Параметр map - это Ref-а, чтобы можно было управлять external-битом.
 //
-// Вернёт makepath ссылку на последние из заданных списком имён окружений
+// Вернёт makepath ссылку на последние из заданных списком имён окружений, если
+// map и последнее имя согласованы. В случае несогласованности NULL
 
 extern Array *makepath(
-	const Array *const env,
-	const Ref path, const List *const names, const Ref map);
+	Array *const env,
+	Array *const U, const Ref path, const List *const names, const Ref map);
 
 // В некотором смысле обратная операция: которая строит стек окружений,
 // связанных по имени name на пути path, начиная с того, которое в окружении map
@@ -346,7 +348,7 @@ extern Array *makepath(
 // будет то, в котором не найдётся следующего окружения по ключу (path name)
 
 extern List *tracepath(
-	const Array *const map, const Ref path, const Ref name);
+	const Array *const map, Array *const U, const Ref path, const Ref name);
 
 // Вдоль таких списков мы тоже умеем искать и создавать Binding-и. По адресу
 // depth, если он не NULL запишется глубина (вершина стека на глубине 0), на
@@ -432,6 +434,7 @@ extern Ref newnode(
 	const unsigned verb, const Ref attribute, const unsigned line);
 
 // Проверка структуры списка на то, что она действительно задаёт выражение
+
 extern unsigned isnode(const Ref);
 extern unsigned isnodelist(const List *const);
 
