@@ -9,6 +9,7 @@ lmtstsrc = \
 	tst-loadtoken.c	\
 	tst-heapsort.c	\
 	tst-list.c	\
+	tst-env.c	\
 	tst-loaddag.c	\
 	tst-gcnodes.c	\
 	tst-forkdag.c	\
@@ -26,6 +27,7 @@ lmtstbin = \
 	$(T)/tst-loadtoken	\
 	$(T)/gen-atomtab	\
 	$(T)/tst-atomtab.sh	\
+	$(T)/tst-env
 
 # 	$(T)/tst-list		\
 # 	$(T)/tst-loaddag	\
@@ -60,6 +62,8 @@ $(T)/tst-gcnodes: $(lmtstbits)/tst-gcnodes.o $(lmlib)
 $(T)/tst-forkdag: $(lmtstbits)/tst-forkdag.o $(lmlib)
 $(T)/tst-evallists: $(lmtstbits)/tst-evallists.o $(lmlib)
 $(T)/tst-evalforms: $(lmtstbits)/tst-evalforms.o $(lmlib)
+
+$(T)/tst-env: $(lmtstbits)/tst-env.o $(lmlib)
 
 lmtstforms = \
 	$(T)/forms/simple-atom.lk

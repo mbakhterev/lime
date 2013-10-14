@@ -350,13 +350,12 @@ extern Array *makepath(
 extern List *tracepath(
 	const Array *const map, Array *const U, const Ref path, const Ref name);
 
-// Вдоль таких списков мы тоже умеем искать и создавать Binding-и. По адресу
+// Вдоль таких списков мы тоже умеем искать Binding-и. По адресу
 // depth, если он не NULL запишется глубина (вершина стека на глубине 0), на
 // которой найдена соответствующая Binding. Если Binding с нужным ключём не
-// будет найдена, то она будет создана и инициирована на вершине стека при
-// помощи keymap
+// будет найдена, то pathlookup вернёт NULL
 
-extern Binding *pathkeymap(
+extern Binding *pathlookup(
 	const List *const stack, const Ref key, unsigned *const depth);
 
 // В некоторых случаях необходима уверенность в том, что ключ состоит только из
@@ -376,19 +375,19 @@ extern unsigned isbasickey(const Ref);
 // аргумент, оно вернёт reffree
 
 extern void tunerefmap(Array *const map, const Ref key, const Ref val);
-extern Ref refmap(const Array *const map, const Ref key);
+extern Ref refmap(Array *const map, const Ref key);
 
 // Отображение Ref -> (set 0 1). То есть, характеристическое для множества. Если
 // отображение не знает о соответствующем аргументе, оно возвращает 0
 
 extern void tunesetmap(Array *const map, const Ref key);
-extern unsigned setmap(const Array *const map, const Ref key);
+extern unsigned setmap(Array *const map, const Ref key);
 
 // Отображение Ref -> void.ptr. Если отображение не знает об аргументе, оно
 // возвращает NULL
 
 extern void tuneptrmap(Array *const map, const Ref key, void *const ptr);
-extern void *ptrmap(const Array *const map, const Ref key);
+extern void *ptrmap(Array *const map, const Ref key);
 
 // Отображения unsigned -> unsigned. Основное предназначение: осмысливание
 // разных verb-ов выражений в разных контекстах. Чаще всего оно наполняется

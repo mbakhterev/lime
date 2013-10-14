@@ -380,3 +380,129 @@ List *tracepath(
 
 	return l;
 }
+
+typedef struct
+{
+	Binding *b;
+	const Ref key;
+	unsigned depth;	
+} PLState;
+
+static int lookone(List *const e, void *const ptr)
+{
+	assert(e && iskeymap(e->ref));
+	assert(ptr);
+	PLState *const st = ptr;
+
+	Binding *const b = look(e->ref.u.array, st->key);
+	if(b)
+	{
+		st->b = b;
+		return 1;
+	}
+
+	// Если ничего не найдено, переходим к следующему элементу
+	st->depth += 1;
+	return 0;
+}
+
+Binding *pathlookup(
+	const List *const stack, const Ref key, unsigned *const depth)
+{
+	PLState st = { .b = NULL, .key = key, .depth = 0 };
+
+	if(forlist((List *)stack, lookone, &st, 0))
+	{
+		assert(st.b);
+
+		if(depth)
+		{
+			*depth = st.depth;
+			return st.b;
+		}
+	}
+
+	return NULL;
+}
+
+static Binding *maptofree(Array *const map, const Ref key)
+{
+	Binding *const b = keymap(map, key);
+	assert(b->ref.code == FREE);
+	return b;
+}
+
+void tunerefmap(Array *const map, const Ref key, const Ref val)
+{
+	Binding *const b = maptofree(map, key);
+	b->ref = val;
+}
+
+Ref refmap(Array *const map, const Ref key)
+{
+	if(map == NULL)
+	{
+		return reffree();
+	}
+
+	return keymap(map, key)->ref;
+}
+
+void tunesetmap(Array *const map, const Ref key)
+{
+	tunerefmap(map, key, refnum(0));
+}
+
+unsigned setmap(Array *const map, const Ref key)
+{
+	if(map == NULL)
+	{
+		return 0;
+	}
+
+	const Ref r = refmap(map, key);
+
+	switch(r.code)
+	{
+	case FREE:
+		return 0;
+
+	case NUMBER:
+		assert(r.u.number == 0);
+		return 1;
+	
+	default:
+		assert(0);
+	}
+
+	return 0;
+}
+
+void tuneptrmap(Array *const map, const Ref key, void *const ptr)
+{
+	tunerefmap(map, key, refptr(ptr));
+}
+
+void *ptrmap(Array *const map, const Ref key)
+{
+	if(map == NULL)
+	{
+		return NULL;
+	}
+
+	const Ref r = refmap(map, key);
+
+	switch(r.code)
+	{
+	case FREE:
+		return NULL;
+
+	case PTR:
+		return r.u.pointer;	
+	
+	default:
+		assert(0);
+	}
+
+	return NULL;
+}
