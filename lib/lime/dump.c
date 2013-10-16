@@ -16,12 +16,13 @@
 
 typedef struct
 {
-	FILE *file;
-	const Array *universe;
+	FILE *const file;
+	const Array *const universe;
 } DumpContext;
 
 typedef struct
 {
+	const Array *const map;
 	const Array *const nodes;
 	const char *const tabstr;
 	const unsigned tabs;
@@ -54,7 +55,9 @@ static int mapone(List *const l, void *const ptr)
 	assert(ptr);
 	Array *const nodes = ptr;
 
-	assert(nodes->count == ptrmap(nodes, l->ref.u.node));
+//	assert(nodes->count == ptrmap(nodes, l->ref.u.node));
+
+	tunerefmap(nodes, l->ref, refnum(nodes->count));
 
 	return 0;
 }
@@ -100,7 +103,7 @@ static void dumpref(
 		assert(r.u.form);
 		assert(fprintf(f, "F:%p (D:%p S:%p)",
 			(void *)r.u.form,
-			(void *)r.u.form->u.dag,
+			(void *)r.u.form->u.dag.u.list,
 			(void *)r.u.form->signature) > 0);
 		break;
 
@@ -110,10 +113,9 @@ static void dumpref(
 
 	case NODE:
 	{
-		const Node *const n = r.u.node;
-		assert(n);
+		assert(isnode(r));
 
-		const unsigned k = ptrreverse(nodes, n);
+		const unsigned k = refmap((Array *)nodes, r).u.number;
 
 		// Когда печатаем узел в списке, то не важно, в каком режиме
 		// печатаем, в отладочном или нет. Адреса узлов надо указать для
@@ -128,7 +130,7 @@ static void dumpref(
 		}
 		else
 		{
-			assert(fprintf(f, "N:%p", (void *)n) > 0);
+			assert(fprintf(f, "N:%p", (void *)r.u.list) > 0);
 		}
 
 		break;
@@ -183,7 +185,7 @@ static void dumpattrlist(
 
 static void dumpattr(
 	const DumpContext *const ctx, const DumpCurrent *const dc,
-	List *const attr)
+	const Ref attr)
 {
 	assert(ctx);
 
@@ -196,12 +198,12 @@ static void dumpattr(
 	DBG(DBGSTD, "f: %p", (void *)f);
 
 	assert(fputc('\t', f) == '\t');
-	dumpattrlist(attr, U, f, dc->nodes);
+	dumpattrlist(attr.u.list, U, f, dc->nodes);
 }
 
 static void dumpsubdag(
 	const DumpContext *const ctx, const DumpCurrent *const dc,
-	List *const dag)
+	const Ref dag)
 {
 	const Array *const U = ctx->universe;
 	FILE *const f = ctx->file;
@@ -210,60 +212,66 @@ static void dumpsubdag(
 	assert(f);
 
 	assert(fputc('\n', f) == '\n');
-	dumpdag(dc->dbg, f, dc->tabs + 1, U, dag);
+	dumpdag(dc->dbg, f, dc->tabs + 1, U, dag, dc->map);
 }
 
 void dumpdag(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
-	const Array *const U, const List *const dag)
+	const Array *const U, const Ref dag, const Array *const map)
 {
 	assert(f);
 
 	// FIXME: требовать ли Universe для работы dumpdag?
 	assert(U);
 
-	const DumpContext ctx =
+	assert(dag.code == LIST);
+
+	DumpContext ctx =
 	{
 		.file = f,
 		.universe = U
 	};
 
 	DBG(DBGDAG, "f: %p", (void *)ctx.file);
-	Array nodes = makeptrmap();
-	forlist((List *)dag, mapone, &nodes, 0);
+
+	Array *const nodes = newkeymap();
+	forlist(dag.u.list, mapone, nodes, 0);
 
 	DumpCurrent dc =
 	{
+		.map = map,
 		.dbg = dbg,
-		.nodes = &nodes,
+		.nodes = nodes,
 		.tabs = tabs,
 		.tabstr = tabstr(tabs)
 	};
 
 	assert(fprintf(f, "%s(", dc.tabstr) > 0);
 
-	for(unsigned i = 0; i < nodes.count; i += 1)
+	const Binding *const B = dc.nodes->u.data;
+
+	for(unsigned i = 0; i < dc.nodes->count; i += 1)
 	{
-		const Node *const n = ptrdirect(dc.nodes, i);
-		assert(n);
+		const Ref n = B[i].key;
 
 		if(dbg)
 		{
 			assert(0 < fprintf(f, "\n%s\t%p\t.%s\tn%u",
 				dc.tabstr,
-				(void *)n, atombytes(atomat(U, n->verb)), i));
+				(void *)n.u.list,
+				atombytes(atomat(U, nodeverb(n, NULL))), i));
 		}
 		else
 		{
 			assert(0 < fprintf(f, "\n%s\t.%s\tn%u",
 				dc.tabstr,
-				atombytes(atomat(U, n->verb)), i));
+				atombytes(atomat(U, nodeverb(n, NULL))), i));
 		}
 
-		(!n->dag ?
-			dumpattr : dumpsubdag)(&ctx, &dc, n->u.attributes);
+		(nodeverb(n, map) == -1 ?
+			dumpattr : dumpsubdag)(&ctx, &dc, nodeattribute(n));
 
-		if(i + 1 < nodes.count)
+		if(i + 1 < nodes->count)
 		{
 			assert(fputc(';', f) == ';');
 		}
@@ -273,7 +281,7 @@ void dumpdag(
 
 	free((void *)dc.tabstr);
 
-	freeptrmap(&nodes);
+	freekeymap(nodes);
 }
 
 void dumplist(FILE *const f, const Array *const U, const List *const l)
@@ -296,166 +304,166 @@ char *strlist(const Array *const U, const List *const l)
 	return buf;
 }
 
-typedef struct
-{
-	FILE *const file;
-	const Array *const universe;
-	const char *const tabstr;
-	const unsigned tabs;
-	unsigned depth;
-} DEnvState;
-
-static int dumpenvone(List *const l, void *const ptr)
-{
-	assert(ptr);
-	assert(l && l->ref.code == ENV && l->ref.u.environment);
-
-	DEnvState *const st = ptr;
-	FILE *const f = st->file;
-	const Array *const U = st->universe;
-	const char *const tabs = st->tabstr;
-	assert(f);
-	assert(U);
-
-	const Array *const E = l->ref.u.environment;
-	const Binding *const B = E->data;
-
-	assert(fprintf(f, "\n%sENV{%u}:", tabs, st->depth) > 0);
-
-	for(unsigned i = 0; i < E->count; i += 1)
-	{
-		assert(fprintf(f, "\n%s\tkey: ", tabs) > 0);
-		dumplist(f, U, B[i].key);
-
-		assert(fprintf(f, "\n%s\tvalue: ", tabs) > 0);
-		dumpref(f, U, NULL, B[i].ref);
-
-		assert(fputc('\n', f) == '\n');
-	}
-
-	st->depth += 1;
-
-	return 0;
-}
-
-void dumpenvironment(
-	FILE *const f, const unsigned tabs,
-	const Array *const U, const List *const env)
-{
-	DEnvState st =
-	{
-		.tabs = tabs,
-		.tabstr = tabstr(tabs),
-		.file = f,
-		.universe = U,
-		.depth = 0
-	};
-
-	forlist((List *)env, dumpenvone, &st, 0);
-
-	free((char *)st.tabstr);
-}
-
-typedef struct
-{
-	const Array *const U;
-	FILE *const f;
-	unsigned depth;
-} DCState;
-
-static void dumpforms(
-	FILE *const f, const unsigned tabs,
-	const Array *const U, const List *const forms);
-
-static int dumpctxone(List *const c, void *const ptr)
-{
-	assert(c && c->ref.code == CTX);
-	const Context *const ctx = c->ref.u.context;
-
-	assert(ptr);
-	DCState *const st = ptr;
-	const Array *const U = st->U;
-	FILE *const f = st->f;
-
-	assert(U);
-	assert(f);
-
-	assert(fprintf(f, "\nCTX{%u}:", st->depth) > 0);
-
-	for(unsigned i = 0; i < sizeof(ctx->R) / sizeof(Reactor); i += 1)
-	{
-		assert(fprintf(f, "\n\tR{%u}.outs:", i) > 0);
-		dumpenvironment(f, 2, U, ctx->R[i].outs);
-
-		assert(fprintf(f, "\n\tR{%u}.ins:", i) > 0);
-		dumpenvironment(f, 2, U, ctx->R[i].ins);
-
-		assert(fprintf(f, "\n\tR{%u}.forms: ", i) > 0);
-		dumpforms(f, 2, U, ctx->R[i].forms);
-
-	}
-
-	assert(fprintf(f, "\n\tDAG:\n") > 0);
-	dumpdag(1, f, 1, U, ctx->dag);
-	assert(fputc('\n', f) == '\n');
-
-	st->depth += 1;
-
-	return 1;
-}
-
-void dumpcontext(
-	FILE *const f, const Array *const U, const List *const ctx)
-{
-	DCState st =
-	{
-		.f = f, .U = U, .depth = 0
-	};
-
-	forlist((List *)ctx, dumpctxone, &st, 0);
-}
-
-typedef struct
-{
-	const Array *const U;
-	FILE *const f;
-	const char *const tabstr;
-	const unsigned tabs;
-} DFState;
-
-static int dumpformone(List *const l, void *const ptr)
-{
-	assert(l && l->ref.code == FORM && l->ref.u.form);
-	assert(ptr);
-
-	const Form *frm = l->ref.u.form;
-	const DFState *const st = ptr;
-	FILE *const f = st->f;
-	assert(st->U);
-	assert(f);
-
-	assert(fprintf(f, "\n%sform: %p", st->tabstr, (void *)frm) > 0);
-
-	assert(fprintf(f, "\n%ssig %p: ",
-		st->tabstr, (void *)frm->signature) > 0);
-	dumplist(f, st->U, frm->signature);	
-
-	assert(fprintf(f, "\n%sdag %p:\n", st->tabstr, (void *)frm->u.dag) > 0);
-	dumpdag(1, f, st->tabs, st->U, frm->u.dag);
-
-	assert(fputc('\n', f) == '\n');
-
-	return 0;
-}
-
-void dumpforms(
-	FILE *const f, const unsigned tabs,
-	const Array *const U, const List *const forms)
-{
-	DFState st =
-	{
-		.U = U, .f = f, .tabs = tabs, .tabstr = tabstr(tabs)
-	};
-
-	forlist((List *)forms, dumpformone, &st, 0);
-}
+// typedef struct
+// {
+// 	FILE *const file;
+// 	const Array *const universe;
+// 	const char *const tabstr;
+// 	const unsigned tabs;
+// 	unsigned depth;
+// } DEnvState;
+// 
+// static int dumpenvone(List *const l, void *const ptr)
+// {
+// 	assert(ptr);
+// 	assert(l && l->ref.code == ENV && l->ref.u.environment);
+// 
+// 	DEnvState *const st = ptr;
+// 	FILE *const f = st->file;
+// 	const Array *const U = st->universe;
+// 	const char *const tabs = st->tabstr;
+// 	assert(f);
+// 	assert(U);
+// 
+// 	const Array *const E = l->ref.u.environment;
+// 	const Binding *const B = E->data;
+// 
+// 	assert(fprintf(f, "\n%sENV{%u}:", tabs, st->depth) > 0);
+// 
+// 	for(unsigned i = 0; i < E->count; i += 1)
+// 	{
+// 		assert(fprintf(f, "\n%s\tkey: ", tabs) > 0);
+// 		dumplist(f, U, B[i].key);
+// 
+// 		assert(fprintf(f, "\n%s\tvalue: ", tabs) > 0);
+// 		dumpref(f, U, NULL, B[i].ref);
+// 
+// 		assert(fputc('\n', f) == '\n');
+// 	}
+// 
+// 	st->depth += 1;
+// 
+// 	return 0;
+// }
+// 
+// void dumpenvironment(
+// 	FILE *const f, const unsigned tabs,
+// 	const Array *const U, const List *const env)
+// {
+// 	DEnvState st =
+// 	{
+// 		.tabs = tabs,
+// 		.tabstr = tabstr(tabs),
+// 		.file = f,
+// 		.universe = U,
+// 		.depth = 0
+// 	};
+// 
+// 	forlist((List *)env, dumpenvone, &st, 0);
+// 
+// 	free((char *)st.tabstr);
+// }
+// 
+// typedef struct
+// {
+// 	const Array *const U;
+// 	FILE *const f;
+// 	unsigned depth;
+// } DCState;
+// 
+// static void dumpforms(
+// 	FILE *const f, const unsigned tabs,
+// 	const Array *const U, const List *const forms);
+// 
+// static int dumpctxone(List *const c, void *const ptr)
+// {
+// 	assert(c && c->ref.code == CTX);
+// 	const Context *const ctx = c->ref.u.context;
+// 
+// 	assert(ptr);
+// 	DCState *const st = ptr;
+// 	const Array *const U = st->U;
+// 	FILE *const f = st->f;
+// 
+// 	assert(U);
+// 	assert(f);
+// 
+// 	assert(fprintf(f, "\nCTX{%u}:", st->depth) > 0);
+// 
+// 	for(unsigned i = 0; i < sizeof(ctx->R) / sizeof(Reactor); i += 1)
+// 	{
+// 		assert(fprintf(f, "\n\tR{%u}.outs:", i) > 0);
+// 		dumpenvironment(f, 2, U, ctx->R[i].outs);
+// 
+// 		assert(fprintf(f, "\n\tR{%u}.ins:", i) > 0);
+// 		dumpenvironment(f, 2, U, ctx->R[i].ins);
+// 
+// 		assert(fprintf(f, "\n\tR{%u}.forms: ", i) > 0);
+// 		dumpforms(f, 2, U, ctx->R[i].forms);
+// 
+// 	}
+// 
+// 	assert(fprintf(f, "\n\tDAG:\n") > 0);
+// 	dumpdag(1, f, 1, U, ctx->dag);
+// 	assert(fputc('\n', f) == '\n');
+// 
+// 	st->depth += 1;
+// 
+// 	return 1;
+// }
+// 
+// void dumpcontext(
+// 	FILE *const f, const Array *const U, const List *const ctx)
+// {
+// 	DCState st =
+// 	{
+// 		.f = f, .U = U, .depth = 0
+// 	};
+// 
+// 	forlist((List *)ctx, dumpctxone, &st, 0);
+// }
+// 
+// typedef struct
+// {
+// 	const Array *const U;
+// 	FILE *const f;
+// 	const char *const tabstr;
+// 	const unsigned tabs;
+// } DFState;
+// 
+// static int dumpformone(List *const l, void *const ptr)
+// {
+// 	assert(l && l->ref.code == FORM && l->ref.u.form);
+// 	assert(ptr);
+// 
+// 	const Form *frm = l->ref.u.form;
+// 	const DFState *const st = ptr;
+// 	FILE *const f = st->f;
+// 	assert(st->U);
+// 	assert(f);
+// 
+// 	assert(fprintf(f, "\n%sform: %p", st->tabstr, (void *)frm) > 0);
+// 
+// 	assert(fprintf(f, "\n%ssig %p: ",
+// 		st->tabstr, (void *)frm->signature) > 0);
+// 	dumplist(f, st->U, frm->signature);	
+// 
+// 	assert(fprintf(f, "\n%sdag %p:\n", st->tabstr, (void *)frm->u.dag) > 0);
+// 	dumpdag(1, f, st->tabs, st->U, frm->u.dag);
+// 
+// 	assert(fputc('\n', f) == '\n');
+// 
+// 	return 0;
+// }
+// 
+// void dumpforms(
+// 	FILE *const f, const unsigned tabs,
+// 	const Array *const U, const List *const forms)
+// {
+// 	DFState st =
+// 	{
+// 		.U = U, .f = f, .tabs = tabs, .tabstr = tabstr(tabs)
+// 	};
+// 
+// 	forlist((List *)forms, dumpformone, &st, 0);
+// }

@@ -8,8 +8,10 @@ unsigned item = 1;
 unsigned field = 1;
 const char *unitname = NULL;
 
-static int printer(List *const l, void *const ptr) {
-	switch(l->ref.code) {
+static int printer(List *const l, void *const ptr)
+{
+	switch(l->ref.code)
+	{
 	case NUMBER:
 		printf("N: %u\n", l->ref.u.number);
 		break; 
@@ -36,7 +38,8 @@ static int printer(List *const l, void *const ptr) {
 	return 0;
 }
 
-static int checkfree(List *const l, void *const ptr) {
+static int checkfree(List *const l, void *const ptr)
+{
 	assert(l->ref.code == FREE);
 	return 0;
 }
@@ -56,9 +59,12 @@ static void cutnprint(List *const k, const unsigned from, const unsigned to)
 	freelist(l);
 }
 
-int main(int argc, char * argv[]) {
+int main(int argc, char * argv[])
+{
 	List * l = NULL;
-	for(int i = 0; i < 20; i += 1) {
+
+	for(int i = 0; i < 20; i += 1)
+	{
 		List *const k = RL(refnum(i));
 
 		forlist(k, printer, NULL, 0);
@@ -87,17 +93,18 @@ int main(int argc, char * argv[]) {
 	printf("n: %s\n", c = strlist(NULL, n));
 	free(c);
 
-	Ref R[21];
-	unsigned ncnt = writerefs(n, R, 21);
-	assert(ncnt == 21);
+	Ref R[20];
+	unsigned ncnt = writerefs(n, R, 20);
+	assert(ncnt == 20);
 	printf("R:");
-	for(unsigned i = 0; R[i].code != FREE; i += 1) {
+	for(unsigned i = 0; i < ncnt; i += 1)
+	{
 		assert(R[i].code == NUMBER);
 		printf(" %u", R[i].u.number);
 	}
 	printf("\n");
 
-	List *const o = readrefs(R);
+	List *const o = readrefs(R, sizeof(R)/sizeof(Ref));
 	printf("o: %s\n", c = strlist(NULL, o));
 	printf("len(o): %u\n", listlen(o));
 	free(c);
@@ -113,13 +120,13 @@ int main(int argc, char * argv[]) {
 	cutnprint(o, -1, -1);
 
 	DL(sl, RS(refnum(1), refnum(2), refnum(3), refnum(4)));
-	DL(tl, RS(refnum(5), reflist((List *)sl)));
+	DL(tl, RS(refnum(5), sl));
 
 	printf("lists on stack done\n");
 
 	char *d = NULL;
 	printf("sl: %s\ntl: %s\n",
-		c = strlist(NULL, sl), d = strlist(NULL, tl));
+		c = strlist(NULL, sl.u.list), d = strlist(NULL, tl.u.list));
 	free(c);
 	free(d);
 

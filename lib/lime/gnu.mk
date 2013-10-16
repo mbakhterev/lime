@@ -11,10 +11,10 @@ lmsrc = \
 	keymap.c	\
 	checkpoint.c	\
 	atomtab.c	\
+	dump.c		\
 
 # 	environment.c	\
 # 	loaddag.c	\
-# 	dump.c		\
 # 	dag.c		\
 # 	walkdag.c	\
 # 	evallists.c	\

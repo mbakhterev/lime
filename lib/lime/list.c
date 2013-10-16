@@ -67,6 +67,7 @@ static List *newlist(const Ref r)
 	case FORM:
 	case MAP:
 	case CTX:
+	case FREE:
 		break;
 	
 	default:
@@ -93,18 +94,18 @@ static List *newlist(const Ref r)
 	return l;
 }
 
-List *readrefs(const Ref R[])
+List *readrefs(const Ref R[], const unsigned N)
 {
 	List *l = NULL;
 
-	for(unsigned i = 0; R[i].code != FREE; i += 1)
+	for(unsigned i = 0; i < N; i += 1)
 	{
 		l = append(l, newlist(R[i]));
 	}
 	return l;
 }
 
-List * append(List *const k, List *const l)
+List *append(List *const k, List *const l)
 {
 	if(k == NULL)
 	{
@@ -343,7 +344,7 @@ void freelist(List *const l)
 
 typedef struct
 {
-	Ref *refs;
+	Ref *const refs;
 
 	// N - ограничение сверху; n - пройдено элементов
 	const unsigned N;
@@ -367,19 +368,9 @@ static int writer(List *const k, void *const ptr)
 unsigned writerefs(const List *const l, Ref refs[], const unsigned N)
 {
 	CState st = { .refs = refs, .N = N, .n = 0 };
+
 	forlist((List *)l, writer, &st, 0);
-
-	assert(N == st.N);
 	assert(N >= st.n);
-
-	if(st.n < N)
-	{
-		refs[st.n].code = FREE;
-
-	 	// Обнуляем весь union
-		memset(&refs[st.n].u, 0, sizeof(refs->u));
-		return st.n + 1;
-	}
 
 	return st.n;
 }

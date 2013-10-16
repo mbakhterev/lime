@@ -181,16 +181,16 @@ struct List
 // Слепить несколько ссылок в массив вида Ref[], воспринимаемый readrefs.
 // Необходимо, чтобы он заканчивался ссылкой с кодом FREE. RS означает Refs
 
-#define RS(...) ((const Ref[]) { __VA_ARGS__, (Ref) { .code = FREE } })
+#define RS(...) ((const Ref[]) { __VA_ARGS__ })
 
 // Конструктор списка из массива ссылок. Чтобы сконструировать список из одной
 // ссылки нужно написать: list = readrefs(RS(refnum(NUMBER, 42)))
 
-extern List *readrefs(const Ref refs[]);
+extern List *readrefs(const Ref refs[], const unsigned N);
 
 // Для упрощения синтаксиса RL - Ref List
 
-#define RL(...) (readrefs(RS(__VA_ARGS__)))
+#define RL(...) (readrefs(RS(__VA_ARGS__), sizeof(RS(__VA_ARGS__))/sizeof(Ref)))
 
 // В работе с Environment-ами могут быть полезны списки в стеке, то есть,
 // массивы из структур List, которые через поле .next связаны в правильный
@@ -363,6 +363,14 @@ extern Binding *pathlookup(
 
 extern unsigned isbasickey(const Ref);
 
+// Процедура для сопоставления ключей. Рекурсивно идёт по элементам в ключах l
+// и k требуя их полного равенства (external-бит не учитывается) за исключением
+// случая, когда для одной из Ref (code == FREE). Ref.code == FREE считается
+// несвязанным местом в выражении, и в него может быть подставлено выражение
+// произвольное
+
+extern unsigned keymatch(const Ref k, const Ref l);
+
 // Для упрощения синтаксиса уместно иметь процедуры для работы с задаваемыми
 // keymap-ами отображениями. Они создаются при помощи newkeymap. В каждое
 // отображение можно добавить информацию вызовом соответствующей tune-процедуры.
@@ -399,17 +407,15 @@ extern void *ptrmap(Array *const map, const Ref key);
 extern Array *newverbmap(
 	Array *const U, const unsigned hint, const char *const atoms[]);
 
-extern unsigned verbmap(const Array *const, const unsigned verb);
+extern unsigned verbmap(Array *const, const unsigned verb);
 
-// Процедура прохода по окружениям. Идёт в ширину от this-окружения в пути path
-// по (Ref.external != 1) ссылкам на другие окружения. Для каждой Binding
-// вызывает соответствующую процедуру
+// Процедура прохода по окружениям. Начинает с map и идёт по Binding-ам (на
+// всякий случай в порядке индекса). Когда walkbindings видит такую связку B,
+// что (B.ref.code == MAP && !B.ref.external), и когда WalkBinding для B вернёт
+// !0, процедура будет вызвана рекурсивно для B.ref.u.array
 
-typedef void WalkBinding(
-	const Array *const map, const Binding *const bnd, void *const ptr);
-
-typedef void walkbindings(
-	const Array *const map, const Ref path, WalkBinding, void *const);
+typedef int WalkBinding(const Array *const map, void *const ptr);
+extern void walkbindings(const Array *const map, WalkBinding, void *const);
 
 // Узлы.
 
@@ -421,7 +427,7 @@ typedef void walkbindings(
 // через такое отображение. Если vm == NULL, то verb возвращается так, как есть:
 // (vm != NULL -> vm verb : verb)
 
-extern unsigned nodeverb(const Ref exp, const List *const vm);
+extern unsigned nodeverb(const Ref exp, const Array *const vm);
 extern Ref nodeattribute(const Ref exp);
 extern unsigned nodeline(const Ref exp);
 
@@ -461,7 +467,7 @@ extern Ref loaddag(
 
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
-	const Array *const U, const Ref dag, const List *const map);
+	const Array *const U, const Ref dag, const Array *const map);
 
 extern Ref forkdag(const Ref dag);
 

@@ -5,10 +5,13 @@
 #include <string.h>
 
 #define DBGFREE	1
+#define DBGKM 2
 
-//#define DBGFLAGS (DBGFREE)
+// #define DBGFLAGS (DBGFREE)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGKM)
+
+// #define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -505,4 +508,125 @@ void *ptrmap(Array *const map, const Ref key)
 	}
 
 	return NULL;
+}
+
+Array *newverbmap(
+	Array *const U, const unsigned hint, const char *const atoms[])
+{
+	assert(atoms);
+	assert(hint <= MAXHINT);
+
+	Array *const map = newkeymap();
+
+	for(unsigned i = 0; atoms[i]; i += 1)
+	{
+		tunerefmap(map,
+			readpack(U, strpack(hint, atoms[i])), refnum(i));
+	}
+
+	return map;
+}
+
+unsigned verbmap(Array *const map, const unsigned verb)
+{
+	if(map == NULL)
+	{
+		return -1;
+	}
+
+	const Ref r = refmap(map, refnum(verb));
+
+	switch(r.code)
+	{
+		case FREE:
+			return -1;
+
+		case NUMBER:
+			return r.u.number;
+
+		default:
+			assert(0);
+	}
+
+	return -1;
+}
+
+static unsigned listmatch(const List *const k, const List *const l)
+{
+	if(k == NULL || l == NULL)
+	{
+		return k == NULL && l == NULL;
+	}
+
+	const List *ck = k;
+	const List *cl = l;
+
+	unsigned r;
+
+	do
+	{
+		ck = ck->next;
+		cl = cl->next;
+		r = keymatch(ck->ref, cl->ref);
+	} while(r && ck != k && cl != l);
+
+	// Всё должно совпадать
+
+	return r && ck == k && cl == l;
+}
+
+unsigned keymatch(const Ref k, const Ref l)
+{
+	DBG(DBGKM, "(k.code l.code) = (%u %u)", k.code, l.code);
+
+	if(k.code == FREE || l.code == FREE)
+	{
+		DBG(DBGKM, "match = %u", !0);
+		return !0;
+	}
+
+	if(k.code != l.code)
+	{
+		DBG(DBGKM, "match = %u", 0);
+		return 0;
+	}
+
+	unsigned match = 0;
+
+	switch(k.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+		match = k.u.number == l.u.number;
+		break;
+	
+	case PTR:
+	case NODE:
+		match = k.u.pointer == l.u.pointer;
+		break;
+	
+	case LIST:
+		match = listmatch(k.u.list, l.u.list);
+		break;
+	
+	default:
+		assert(0);
+	}
+
+	DBG(DBGKM, "match = %u", match);
+
+	return match;
+}
+
+void walkbindings(const Array *const map, WalkBinding wlk, void *const ptr)
+{
+	assert(map && map->code == MAP);
+	
+// 	const unsigned *const I = map->index;
+// 	const unsigned *const B = map->u.data;
+
+	for(unsigned i = 0; i < map->count; i += 1)
+	{
+	}
 }

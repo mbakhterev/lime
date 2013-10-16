@@ -27,9 +27,9 @@ lmtstbin = \
 	$(T)/tst-loadtoken	\
 	$(T)/gen-atomtab	\
 	$(T)/tst-atomtab.sh	\
-	$(T)/tst-env
+	$(T)/tst-env		\
+	$(T)/tst-list		
 
-# 	$(T)/tst-list		\
 # 	$(T)/tst-loaddag	\
 # 	$(T)/tst-gcnodes	\
 # 	$(T)/tst-forkdag	\
