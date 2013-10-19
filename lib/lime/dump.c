@@ -22,8 +22,8 @@ typedef struct
 
 typedef struct
 {
-	const Array *const map;
-	const Array *const nodes;
+	Array *const map;
+	Array *const nodes;
 	const char *const tabstr;
 	const unsigned tabs;
 	const unsigned dbg;
@@ -217,7 +217,7 @@ static void dumpsubdag(
 
 void dumpdag(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
-	const Array *const U, const Ref dag, const Array *const map)
+	const Array *const U, const Ref dag, Array *const map)
 {
 	assert(f);
 

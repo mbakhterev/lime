@@ -78,8 +78,11 @@ int main(int argc, char * argv[])
 
 	List *const k = forklist(l);
 	printf("k forked\n"); fflush(stdout);
+	printf("---\n");
+	forlist(k, printer, NULL, 0);
+	printf("---\n");
 	c = strlist(NULL, k);
-	printf("k: %s\n", c);
+	printf("k(%u): %s\n", listlen(k), c);
 	free(c);
 
 	freelist(k);

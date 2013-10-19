@@ -8,10 +8,9 @@
 #define DBGKM 2
 
 // #define DBGFLAGS (DBGFREE)
+// #define DBGFLAGS (DBGKM)
 
-#define DBGFLAGS (DBGKM)
-
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -551,37 +550,35 @@ unsigned verbmap(Array *const map, const unsigned verb)
 	return -1;
 }
 
-static unsigned listmatch(const List *const k, const List *const l)
+typedef struct
 {
-	if(k == NULL || l == NULL)
-	{
-		return k == NULL && l == NULL;
-	}
+	Ref *const uni;
+	const unsigned N;
+	unsigned n;
+} KMState;
 
-	const List *ck = k;
-	const List *cl = l;
+static unsigned listmatch(
+	KMState *const st, const List *const k, const List *const l);
 
-	unsigned r;
-
-	do
-	{
-		ck = ck->next;
-		cl = cl->next;
-		r = keymatch(ck->ref, cl->ref);
-	} while(r && ck != k && cl != l);
-
-	// Всё должно совпадать
-
-	return r && ck == k && cl == l;
-}
-
-unsigned keymatch(const Ref k, const Ref l)
+static unsigned keymatchone(KMState *const st, const Ref k, const Ref l)
 {
+	assert(st);
+	assert(st->n <= st->N);
+
 	DBG(DBGKM, "(k.code l.code) = (%u %u)", k.code, l.code);
 
-	if(k.code == FREE || l.code == FREE)
+	if(k.code == FREE)
 	{
 		DBG(DBGKM, "match = %u", !0);
+
+		if(st->n < st->N)
+		{
+			assert(st->uni);
+
+			st->uni[st->n] = markext(l);
+			st->n += 1;
+		}
+
 		return !0;
 	}
 
@@ -607,7 +604,7 @@ unsigned keymatch(const Ref k, const Ref l)
 		break;
 	
 	case LIST:
-		match = listmatch(k.u.list, l.u.list);
+		match = listmatch(st, k.u.list, l.u.list);
 		break;
 	
 	default:
@@ -617,6 +614,54 @@ unsigned keymatch(const Ref k, const Ref l)
 	DBG(DBGKM, "match = %u", match);
 
 	return match;
+}
+
+static unsigned listmatch(
+	KMState *const st, const List *const k, const List *const l)
+{
+	if(k == NULL || l == NULL)
+	{
+		return k == NULL && l == NULL;
+	}
+
+	const List *ck = k;
+	const List *cl = l;
+
+	unsigned r;
+
+	do
+	{
+		ck = ck->next;
+		cl = cl->next;
+		r = keymatchone(st, ck->ref, cl->ref);
+	} while(r && ck != k && cl != l);
+
+	// Всё должно совпадать
+
+	return r && ck == k && cl == l;
+}
+
+unsigned keymatch(
+	const Ref k, const Ref l, Ref uni[], const unsigned N,
+	unsigned *const pmatched)
+{
+	assert(!N || uni);
+
+	KMState st =
+	{
+		.n = 0,
+		.N = N,
+		.uni = uni
+	};
+
+	const unsigned r = keymatchone(&st, k, l);
+
+	if(pmatched)
+	{
+		*pmatched = st.n;
+	}
+
+	return r;
 }
 
 void walkbindings(const Array *const map, WalkBinding wlk, void *const ptr)

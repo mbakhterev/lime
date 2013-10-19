@@ -202,10 +202,7 @@ static int forkitem(List *const k, void *const ptr)
 		return 0;
 	}
 
-	List *l = NULL;
-
-
-	fs->list = append(fs->list, l);
+	fs->list = append(fs->list, newlist(forkref(k->ref, fs->nodemap)));
 
 	if(cur < fs->to)
 	{
@@ -395,7 +392,7 @@ void formlist(List L[], const Ref R[], const unsigned N)
 {
 	assert(L && R);
 	assert(N < MAXNUM);
-	assert(R[N].code == FREE);
+// 	assert(R[N].code == FREE);
 
 	if(N > 0)
 	{

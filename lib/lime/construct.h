@@ -206,9 +206,9 @@ extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 	const Ref DLNAME = \
 	{ \
 		.code = LIST, \
-		.u.list = (List[sizeof(REFS)/sizeof(Ref) - 1]) { { NULL } } \
+		.u.list = (List[sizeof(REFS)/sizeof(Ref)]) { { NULL } } \
 	}; \
-	formlist(DLNAME.u.list, REFS, sizeof(REFS)/sizeof(Ref) - 1)
+	formlist(DLNAME.u.list, REFS, sizeof(REFS)/sizeof(Ref))
 
 // Записывает ссылки из списка (не рекурсивно, и не спускаясь в подсписки) в
 // массив. Записывает не более N элементов, с учётом последнего с кодом FREE.
@@ -363,13 +363,19 @@ extern Binding *pathlookup(
 
 extern unsigned isbasickey(const Ref);
 
-// Процедура для сопоставления ключей. Рекурсивно идёт по элементам в ключах l
-// и k требуя их полного равенства (external-бит не учитывается) за исключением
-// случая, когда для одной из Ref (code == FREE). Ref.code == FREE считается
-// несвязанным местом в выражении, и в него может быть подставлено выражение
-// произвольное
+// Процедура для сопоставления ключей. Рекурсивно идёт по Ref-ам в ключах
+// pattern и k, требуя их полного равенства (external-бит не учитывается) за
+// исключением случая, когда в очередной Ref ключа pattern (code == FREE).
+// (Ref.code == FREE) считается несвязанным местом в выражении, и в него может
+// быть подставлено выражение произвольное. Такой вот примитивный алгоритм
+// унификации. Не более чем N первых Ref из l, которые соответствуют первым
+// позициям с (Ref.code == FREE) в pattern будут записаны с массив unifiers.
+// Если (pmatched != NULL), то по этому адресу будет записано реальное число
+// совпадений
 
-extern unsigned keymatch(const Ref k, const Ref l);
+extern unsigned keymatch(
+	const Ref pattern, const Ref l,
+	Ref unifiers[], const unsigned N, unsigned *const pmatched);
 
 // Для упрощения синтаксиса уместно иметь процедуры для работы с задаваемыми
 // keymap-ами отображениями. Они создаются при помощи newkeymap. В каждое
@@ -427,7 +433,7 @@ extern void walkbindings(const Array *const map, WalkBinding, void *const);
 // через такое отображение. Если vm == NULL, то verb возвращается так, как есть:
 // (vm != NULL -> vm verb : verb)
 
-extern unsigned nodeverb(const Ref exp, const Array *const vm);
+extern unsigned nodeverb(const Ref exp, Array *const vm);
 extern Ref nodeattribute(const Ref exp);
 extern unsigned nodeline(const Ref exp);
 
@@ -467,7 +473,7 @@ extern Ref loaddag(
 
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
-	const Array *const U, const Ref dag, const Array *const map);
+	const Array *const U, const Ref dag, Array *const map);
 
 extern Ref forkdag(const Ref dag);
 

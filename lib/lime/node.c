@@ -2,9 +2,82 @@
 
 #include <assert.h>
 
+enum { NODELEN = 3, VERB = 0, LINE = 2, ATTR = 1 };
+
+static unsigned splitnode(const List *const l, Ref parts[])
+{
+	unsigned nmatch = 0;
+	const Ref F = reffree();
+
+	DL(pattern, RS(F, F, F));
+
+	if(keymatch(pattern, reflist((List *)l), parts, NODELEN, &nmatch))
+	{
+		assert(nmatch == NODELEN);
+		return !0;
+	}
+
+	return 0;
+}
+
+static unsigned verbandline(const Ref n[])
+{
+	return n[VERB].code == ATOM && n[LINE].code == NUMBER;
+}
+
+unsigned isnodelist(const List *const l)
+{
+	Ref R[NODELEN];
+	return splitnode(l, R) && verbandline(R);
+}
+
+unsigned isnode(const Ref node)
+{
+	return node.code == NODE && isnodelist(node.u.list);
+}
+
+unsigned nodeverb(const Ref n, Array *const map)
+{
+	assert(n.code == NODE);
+
+	Ref R[NODELEN];
+	splitnode(n.u.list, R);
+
+	assert(verbandline(R));
+
+	return map ? verbmap(map, R[VERB].u.number) : R[VERB].u.number;
+}
+
+Ref nodeattribute(const Ref n)
+{
+	assert(n.code == NODE);
+	Ref R[NODELEN];
+	splitnode(n.u.list, R);
+
+	assert(verbandline(R));
+
+	return R[ATTR];
+}
+
+Ref newnode(const unsigned verb, const Ref attribute, const unsigned line)
+{
+	return cleanext(refnode(RL(refatom(verb), attribute, refnum(line))));
+}
+
+unsigned nodeline(const Ref n)
+{
+	assert(n.code == NODE);
+	Ref R[NODELEN];
+	splitnode(n.u.list, R);
+
+	assert(verbandline(R));
+
+	return R[LINE].u.number;
+}
+
 Ref forknode(const Ref node, Array *const M)
 {
-	assert(node.code == NODE && isnode(node));
+	assert(isnode(node));
 
 	// Есть два варианта по M. Когда M != NULL нас просят от-fork-ать узлы и
 	// в новом корректно расставить на них ссылки. Если M == NULL, то нас
