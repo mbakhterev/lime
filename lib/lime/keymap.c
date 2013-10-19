@@ -664,14 +664,20 @@ unsigned keymatch(
 	return r;
 }
 
-void walkbindings(const Array *const map, WalkBinding wlk, void *const ptr)
+void walkbindings(Array *const map, WalkBinding wlk, void *const ptr)
 {
 	assert(map && map->code == MAP);
 	
-// 	const unsigned *const I = map->index;
-// 	const unsigned *const B = map->u.data;
-
+	Binding *const B = map->u.data;
+	const unsigned *const I = map->index;
+	
 	for(unsigned i = 0; i < map->count; i += 1)
 	{
+		Binding *const b = B + I[i];
+
+		if(wlk(b, ptr) && iskeymap(b->ref) && !b->ref.external)
+		{
+			walkbindings(b->ref.u.array, wlk, ptr);
+		}
 	}
 }

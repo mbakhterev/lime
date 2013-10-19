@@ -1,6 +1,7 @@
 #include <lime/construct.h>
 
 #include <stdio.h>
+#include <assert.h>
 
 const char *const unitname = "test";
 unsigned item = 1;
@@ -10,7 +11,7 @@ int main(int argc, char *const argv[])
 	Array *const U = newatomtab();
 
 	const Ref A = readpack(U, strpack(0, "this"));
-// 	const Ref B = readpack(U, strpack(0, "is"));
+	const Ref B = readpack(U, strpack(0, "is"));
 	const Ref C = readpack(U, strpack(0, "war"));
 
 	const Ref p = decorate(reflist(RL(A, reffree())), U, ATOM);
@@ -35,12 +36,29 @@ int main(int argc, char *const argv[])
 		keymatch(al, fl, NULL, 0, NULL),
 		keymatch(fl, al, NULL, 0, NULL));
 
+	dumplist(stdout, U, b.u.list);
+	fputc('\n', stdout);
+
 	freeref(p);
 	freeref(a);
 	freeref(b);
 
 	freeref(al);
 	freeref(fl);
+
+	Array *const M = newkeymap();
+	Array *const N = newkeymap();
+
+	DL(names, RS(A, B, C));
+
+	assert(makepath(M, U, B, names.u.list, markext(refkeymap(N))) == N);
+	assert(makepath(M, U, B, names.u.list, reffree()) == N);
+
+	dumpkeymap(stdout, 0, U, M);
+	fputc('\n', stdout);
+
+	freekeymap(M);
+	freekeymap(N);
 	
 	return 0;
 }

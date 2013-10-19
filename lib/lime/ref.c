@@ -83,6 +83,7 @@ static Ref setbit(const Ref r, const unsigned bit)
 	case NODE:
 	case LIST:
 	case FORM:
+	case MAP:
 		break;
 	
 	default:

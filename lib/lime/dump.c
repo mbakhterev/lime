@@ -19,7 +19,8 @@ typedef struct
 	FILE *const f;
 	const Array *const U;
 
-	const List *const last;
+	List *L;
+	List *F;
 
 	Array *const map;
 	Array *const nodes;
@@ -28,6 +29,8 @@ typedef struct
 	const unsigned tabs;
 
 	const unsigned dbg;
+
+	unsigned count;
 } DState;
 
 static void dumpreflist(
@@ -108,6 +111,10 @@ static void dumpref(
 		assert(r.u.array && r.u.array->code == MAP);
 		assert(fprintf(f, "M:%p", (void *)r.u.array) > 0);
 		break;
+	
+	case FREE:
+		assert(fprintf(f, "-1") > 0);
+		break;
 	}
 
 	default:
@@ -129,7 +136,7 @@ static int dumprefone(List *const l, void *const ptr)
 
 	dumpref(f, st->U, st->nodes, l->ref);
 
-	if(l != st->last)
+	if(l != st->L)
 	{
 		assert(fputs("; ", f) >= 0);
 	}
@@ -148,7 +155,7 @@ static void dumpreflist(
 	DState st =
 	{
 		.f = f,
-		.last = l,
+		.L = (List *)l,
 		.nodes = nodes,
 		.U = U
 	};
@@ -259,7 +266,7 @@ static int dumpone(List *const l, void *const ptr)
 	(nodeverb(n, map) == -1 ?
 		dumpattr : dumpsubdag)(st, nodeattribute(n));
 
-	if(l != st->last)
+	if(l != st->L)
 	{
 		assert(fputc(';', f) == ';');
 	}
@@ -290,7 +297,7 @@ void dumpdag(
 		.nodes = nodes,
 		.tabs = tabs,
 		.tabstr = tabstr(tabs),
-		.last = dag.u.list
+		.L = dag.u.list
 	};
 
 	assert(fprintf(f, "%s(", st.tabstr) > 0);
@@ -299,6 +306,75 @@ void dumpdag(
 
 	free((void *)st.tabstr);
 	freekeymap(nodes);
+}
+
+static int dumpbindingone(Binding *const b, void *const ptr)
+{
+	assert(b);
+	assert(ptr);
+	DState *const st = ptr;
+
+	FILE *const f = st->f;
+	assert(f);
+
+	assert(fprintf(f, "\n%s\tkey(%u): ", st->tabstr, b->key.external) > 0);
+	dumpref(st->f, st->U, NULL, b->key);
+
+	assert(fprintf(f, "\n%s\tval(%u): ", st->tabstr, b->ref.external) > 0);
+	dumpref(st->f, st->U, NULL, b->ref);
+
+	assert(fputc('\n', st->f) == '\n');
+
+	switch(b->ref.code)
+	{
+	case FORM:
+		st->F = append(st->F, RL(markext(b->ref)));
+		break;
+
+	case MAP:
+		st->L = append(st->L, RL(markext(b->ref)));
+		break;
+	}
+
+	return 0;
+}
+
+static int dumpkeymapone(List *const l, void *const ptr)
+{
+	assert(l && iskeymap(l->ref));
+	assert(ptr);
+	const DState *const st = ptr;
+
+	dumpkeymap(st->f, st->tabs + 1, st->U, l->ref.u.array);
+
+	return 0;
+}
+
+void dumpkeymap(
+	FILE *const f, const unsigned tabs, const Array *const U,
+	const Array *const map)
+{
+	assert(f);
+	assert(map && map->code == MAP);
+
+	DState st =
+	{
+		.f = f,
+		.U = U,
+		.L = NULL,
+		.F = NULL,
+		.tabs = tabs,
+		.tabstr = tabstr(tabs)
+	};
+
+	assert(fprintf(f, "\n%smap: %p", st.tabstr, (void *)map) > 0);
+
+	walkbindings((Array *)map, dumpbindingone, &st);
+	forlist(st.L, dumpkeymapone, &st, 0);
+
+	free((void *)st.tabstr);
+	freelist(st.L);
+	freelist(st.F);
 }
 
 // typedef struct

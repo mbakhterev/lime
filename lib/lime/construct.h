@@ -420,8 +420,8 @@ extern unsigned verbmap(Array *const, const unsigned verb);
 // что (B.ref.code == MAP && !B.ref.external), и когда WalkBinding для B вернёт
 // !0, процедура будет вызвана рекурсивно для B.ref.u.array
 
-typedef int WalkBinding(const Array *const map, void *const ptr);
-extern void walkbindings(const Array *const map, WalkBinding, void *const);
+typedef int WalkBinding(Binding *const, void *const ptr);
+extern void walkbindings(Array *const map, WalkBinding, void *const);
 
 // Узлы.
 
