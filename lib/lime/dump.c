@@ -16,59 +16,25 @@
 
 typedef struct
 {
-	FILE *const file;
-	const Array *const universe;
-} DumpContext;
+	FILE *const f;
+	const Array *const U;
 
-typedef struct
-{
+	const List *const last;
+
 	Array *const map;
 	Array *const nodes;
+
 	const char *const tabstr;
 	const unsigned tabs;
+
 	const unsigned dbg;
-} DumpCurrent;
+} DState;
 
-typedef struct
-{
-	FILE *f;
-	const List *last;
-	const Array *nodes;
-	const Array *universe;
-} DAState;
-
-static const char *tabstr(const unsigned tabs)
-{
-	char *const s = malloc(tabs + 1);
-	assert(s);
-
-	memset(s, '\t', tabs);
-	s[tabs] = '\0';
-
-	return s;
-}
-
-static int mapone(List *const l, void *const ptr)
-{
-	assert(l);
-	assert(l->ref.code == NODE);
-	assert(ptr);
-	Array *const nodes = ptr;
-
-//	assert(nodes->count == ptrmap(nodes, l->ref.u.node));
-
-	tunerefmap(nodes, l->ref, refnum(nodes->count));
-
-	return 0;
-}
-
-static void dumpattrlist(
-	List *const, const Array *const,
-	FILE *const, const Array *const);
+static void dumpreflist(
+	FILE *const, const Array *const, Array *const nodes, const List *const);
 
 static void dumpref(
-	FILE *const f, const Array *const U,
-	const Array *const nodes, const Ref r)
+	FILE *const f, const Array *const U, Array *const nodes, const Ref r)
 {
 	switch(r.code)
 	{
@@ -99,23 +65,18 @@ static void dumpref(
 		assert(fprintf(f, "T:%u", r.u.number) > 0);
 		break;
 
-	case FORM:
-		assert(r.u.form);
-		assert(fprintf(f, "F:%p (D:%p S:%p)",
-			(void *)r.u.form,
-			(void *)r.u.form->u.dag.u.list,
-			(void *)r.u.form->signature) > 0);
-		break;
-
 	case LIST:
-		dumpattrlist(r.u.list, U, f, nodes);
+		dumpreflist(f, U, nodes, r.u.list);
 		break;
 
 	case NODE:
 	{
 		assert(isnode(r));
 
-		const unsigned k = refmap((Array *)nodes, r).u.number;
+		const Ref n = refmap(nodes, r);
+		assert(n.code == NUMBER);
+
+		const unsigned k = n.u.number;
 
 		// Когда печатаем узел в списке, то не важно, в каком режиме
 		// печатаем, в отладочном или нет. Адреса узлов надо указать для
@@ -134,6 +95,19 @@ static void dumpref(
 		}
 
 		break;
+
+	case FORM:
+		assert(r.u.form);
+		assert(fprintf(f, "F:%p (D:%p S:%p)",
+			(void *)r.u.form,
+			(void *)r.u.form->u.dag.u.list,
+			(void *)r.u.form->signature) > 0);
+		break;
+
+	case MAP:
+		assert(r.u.array && r.u.array->code == MAP);
+		assert(fprintf(f, "M:%p", (void *)r.u.array) > 0);
+		break;
 	}
 
 	default:
@@ -142,17 +116,18 @@ static void dumpref(
 
 }
 
-static int dumpattrone(List *const l, void *const ptr)
+static int dumprefone(List *const l, void *const ptr)
 {
 	assert(l);
-	const DAState *const st = ptr;
-	assert(st);
+	assert(ptr);
+
+	const DState *const st = ptr;
 	FILE *const f = st->f;
 	assert(f);
 
 	DBG(DBGATTR, "f: %p; code: %u", (void *)f, l->ref.code);
 
-	dumpref(f, st->universe, st->nodes, l->ref);
+	dumpref(f, st->U, st->nodes, l->ref);
 
 	if(l != st->last)
 	{
@@ -162,131 +137,30 @@ static int dumpattrone(List *const l, void *const ptr)
 	return 0;
 }
 
-static void dumpattrlist(
-	List *const l, const Array *const U,
-	FILE *const f, const Array *const nodes)
+static void dumpreflist(
+	FILE *const f, const Array *const U, Array *const nodes,
+	const List *const l)
 {
 	assert(f);
 
 	DBG(DBGATTR, "f: %p", (void *)f);
 
-	const DAState st =
+	DState st =
 	{
 		.f = f,
 		.last = l,
 		.nodes = nodes,
-		.universe = U
+		.U = U
 	};
 
 	assert('(' == fputc('(', st.f));
-	forlist(l, dumpattrone, (DAState *)&st, 0);
+	forlist((List *)l, dumprefone, &st, 0);
 	assert(')' == fputc(')', st.f));
-}
-
-static void dumpattr(
-	const DumpContext *const ctx, const DumpCurrent *const dc,
-	const Ref attr)
-{
-	assert(ctx);
-
-	FILE *const f = ctx->file;
-	assert(f);
-
-	const Array *const U = ctx->universe;
-	assert(U);
-	
-	DBG(DBGSTD, "f: %p", (void *)f);
-
-	assert(fputc('\t', f) == '\t');
-	dumpattrlist(attr.u.list, U, f, dc->nodes);
-}
-
-static void dumpsubdag(
-	const DumpContext *const ctx, const DumpCurrent *const dc,
-	const Ref dag)
-{
-	const Array *const U = ctx->universe;
-	FILE *const f = ctx->file;
-
-	assert(U);
-	assert(f);
-
-	assert(fputc('\n', f) == '\n');
-	dumpdag(dc->dbg, f, dc->tabs + 1, U, dag, dc->map);
-}
-
-void dumpdag(
-	const unsigned dbg, FILE *const f, const unsigned tabs,
-	const Array *const U, const Ref dag, Array *const map)
-{
-	assert(f);
-
-	// FIXME: требовать ли Universe для работы dumpdag?
-	assert(U);
-
-	assert(dag.code == LIST);
-
-	DumpContext ctx =
-	{
-		.file = f,
-		.universe = U
-	};
-
-	DBG(DBGDAG, "f: %p", (void *)ctx.file);
-
-	Array *const nodes = newkeymap();
-	forlist(dag.u.list, mapone, nodes, 0);
-
-	DumpCurrent dc =
-	{
-		.map = map,
-		.dbg = dbg,
-		.nodes = nodes,
-		.tabs = tabs,
-		.tabstr = tabstr(tabs)
-	};
-
-	assert(fprintf(f, "%s(", dc.tabstr) > 0);
-
-	const Binding *const B = dc.nodes->u.data;
-
-	for(unsigned i = 0; i < dc.nodes->count; i += 1)
-	{
-		const Ref n = B[i].key;
-
-		if(dbg)
-		{
-			assert(0 < fprintf(f, "\n%s\t%p\t.%s\tn%u",
-				dc.tabstr,
-				(void *)n.u.list,
-				atombytes(atomat(U, nodeverb(n, NULL))), i));
-		}
-		else
-		{
-			assert(0 < fprintf(f, "\n%s\t.%s\tn%u",
-				dc.tabstr,
-				atombytes(atomat(U, nodeverb(n, NULL))), i));
-		}
-
-		(nodeverb(n, map) == -1 ?
-			dumpattr : dumpsubdag)(&ctx, &dc, nodeattribute(n));
-
-		if(i + 1 < nodes->count)
-		{
-			assert(fputc(';', f) == ';');
-		}
-	}
-
-	assert(fprintf(f, "\n%s)", dc.tabstr) > 0);
-
-	free((void *)dc.tabstr);
-
-	freekeymap(nodes);
 }
 
 void dumplist(FILE *const f, const Array *const U, const List *const l)
 {
-	dumpattrlist((List *)l, U, f, NULL);
+	dumpreflist(f, U, NULL, l);
 }
 
 char *strlist(const Array *const U, const List *const l)
@@ -302,6 +176,129 @@ char *strlist(const Array *const U, const List *const l)
 	fclose(f);
 
 	return buf;
+}
+
+static const char *tabstr(const unsigned tabs)
+{
+	char *const s = malloc(tabs + 1);
+	assert(s);
+
+	memset(s, '\t', tabs);
+	s[tabs] = '\0';
+
+	return s;
+}
+
+static int mapone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(l->ref.code == NODE);
+
+	Array *const nodes = ptr;
+	assert(nodes);
+
+	tunerefmap(nodes, l->ref, refnum(nodes->count));
+
+	return 0;
+}
+
+static void dumpattr(const DState *const st, const Ref attr)
+{
+	assert(st);
+
+	FILE *const f = st->f;
+	assert(f);
+	
+	DBG(DBGSTD, "f: %p", (void *)f);
+
+	assert(fputc('\t', f) == '\t');
+	dumpreflist(f, st->U, st->nodes, attr.u.list);
+}
+
+static void dumpsubdag(const DState *const st, const Ref dag)
+{
+	FILE *const f = st->f;
+	assert(f);
+
+	assert(fputc('\n', f) == '\n');
+	dumpdag(st->dbg, f, st->tabs + 1, st->U, dag, st->map);
+}
+
+static int dumpone(List *const l, void *const ptr)
+{
+	const DState *const st = ptr;
+	assert(st);
+
+	assert(l);
+	const Ref n = l->ref;
+	assert(isnode(n));
+
+	FILE *const f = st->f;
+	const Array *const U = st->U;
+	assert(f);
+	assert(U);
+
+	Array *const map = st->map;
+
+	const Ref i = refmap(st->nodes, n);
+
+	if(st->dbg)
+	{
+		assert(0 < fprintf(f, "\n%s\t%p\t.%s\tn%u",
+			st->tabstr,
+			(void *)n.u.list,
+			atombytes(atomat(U, nodeverb(n, NULL))), i.u.number));
+	}
+	else
+	{
+		assert(0 < fprintf(f, "\n%s\t.%s\tn%u",
+			st->tabstr,
+			atombytes(atomat(U, nodeverb(n, NULL))), i.u.number));
+	}
+
+	(nodeverb(n, map) == -1 ?
+		dumpattr : dumpsubdag)(st, nodeattribute(n));
+
+	if(l != st->last)
+	{
+		assert(fputc(';', f) == ';');
+	}
+
+	return 0;
+}
+
+void dumpdag(
+	const unsigned dbg, FILE *const f, const unsigned tabs,
+	const Array *const U, const Ref dag, Array *const map)
+{
+	assert(f);
+
+	// FIXME: требовать ли Universe для работы dumpdag?
+	assert(U);
+
+	DBG(DBGDAG, "f: %p", (void *)f);
+
+	Array *const nodes = newkeymap();
+	forlist(dag.u.list, mapone, nodes, 0);
+
+	DState st =
+	{
+		.f = f,
+		.U = U,
+		.map = map,
+		.dbg = dbg,
+		.nodes = nodes,
+		.tabs = tabs,
+		.tabstr = tabstr(tabs),
+		.last = dag.u.list
+	};
+
+	assert(fprintf(f, "%s(", st.tabstr) > 0);
+	forlist(dag.u.list, dumpone, &st, 0);
+	assert(fprintf(f, "\n%s)", st.tabstr) > 0);
+
+	free((void *)st.tabstr);
+	freekeymap(nodes);
 }
 
 // typedef struct
