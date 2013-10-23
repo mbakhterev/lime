@@ -368,14 +368,14 @@ extern unsigned isbasickey(const Ref);
 // исключением случая, когда в очередной Ref ключа pattern (code == FREE).
 // (Ref.code == FREE) считается несвязанным местом в выражении, и в него может
 // быть подставлено выражение произвольное. Такой вот примитивный алгоритм
-// унификации. Не более чем N первых Ref из l, которые соответствуют первым
-// позициям с (Ref.code == FREE) в pattern будут записаны с массив unifiers.
-// Если (pmatched != NULL), то по этому адресу будет записано реальное число
-// совпадений
+// унификации. Указатели на не более чем N первых Ref из l, которые
+// соответствуют первым позициям с (Ref.code == FREE) в pattern будут записаны с
+// массив unifiers. Если (pmatched != NULL), то по этому адресу будет записано
+// реальное число совпадений
 
 extern unsigned keymatch(
-	const Ref pattern, const Ref l,
-	Ref unifiers[], const unsigned N, unsigned *const pmatched);
+	const Ref pattern, const Ref *const l,
+	const Ref *unifiers[], const unsigned N, unsigned *const pmatched);
 
 // Для упрощения синтаксиса уместно иметь процедуры для работы с задаваемыми
 // keymap-ами отображениями. Они создаются при помощи newkeymap. В каждое
@@ -434,8 +434,9 @@ extern void walkbindings(Array *const map, WalkBinding, void *const);
 // (vm != NULL -> vm verb : verb)
 
 extern unsigned nodeverb(const Ref exp, Array *const vm);
-extern Ref nodeattribute(const Ref exp);
 extern unsigned nodeline(const Ref exp);
+extern Ref nodeattribute(const Ref exp);
+extern const Ref *nodeattributecell(const Ref exp);
 
 // Конструирование узла. Процедура вернёт Ref-у со сброшенным external-битом,
 // что будет трактоваться как ссылка на определение узла, а не просто ссылка на
@@ -477,34 +478,37 @@ extern void dumpdag(
 
 extern Ref forkdag(const Ref dag);
 
-extern void freedag(const Ref dag);
-
 // Сборка мусорных не корневых узлов. Не корневые узлы определяются
-// verbmap-ой. После обработки структура графа поменяется, но это затронет
-// только атрибуты выражения dag. Поэтому Ref-а на узел с графом может быть
-// константой
+// verbmap-ой nonroots. После обработки структура графа поменяется,
 
 extern void gcnodes(
-	const Ref dag, const List *const map,
-	const List *const nonroots, const List *const marks);
+	Ref *const dag, Array *const map,
+	Array *const nonroots, Array *const marks);
 
-// Узел передаётся в WalkOne в разобранном виде. На атрибут передаётся ссылка,
-// потому что в некоторых случаях walkone будет его переписывать
+// Процедура для записи меток в setmap, которую можно потом передать в качестве
+// marks в gcnodes
+
+extern void collectmarks(Array *const marks, const Ref, Array *const nonroots);
+
+// Узел передаётся в WalkOne и в разобранном виде тоже (разбор почти всегда
+// необходим, поэтому разумно для упрощения работы). На атрибут передаётся
+// ссылка, потому что в некоторых случаях WalkOne будет его переписывать
 
 typedef int WalkOne(
-	const unsigned verb, Ref *const attribute, void *const);
+	const Ref node,
+	const unsigned verb, const Ref *const attribute, void *const);
 
 // Процедура walkdag проходит по объявлениям выражений
 // 
-// 	(Ref.code == NULL && !Ref.external)
+// 	(Ref.code == NODE && !Ref.external)
 // 
 // в графе (ну, граф условный у нас теперь). Для каждого такого объявления
-// вызывается процедура walkone, в которую выражение передаётся в разобранном
-// виде. Если walkone возвращает истину, то walkdag рекурсивно повторяется для
-// атрибутов этого узла.
+// вызывается процедура wlk, в которую выражение передаётся в разобранном виде.
+// Если wlk возвращает истину, то walkdag рекурсивно повторяется для атрибутов
+// этого узла. Параметр vm - это verbmap, через которое будут транслироваться
+// verb-узлов пере вызовом wlk
 
-extern void walkdag(
-	const Ref dag, WalkOne, void *const, const List *const verbmap);
+extern void walkdag(const Ref dag, WalkOne wlk, void *const, Array *const vm);
 
 // Оценка узлов L, LNth и FIn. Параметр map описывает те выражения, в которых
 // оценку проводить не следует

@@ -328,11 +328,17 @@ static int dumpbindingone(Binding *const b, void *const ptr)
 	switch(b->ref.code)
 	{
 	case FORM:
-		st->F = append(st->F, RL(markext(b->ref)));
+		if(!b->ref.external)
+		{
+			st->F = append(st->F, RL(markext(b->ref)));
+		}
 		break;
 
 	case MAP:
-		st->L = append(st->L, RL(markext(b->ref)));
+		if(!b->ref.external)
+		{
+			st->L = append(st->L, RL(markext(b->ref)));
+		}
 		break;
 	}
 

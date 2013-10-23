@@ -7,15 +7,15 @@ lmsrc = \
 	ref.c		\
 	array.c		\
 	list.c		\
-	node.c		\
 	keymap.c	\
+	node.c		\
 	checkpoint.c	\
 	atomtab.c	\
 	dump.c		\
+	dag.c		\
 
 # 	environment.c	\
 # 	loaddag.c	\
-# 	dag.c		\
 # 	walkdag.c	\
 # 	evallists.c	\
 # 	context.c	\

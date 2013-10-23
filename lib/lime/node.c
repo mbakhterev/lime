@@ -4,14 +4,15 @@
 
 enum { NODELEN = 3, VERB = 0, LINE = 2, ATTR = 1 };
 
-static unsigned splitnode(const List *const l, Ref parts[])
+static unsigned splitnode(const List *const l, const Ref *parts[])
 {
 	unsigned nmatch = 0;
 	const Ref F = reffree();
+	const Ref n = reflist((List *)l);
 
 	DL(pattern, RS(F, F, F));
 
-	if(keymatch(pattern, reflist((List *)l), parts, NODELEN, &nmatch))
+	if(keymatch(pattern, &n, parts, NODELEN, &nmatch))
 	{
 		assert(nmatch == NODELEN);
 		return !0;
@@ -20,14 +21,14 @@ static unsigned splitnode(const List *const l, Ref parts[])
 	return 0;
 }
 
-static unsigned verbandline(const Ref n[])
+static unsigned verbandline(const Ref *const n[])
 {
-	return n[VERB].code == ATOM && n[LINE].code == NUMBER;
+	return n[VERB]->code == ATOM && n[LINE]->code == NUMBER;
 }
 
 unsigned isnodelist(const List *const l)
 {
-	Ref R[NODELEN];
+	const Ref *R[NODELEN];
 	return splitnode(l, R) && verbandline(R);
 }
 
@@ -40,23 +41,28 @@ unsigned nodeverb(const Ref n, Array *const map)
 {
 	assert(n.code == NODE);
 
-	Ref R[NODELEN];
+	const Ref *R[NODELEN];
 	splitnode(n.u.list, R);
 
 	assert(verbandline(R));
 
-	return map ? verbmap(map, R[VERB].u.number) : R[VERB].u.number;
+	return map ? verbmap(map, R[VERB]->u.number) : R[VERB]->u.number;
+}
+
+const Ref *nodeattributecell(const Ref n)
+{
+	assert(n.code == NODE);
+	const Ref *R[NODELEN];
+	splitnode(n.u.list, R);
+
+	assert(verbandline(R));
+
+	return (Ref *)R[ATTR];
 }
 
 Ref nodeattribute(const Ref n)
 {
-	assert(n.code == NODE);
-	Ref R[NODELEN];
-	splitnode(n.u.list, R);
-
-	assert(verbandline(R));
-
-	return R[ATTR];
+	return *nodeattributecell(n);
 }
 
 Ref newnode(const unsigned verb, const Ref attribute, const unsigned line)
@@ -67,12 +73,12 @@ Ref newnode(const unsigned verb, const Ref attribute, const unsigned line)
 unsigned nodeline(const Ref n)
 {
 	assert(n.code == NODE);
-	Ref R[NODELEN];
+	const Ref *R[NODELEN];
 	splitnode(n.u.list, R);
 
 	assert(verbandline(R));
 
-	return R[LINE].u.number;
+	return R[LINE]->u.number;
 }
 
 Ref forknode(const Ref node, Array *const M)

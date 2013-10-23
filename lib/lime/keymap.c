@@ -552,7 +552,7 @@ unsigned verbmap(Array *const map, const unsigned verb)
 
 typedef struct
 {
-	Ref *const uni;
+	const Ref **const uni;
 	const unsigned N;
 	unsigned n;
 } KMState;
@@ -560,12 +560,12 @@ typedef struct
 static unsigned listmatch(
 	KMState *const st, const List *const k, const List *const l);
 
-static unsigned keymatchone(KMState *const st, const Ref k, const Ref l)
+static unsigned keymatchone(KMState *const st, const Ref k, const Ref const *l)
 {
 	assert(st);
 	assert(st->n <= st->N);
 
-	DBG(DBGKM, "(k.code l.code) = (%u %u)", k.code, l.code);
+	DBG(DBGKM, "(k.code l.code) = (%u %u)", k.code, l->code);
 
 	if(k.code == FREE)
 	{
@@ -575,14 +575,14 @@ static unsigned keymatchone(KMState *const st, const Ref k, const Ref l)
 		{
 			assert(st->uni);
 
-			st->uni[st->n] = markext(l);
+			st->uni[st->n] = l;
 			st->n += 1;
 		}
 
 		return !0;
 	}
 
-	if(k.code != l.code)
+	if(k.code != l->code)
 	{
 		DBG(DBGKM, "match = %u", 0);
 		return 0;
@@ -595,16 +595,16 @@ static unsigned keymatchone(KMState *const st, const Ref k, const Ref l)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
-		match = k.u.number == l.u.number;
+		match = k.u.number == l->u.number;
 		break;
 	
 	case PTR:
 	case NODE:
-		match = k.u.pointer == l.u.pointer;
+		match = k.u.pointer == l->u.pointer;
 		break;
 	
 	case LIST:
-		match = listmatch(st, k.u.list, l.u.list);
+		match = listmatch(st, k.u.list, l->u.list);
 		break;
 	
 	default:
@@ -633,7 +633,7 @@ static unsigned listmatch(
 	{
 		ck = ck->next;
 		cl = cl->next;
-		r = keymatchone(st, ck->ref, cl->ref);
+		r = keymatchone(st, ck->ref, &cl->ref);
 	} while(r && ck != k && cl != l);
 
 	// Всё должно совпадать
@@ -642,7 +642,7 @@ static unsigned listmatch(
 }
 
 unsigned keymatch(
-	const Ref k, const Ref l, Ref uni[], const unsigned N,
+	const Ref k, const Ref *const l, const Ref *uni[], const unsigned N,
 	unsigned *const pmatched)
 {
 	assert(!N || uni);
