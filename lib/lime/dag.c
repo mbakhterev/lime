@@ -70,49 +70,43 @@ typedef struct
 	Array *const marks;
 	Array *const nonroots;
 	Array *const defs;
+	Array *const map;
 } GCState;
 
-static void mark(
-	const Ref dag, Array *const nonroots,
-	Array *const defs, Array *const marks);
+static void mark(const Ref dag, GCState *const st);
 
 static int markone(List *const l, void *const ptr)
 {
 	assert(l);
 	assert(ptr);
-	GCState *const st = ptr;
-
-	mark(l->ref, st->nonroots, st->defs, st->marks);
+	mark(l->ref, ptr);
 
 	return 0;
 }
 
-static void mark(
-	const Ref r, Array *const nonroots,
-	Array *const defs, Array *const marks)
+static void mark(const Ref r, GCState *const st)
 {
 	switch(r.code)
 	{
 	case NUMBER:
 	case ATOM:
 	case TYPE:
-	case PTR:
 		break;
 	
 	case LIST:
 	{
-		GCState st =
-		{
-			.marks = marks,
-			.nonroots = nonroots,
-			.defs = defs
-		};
-
-		forlist(r.u.list, markone, &st, 0);
+		forlist(r.u.list, markone, st, 0);
 		break;
 	}
 
 	case NODE:
+	{
+		Array *const D = st->defs;
+		Array *const NR = st->nonroots;
+		Array *const M = st->marks;
+		Array *const map = st->map;
+
+
 		// Тут возможны варианты
 
 		if(!r.external)
@@ -122,7 +116,7 @@ static void mark(
 			// узел уже есть в defs, то это нарушение структуры
 			// графа tunesetmap вылетит
 
-			tunesetmap(defs, r);
+			tunesetmap(D, r);
 
 			// Выясняем является ли узел nonroots и отмечен ли он (в
 			// этом месте он может быть отмечен только внешним
@@ -131,8 +125,8 @@ static void mark(
 			// в defs и это nonroot-узел, или если (2) был в defs, и
 			// мы смотрим на него через ссылку; см. ниже)
 
-			const unsigned isnr = nodeverb(r, nonroots) != -1;
-			const unsigned mrk = setmap(marks, r);
+			const unsigned isnr = nodeverb(r, NR) != -1;
+			const unsigned mrk = setmap(M, r);
 
 			if(!isnr)
 			{
@@ -141,23 +135,31 @@ static void mark(
 
 				if(!mrk)
 				{
-					tunesetmap(marks, r);
+					tunesetmap(M, r);
 				}
 
-				// И пройтись по его атрибутам. То, что проход
-				// не повторный гарантируется уникальностью узла
-				// в defs
+				// И пройтись по его атрибутам, если нас не
+				// просят обойти этот узел стороной. То, что
+				// проход не повторный гарантируется
+				// уникальностью узла в defs
 
-				mark(nodeattribute(r), nonroots, defs, marks);
+				if(!setmap(map, r))
+				{
+					mark(nodeattribute(r), st);
+				}
 			}
 			else if(mrk)
 			{
 				// Если этот nonroot-узел, и он помечен (внешним
 				// образом, изнутри мы до него не могли
 				// добраться; см. ниже), то он нам тоже нужен.
-				// Надо пройтись по его атрибутам
+				// Надо пройтись по его атрибутам. Если нас не
+				// просят обойти узел стороной
 
-				mark(nodeattribute(r), nonroots, defs, marks);
+				if(nodeverb(r, map) == -1)
+				{
+					mark(nodeattribute(r), st);
+				}
 			}
 		}
 		else
@@ -167,21 +169,65 @@ static void mark(
 			// обязан быть nonroot-узел. Который мы с удовольствием
 			// отметим и пройдёмся по его атрибутам. Если узел
 			// помечен, то этот проход уже был сделан и ничего
-			// делать не нужно
+			// делать не нужно. Проходим, если узел особо не отмечен
+			// в map
 
-			if(setmap(defs, r) && !setmap(marks, r))
+			if(setmap(D, r) && !setmap(M, r))
 			{
-				assert(nodeverb(r, nonroots) != -1);
+				assert(nodeverb(r, NR) != -1);
 
-				tunesetmap(marks, r);
-				mark(nodeattribute(r), nonroots, defs, marks);
+				tunesetmap(M, r);
+
+				if(nodeverb(r, map) == -1)
+				{
+					mark(nodeattribute(r), st);
+				}
 			}
 		}
 
 		break;
+	}
 
 	default:
 		assert(0);
+	}
+}
+
+static void rebuild(Ref *const r, GCState *const st)
+{
+	assert(st);
+
+	// Сперва разберёмся со скучными тривиальными случаями, в которых ничего
+	// делать не надо
+
+	switch(r->code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+		return;
+	
+	case LIST:
+		break;
+	
+	default:
+		// По идее rebuild не должна вызываться для всех других случаев.
+		// Даже для NODE
+
+		assert(0);
+	}
+
+	// Приступаем к реконструкции списка
+
+	List *l = NULL;
+
+	while(r->u.list)
+	{
+		List *const k = tipoff(&r->u.list);
+
+		if(k->code != NODE)
+		{
+		}	
 	}
 }
 
@@ -189,5 +235,15 @@ void gcnodes(
 	Ref *const dag, Array *const map,
 	Array *const nonroots, Array *const marks)
 {
+	GCState st =
+	{
+		.map = map,
+		.nonroots = nonroots,
+		.marks = marks,
+		.defs = newkeymap()
+	};
+
+	mark(*dag, &st);
 	
+	freekeymap(st.defs);
 }
