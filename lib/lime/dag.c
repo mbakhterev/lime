@@ -69,295 +69,125 @@ typedef struct
 {
 	Array *const marks;
 	Array *const nonroots;
+	Array *const defs;
 } GCState;
 
-static int collectone(List *const l, void *const ptr)
+static void mark(
+	const Ref dag, Array *const nonroots,
+	Array *const defs, Array *const marks);
+
+static int markone(List *const l, void *const ptr)
 {
 	assert(l);
 	assert(ptr);
 	GCState *const st = ptr;
 
-	collectmarks(st->marks, l->ref, st->nonroots);
+	mark(l->ref, st->nonroots, st->defs, st->marks);
 
 	return 0;
 }
 
-void collectmarks(Array *const marks, const Ref r, Array *const nonroots)
+static void mark(
+	const Ref r, Array *const nonroots,
+	Array *const defs, Array *const marks)
 {
 	switch(r.code)
 	{
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+	case PTR:
 		break;
 	
-	case NODE:
-		assert(isnode(r));
-
-		if(r.external)
+	case LIST:
+	{
+		GCState st =
 		{
-			// Если речь идёт о ссылке на узел, то помечаем этот
-			// узел, если он был до сих пор не помечен
+			.marks = marks,
+			.nonroots = nonroots,
+			.defs = defs
+		};
 
-			if(!setmap(marks, r))
+		forlist(r.u.list, markone, &st, 0);
+		break;
+	}
+
+	case NODE:
+		// Тут возможны варианты
+
+		if(!r.external)
+		{
+			// Если речь идёт об определении узла, то в любом случае
+			// узел надо отметить, как определённый локально. Если
+			// узел уже есть в defs, то это нарушение структуры
+			// графа tunesetmap вылетит
+
+			tunesetmap(defs, r);
+
+			// Выясняем является ли узел nonroots и отмечен ли он (в
+			// этом месте он может быть отмечен только внешним
+			// образом: метка из gcnodes может быть поставлена,
+			// только если (1) узел не был в defs и мы его поместили
+			// в defs и это nonroot-узел, или если (2) был в defs, и
+			// мы смотрим на него через ссылку; см. ниже)
+
+			const unsigned isnr = nodeverb(r, nonroots) != -1;
+			const unsigned mrk = setmap(marks, r);
+
+			if(!isnr)
 			{
-				tunesetmap(marks, r);
+				// Если это не-nonroot узел, и он не отмечен
+				// внешне, то надо его отметить
+
+				if(!mrk)
+				{
+					tunesetmap(marks, r);
+				}
+
+				// И пройтись по его атрибутам. То, что проход
+				// не повторный гарантируется уникальностью узла
+				// в defs
+
+				mark(nodeattribute(r), nonroots, defs, marks);
+			}
+			else if(mrk)
+			{
+				// Если этот nonroot-узел, и он помечен (внешним
+				// образом, изнутри мы до него не могли
+				// добраться; см. ниже), то он нам тоже нужен.
+				// Надо пройтись по его атрибутам
+
+				mark(nodeattribute(r), nonroots, defs, marks);
 			}
 		}
 		else
 		{
-			// Если речь идёт об определение узла, то интересуемся
-			// его атрибутом только если это узел не не-корневой
+			// Здесь мы наблюдаем ссылку на узел. Нам интересны
+			// определённые узлы. Если такой узел не помечен, то это
+			// обязан быть nonroot-узел. Который мы с удовольствием
+			// отметим и пройдёмся по его атрибутам. Если узел
+			// помечен, то этот проход уже был сделан и ничего
+			// делать не нужно
 
-			if(nodeverb(r, nonroots) == -1)
+			if(setmap(defs, r) && !setmap(marks, r))
 			{
-				collectmarks(marks, nodeattribute(r), nonroots);
+				assert(nodeverb(r, nonroots) != -1);
+
+				tunesetmap(marks, r);
+				mark(nodeattribute(r), nonroots, defs, marks);
 			}
 		}
 
 		break;
 
-	case LIST:
-	{
-		GCState st = { .marks = marks };
-		forlist(r.u.list, collectone, &st, 0);
-
-		break;
-	}
-	
 	default:
 		assert(0);
 	}
 }
 
-static void rebuild(
-
-// typedef struct
-// {
-// 	List *L;
-// 	const Array *const nonroots;
-// 	const Array *const go;
-// 	Array marks;
-// } GCState;
-// 
-// static unsigned inmap(const Array *const map, const unsigned i)
-// {
-// 	return uireverse(map, i) != -1;
-// }
-// 
-// static int rootone(List *const l, void *const state)
-// {
-// 	assert(l);
-// 	DBG(DBGGC, "l.ref.u.(code node) = %u %p",
-// 		l->ref.code, (void *)l->ref.u.node);
-// 
-// 	assert(l->ref.code == NODE);
-// 	assert(l->ref.u.node);
-// 
-// 	GCState *const st = state;
-// 	assert(st);
-// 
-// 	const Node *const n = l->ref.u.node;
-// 	assert(n);
-// 
-// 	if(!inmap(st->nonroots, n->verb))
-// 	{
-// 		ptrmap(&st->marks, n);
-// 		st->L = append(st->L, RL(refnode((Node *)n)));
-// 	}
-// 
-// 	return 0;
-// }
-// 
-// static int expandone(List *const l, void *const state)
-// {
-// 	GCState *const st = state;
-// 	assert(l);
-// 	assert(st);
-// 
-// 	if(l->ref.code != NODE)
-// 	{
-// 		return 0;
-// 	}
-// 
-// 	const Node *const n = l->ref.u.node;
-// 	assert(n);
-// 
-// 	// FIXME: это очень неэффективный поиск в ширину из-за ptrmap
-// 
-// 	if(ptrreverse(&st->marks, n) != -1)
-// 	{
-// 		return 0;
-// 	}
-// 
-// 	ptrmap(&st->marks, l->ref.u.node);
-// 	st->L = append(st->L, RL(refnode((Node *)n)));
-// 
-// 	return 0;
-// }
-// 
-// static int rebuildone(List *const l, void *const state)
-// {
-// 	// Проверяем и отцепляем звено от списка. Оно будет либо добавлено в
-// 	// новый список, либо удалено
-// 
-// 	assert(l && l->ref.code == NODE);
-// 	Node *const n = l->ref.u.node;
-// 	assert(n);
-// 
-// 	// l - dag из одного узла n
-// 	l->next = l;
-// 
-// 	GCState *const st = state;
-// 	assert(st);
-// 
-// 	if(ptrreverse(&st->marks, n) != -1)
-// 	{
-// 		DBG(DBGGC,
-// 			"keepind (%p:dag(%u)=%u)",
-// 			(void *)n, n->verb,
-// 			n->dag);
-// 
-// 		// Приписываем отмеченный узел к результату
-// 		st->L = append(st->L, l);
-// 
-// 		// Если в этом узле подграф, который надо пройти, собираем мусор
-// 		// в нём
-// 
-// 		if(n->dag && inmap(st->go, n->verb))
-// 		{
-// 			DBG(DBGGC, "gc dag on node (%u:%p)",
-// 				n->verb, (void *)n);
-// 
-// 			gcnodes(&n->u.attributes, st->go, st->nonroots);
-// 		}
-// 	}
-// 	else
-// 	{
-// 		freedag(l);
-// 	}
-// 
-// 	return 0;
-// }
-// 
-// List *gcnodes(
-// 	List **const dptr,
-// 	const Array *const go, const Array *const nonroots)
-// {
-// 	GCState st =
-// 	{
-// 		.nonroots = nonroots,
-// 		.go = go,
-// 		.marks = makeptrmap(),
-// 		.L = NULL
-// 	};
-// 
-// 	List *const l = *dptr;
-// 
-// 	if(DBGFLAGS & DBGGC)
-// 	{
-// 		char *const c = strlist(NULL, *dptr);
-// 		DBG(DBGGC, "going along list: %s", c);
-// 		free(c);
-// 	}
-// 
-// 	forlist(l, rootone, &st, 0);
-// 
-// 	while(st.L)
-// 	{
-// 		List *const k = tipoff(&st.L);
-// 
-// 		// Список уже отфильтрован в rootone, поэтому знаем, что k -
-// 		// это ссылка на узел. Расширять волну на под-графы не следует,
-// 		// потому что под-графы изолированы по ссылкам
-// 
-// 		const Node *const n = k->ref.u.node;
-// 
-// 		if(!n->dag)
-// 		{
-// 			forlist(n->u.attributes, expandone, &st, 0);
-// 		}
-// 
-// 		freelist(k);
-// 	}
-// 
-// 	forlist(l, rebuildone, &st, 0);
-// 
-// 	freeptrmap(&st.marks);
-// 
-// 	return (*dptr = st.L);
-// }
-// 
-// static int freeone(List *const l, void *const ptr)
-// {
-// 	assert(ptr == NULL);
-// 	assert(l);
-// 	assert(l->ref.code == NODE);
-// 
-// 	Node *const n = l->ref.u.node;
-// 
-// 	if(!n->dag)
-// 	{
-// 		freelist(n->u.attributes);
-// 	}
-// 	else
-// 	{
-// 		freedag(n->u.attributes);
-// 	}
-// 
-// 	freenode(n);
-// 
-// 	return 0;
-// }
-// 
-// void freedag(List *const dag)
-// {
-// 	forlist(dag, freeone, NULL, 0);
-// 	freelist(dag);
-// }
-// 
-// // FIXME: может быть, имеет смысл вынести mapone и inmap в extern-функции
-// // каких-нибудь dag-утилит. Возможно, они часто будут всплывать
-// 
-// static int mapone(List *const l, void *const ptr)
-// {
-// 	assert(l && l->ref.code == NODE);
-// 	assert(ptr);
-// 	Array *const nodes = ptr;
-// 
-// 	assert(nodes->count == ptrmap(nodes, l->ref.u.node));
-// 
-// 	return 0;
-// }
-// 
-// typedef struct
-// {
-// 	const Array *nodemap;
-// 	const Node *nodes;
-// 	unsigned bound;
-// } FState;
-// 
-// List *forkdag(const List *const dag)
-// {
-// 	Array M = makeptrmap();
-// 	forlist((List *)dag, mapone, &M, 0);
-// 
-// 	Ref N[M.count + 1];
-// 	N[M.count] = (Ref) { .code = FREE, .u.node = NULL };
-// 
-// 	// Исходные узлы
-// 	const Node *const *const nsrc = M.data;
-// 
-// 	for(unsigned i = 0; i < M.count; i += 1)
-// 	{
-// 		const Node *const n = nsrc[i];
-// 
-// 		N[i] = refnode(newnode(		
-// 			n->line, n->verb,
-// 			!n->dag ?
-// 				  transforklist(n->u.attributes, &M, N, i)
-// 				: forkdag(n->u.attributes), n->dag));
-// 	}
-// 
-// 	return readrefs(N);
-// }
+void gcnodes(
+	Ref *const dag, Array *const map,
+	Array *const nonroots, Array *const marks)
+{
+	
+}
