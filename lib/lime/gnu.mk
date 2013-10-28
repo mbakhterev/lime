@@ -13,9 +13,9 @@ lmsrc = \
 	atomtab.c	\
 	dump.c		\
 	dag.c		\
+	loaddag.c	\
 
 # 	environment.c	\
-# 	loaddag.c	\
 # 	walkdag.c	\
 # 	evallists.c	\
 # 	context.c	\

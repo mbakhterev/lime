@@ -32,6 +32,8 @@ List *tip(const List *const l)
 // Откусить первый элемент
 List *tipoff(List **const lptr)
 {
+	assert(lptr);
+
 	List *const l = *lptr;
 	assert(l);
 

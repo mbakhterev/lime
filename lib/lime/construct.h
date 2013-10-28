@@ -466,7 +466,7 @@ extern Ref forknode(const Ref, Array *const nodemap);
 // узлы, в атрибутах которых должен быть записан замкнутый граф
 
 extern Ref loaddag(
-	FILE *const, Array *const U, const List *const map, const Ref verb);
+	FILE *const, Array *const U, Array *const map);
 
 // Выгрузка dag-а. tabs - для красивой печати с отступами. dbg - выдавать ли
 // указатели на узлы (для закрепления: на списки особого формата) в выводе

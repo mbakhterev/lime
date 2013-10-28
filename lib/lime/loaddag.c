@@ -19,35 +19,13 @@
 
 #define DBGFLAGS 0
 
-Array keymap(
-	Array *const U,
-	const unsigned hint, const char *const A[])
-{
-	assert(U->code == ATOM);
-	assert(hint <= MAXHINT);
-
-	Array map = makeuimap();
-
-	if(A)
-	{
-		unsigned i;
-		for(i = 0; i < MAXNUM && A[i] != NULL; i += 1)
-		{
-			uimap(&map, readpack(U, strpack(hint, A[i])));
-		}
-		assert(i < MAXNUM);
-	}
-
-	return map;
-}
-
 // Подробности: txt/sketch.txt: Fri Apr 26 19:29:46 YEKT 2013
 
 typedef struct
 {
-	FILE *file;
-	Array *universe;
-	const Array *dagmap;
+	FILE *const file;
+	Array *const universe;
+	Array *const dagmap;
 } LoadContext;
 
 typedef struct
@@ -61,7 +39,7 @@ static LoadCurrent LC(List *const nodes, List *const refs)
 	return (LoadCurrent) { .nodes = nodes, .refs = refs };
 }
 
-static unsigned loadnum(FILE *const f)
+static Ref loadnum(FILE *const f)
 {
 	unsigned n;
 	if(fscanf(f, "%u", &n) != 1)
@@ -74,7 +52,7 @@ static unsigned loadnum(FILE *const f)
 		ERR("%u is > %u", n, MAXNUM);
 	}
 
-	return n;
+	return refnum(n);
 }
 
 static LoadCurrent core(
@@ -113,6 +91,26 @@ static unsigned isfirstcore(const int c)
 	return isascii(c) && isalnum(c);
 }
 
+static List *pushenv(List *const env)
+{
+	assert(env == NULL || iskeymap(env->ref));
+	return append(env, RL(refkeymap(newkeymap())));
+}
+
+static List *popenv(List **const penv)
+{
+	assert(penv && *penv);
+	List *const k = tipoff(penv);
+	assert(k != NULL && iskeymap(k->ref));
+	
+	// Освобождение списка освободит и сохранённую Ref, а так как там
+	// сброшен external-бит, то и keymap будет освобождена
+
+	freelist(k);
+
+	return *penv;
+}
+
 // Для list не нужен параметр refs. Список всегда начинается с пустого списка
 // ссылок
 
@@ -121,8 +119,8 @@ static LoadCurrent list(
 {
 	DBG(DBGLST, "LIST: ctx: %p", (void *)ctx);
 
-	assert(env == NULL || env->ref.code == ENV);
-	assert(nodes == NULL || nodes->ref.code == NODE);
+	assert(env == NULL || iskeymap(env->ref));
+	assert(nodes == NULL || isnode(nodes->ref));
 
 	FILE *const f = ctx->file;
 	assert(f);
@@ -148,7 +146,7 @@ static LoadCurrent list(
 	{
 		assert(ungetc(c, f) == c);
 
-		List *lenv = pushenvironment(env);
+		List *lenv = pushenv(env);
 
 		DBG(DBGLST,
 			"-> ENV(CORE). env: %p; lenv %p; E: %p",
@@ -158,7 +156,7 @@ static LoadCurrent list(
 
 		const LoadCurrent lc = core(ctx, lenv, nodes, NULL);
 
-		assert(popenvironment(&lenv) == env);
+		assert(popenv(&lenv) == env);
 
 		return lc;
 	}
@@ -174,8 +172,8 @@ static LoadCurrent ce(
 {
 	DBG(DBGCE, "%s", "");
 
-	assert(env && env->ref.code == ENV);
-	assert(nodes == NULL || nodes->ref.code == NODE);
+	assert(env && iskeymap(env->ref));
+	assert(nodes == NULL || isnode(nodes->ref));
 
 	DBG(DBGCE, "%s", "skipping");
 	const int c = skipspaces(ctx->file);
@@ -197,14 +195,28 @@ static LoadCurrent ce(
 	return (LoadCurrent) { .nodes = NULL, .refs = NULL };
 }
 
+static Ref *keytoref(List *const env, const Ref r)
+{
+	assert(env && iskeymap(env->ref));
+
+	Binding *const b = pathlookup(env, r, NULL);
+
+	if(b)
+	{
+		return &b->ref;
+	}
+
+	return &keymap(tip(env)->ref.u.array, r)->ref;
+}
+
 static LoadCurrent core(
 	const LoadContext *const ctx,
 	List *const env, List *const nodes, List *const refs)
 {
 	DBG(DBGCORE, "%s", "");
 
-	assert(env != NULL && env->ref.code == ENV);
-	assert(nodes == NULL || nodes->ref.code == NODE);
+	assert(env != NULL && iskeymap(env->ref));
+	assert(nodes == NULL || isnode(nodes->ref));
 
 	FILE *const f = ctx->file;
 	Array *const U = ctx->universe;
@@ -219,13 +231,13 @@ static LoadCurrent core(
 	{
 		// Обработка узла может добавить только новый узел. Список
 		// ссылок должен представлять собой один элемент со ссылокой на
-		// узел.
+		// узел
 
 		DBG(DBGCORE, "%s", "-> NODE");
 		const LoadCurrent lc = node(ctx, env, nodes);
 
 		List *const l = lc.refs;
-		assert(l->ref.code == NODE && l->next == l);
+		assert(l && isnode(l->ref) && l->next == l);
 
 		DBG(DBGCORE, "%s", "-> CE");
 		return ce(ctx, env, lc.nodes, append(refs, l));
@@ -233,6 +245,8 @@ static LoadCurrent core(
 
 	case '(':
 	{
+		// Здесь загружается список
+
 		DBG(DBGCORE, "%s", "-> LIST");
 		const LoadCurrent lc = list(ctx, env, nodes);
 
@@ -242,15 +256,18 @@ static LoadCurrent core(
 	}
 
 	case '\'':
-		return ce(ctx, env, nodes,
-			append(refs, RL(refatom(loadatom(U, f)))));
+		// Загрузка атома
+
+		return ce(ctx, env, nodes, append(refs, RL(loadatom(U, f))));
 	}
+
+	// Остаётся один возможный вариант: имя ссылки на узел
 
 	if(isdigit(c))
 	{
 		assert(ungetc(c, f) == c);
 
-		List *const lrefs = append(refs, RL(refnum(loadnum(f))));
+		List *const lrefs = append(refs, RL(loadnum(f)));
 
 		DBG(DBGCORE, "-> %u -> CE", lrefs->ref.u.number);
 		return ce(ctx, env, nodes, lrefs);
@@ -260,27 +277,27 @@ static LoadCurrent core(
 	{
 		assert(ungetc(c, f) == c);
 
-		DL(l, RS(refatom(loadtoken(U, f, 0, "[0-9A-Za-z]"))));
-		const Ref *const r = keytoref(env, l, -1);
+		const Ref l = loadtoken(U, f, 0, "[0-9A-Za-z]");
+		const Ref *const r = keytoref(env, l);
 
 		if(r->code == FREE)
 		{
 			assert(r->u.pointer == NULL);
 
 			ERR("no label in the scope: %s",
-				atombytes(atomat(U, l->ref.u.number)));
+				atombytes(atomat(U, l.u.number)));
 		}
 
 		assert(r->code == NODE);
 
-		if(r->u.node == NULL)
+		if(r->u.list == NULL)
 		{
 			ERR("labeled node is not complete: %s",
-				atombytes(atomat(U, l->ref.u.number)));
+				atombytes(atomat(U, l.u.number)));
 		}
 
 		return ce(ctx, env,
-			nodes, append(refs, RL(refnode(r->u.node))));
+			nodes, append(refs, RL(markext(*r))));
 		
 	}
 
@@ -318,14 +335,18 @@ static LoadCurrent loadsubdag(
 	// этим полем node (см. ниже NEWNODE) замыкает список атрибутов нового
 	// узла
 
-	return LC(nodes, loaddag(f, U, ctx->dagmap)); }
+	const Ref r = loaddag(f, U, ctx->dagmap);
+	assert(r.code == LIST);
+
+	return LC(nodes, r.u.list);
+}
 
 static LoadCurrent node(
 	const LoadContext *const ctx, List *const env, List *const nodes)
 {
 	DBG(DBGNODE, "%s", "");
 
-	assert(env && env->ref.code == ENV);
+	assert(env && iskeymap(env->ref));
 
 	Array *const U = ctx->universe;
 	FILE *const f = ctx->file;
@@ -344,7 +365,7 @@ static LoadCurrent node(
 		errexpect(c, ES("[A-Za-z]"));
 	}
 
-	const unsigned verb = loadtoken(U, f, 0, "[0-9A-Za-z]");
+	const unsigned verb = loadtoken(U, f, 0, "[0-9A-Za-z]").u.number;
 
 	Ref *ref = NULL;
 
@@ -360,8 +381,8 @@ static LoadCurrent node(
 
 	if(isfirstid(c))
 	{
-		DL(label, RS(refatom(loadtoken(U, f, 0, "[0-9A-Za-z]"))));
-		ref = keytoref(env, label, -1);
+		const Ref label = loadtoken(U, f, 0, "[0-9A-Za-z]");
+		ref = keytoref(env, label);
 
 		if(ref->code == FREE)
 		{
@@ -370,14 +391,14 @@ static LoadCurrent node(
 		else
 		{
 			ERR("node label is in scope: %s",
-				atombytes(atomat(U, label->ref.u.number)));
+				atombytes(atomat(U, label.u.number)));
 		}
 	}
 
 	// Загрузка атрибутов узла. Которые могут составлять либо список
 	// атрибутов в текущем dag-е, либо под-dag
 
-	const unsigned isdag = uireverse(ctx->dagmap, verb) != -1;
+	const unsigned isdag = verbmap(ctx->dagmap, verb) != -1;
 	const LoadCurrent lc
 		= (!isdag ? loadattr : loadsubdag)(ctx, env, nodes);
 
@@ -391,21 +412,22 @@ static LoadCurrent node(
 		free(ns);
 	}
 
-	List *const l = RL(refnode(newnode(item, verb, lc.refs, isdag)));
+	const Ref n = newnode(verb, reflist(lc.refs), item);
+	List *const l = RL(markext(n));
 
 	// Узел создан, и если под него зарезервирована метка в окружении, надо
 	// бы его туда добавить
 
 	if(ref)
 	{
-		*ref = refnode(l->ref.u.node);
+		*ref = markext(n);
 	}
 	
-	return LC(append(lc.nodes, RL(refnode(l->ref.u.node))), l);
+	return LC(append(lc.nodes, RL(n)), l);
 }
 
-List *loaddag(
-	FILE *const f, Array *const U, const Array *const dagmap)
+Ref loaddag(
+	FILE *const f, Array *const U, Array *const dagmap)
 {
 	List *const env = NULL;
 	List *const nodes = NULL;
@@ -432,7 +454,6 @@ List *loaddag(
 	DBG(DBGLRD, "%s", "-> LIST");
  	const LoadCurrent lc = list(&ctx, env, nodes);
 
-
 	if(DBGFLAGS & DBGLRD)
 	{
 		DBG(DBGLRD, "%s", "dumping");
@@ -445,7 +466,5 @@ List *loaddag(
 	// FIXME: Список в виде списка ссылок не нужен
 	freelist(lc.refs);
 
-	return lc.nodes;
-
-	return NULL;
+	return reflist(lc.nodes);
 }
