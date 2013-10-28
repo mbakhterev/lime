@@ -102,10 +102,9 @@ static void mark(const Ref r, GCState *const st)
 	case NODE:
 	{
 		Array *const D = st->defs;
-		Array *const NR = st->nonroots;
 		Array *const M = st->marks;
+		Array *const NR = st->nonroots;
 		Array *const map = st->map;
-
 
 		// Тут возможны варианты
 
@@ -196,6 +195,7 @@ static void mark(const Ref r, GCState *const st)
 static void rebuild(Ref *const r, GCState *const st)
 {
 	assert(st);
+	assert(r);
 
 	// Сперва разберёмся со скучными тривиальными случаями, в которых ничего
 	// делать не надо
@@ -208,6 +208,7 @@ static void rebuild(Ref *const r, GCState *const st)
 		return;
 	
 	case LIST:
+		// Продолжим ниже
 		break;
 	
 	default:
@@ -221,13 +222,43 @@ static void rebuild(Ref *const r, GCState *const st)
 
 	List *l = NULL;
 
+	Array *const M = st->marks;
+	Array *const map = st->map;
+
 	while(r->u.list)
 	{
 		List *const k = tipoff(&r->u.list);
 
-		if(k->code != NODE)
+		if(k->ref.code != NODE || k->ref.external)
 		{
+			// Если речь идёт не о определении узла, то оставляем
+			// эту Ref в списке
+
+			l = append(l, k);
+
+			continue;
 		}	
+
+		// Здесь речь идёт об определение узла.  Чтобы быть оставленным
+		// в списке он должен быть помечен. Если он не помечен, то
+		// просто освобождаем список k
+
+		if(!setmap(M, k->ref))
+		{
+			freelist(k);
+			continue;
+		}
+
+		// Здесь мы знаем, что узел помечен. Его надо оставить. Но
+		// сперва в том случае, если про него не сказано при помощи map:
+		// не трогать! - мы должны перестроить его атрибут
+
+		if(nodeverb(k->ref, map) == -1)
+		{
+			rebuild((Ref *)nodeattributecell(k->ref), st);
+		}
+
+		l = append(l, k);
 	}
 }
 
@@ -244,6 +275,7 @@ void gcnodes(
 	};
 
 	mark(*dag, &st);
+	rebuild(dag, &st);
 	
 	freekeymap(st.defs);
 }
