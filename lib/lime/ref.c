@@ -1,4 +1,11 @@
 #include "construct.h"
+#include "util.h"
+
+#define DBGSB 1
+
+// #define DBGFLAGS (DBGSB)
+
+#define DBGFLAGS 0
 
 #include <assert.h>
 
@@ -74,6 +81,8 @@ Ref refctx(Context *const c)
 
 static Ref setbit(const Ref r, const unsigned bit)
 {
+	DBG(DBGSB, "(r.code r.u.pointer) = (%u %p)", r.code, r.u.pointer);
+
 	// switch для аккуратности, потому что во многих случаях Ref не должна
 	// быть внешней. Случая сейчас вообще всего два: форма и список (для
 	// ключей и аргументов .FIn)

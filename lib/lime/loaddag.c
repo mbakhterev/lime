@@ -10,14 +10,16 @@
 #define DBGNODE	0x04
 #define DBGCORE	0x08
 #define DBGCE	0x10
+#define DBGKR	0x20
 
 // #define DBGFLAGS (DBGLST | DBGLRD)
 // #define DBGFLAGS (DBGLRD | DBGNODE)
 // #define DBGFLAGS 0x1f
 // #define DBGFLAGS (DBGNODE)
 // #define DBGFLAGS (DBGLRD)
+#define DBGFLAGS (DBGKR)
 
-#define DBGFLAGS 0
+// #define DBGFLAGS 0
 
 // Подробности: txt/sketch.txt: Fri Apr 26 19:29:46 YEKT 2013
 
@@ -94,7 +96,7 @@ static unsigned isfirstcore(const int c)
 static List *pushenv(List *const env)
 {
 	assert(env == NULL || iskeymap(env->ref));
-	return append(env, RL(refkeymap(newkeymap())));
+	return append(RL(refkeymap(newkeymap())), env);
 }
 
 static List *popenv(List **const penv)
@@ -152,7 +154,7 @@ static LoadCurrent list(
 			"-> ENV(CORE). env: %p; lenv %p; E: %p",
 			(void *)env,
 			(void *)lenv,
-			(void *)lenv->ref.u.environment);
+			(void *)lenv->ref.u.array);
 
 		const LoadCurrent lc = core(ctx, lenv, nodes, NULL);
 
@@ -200,6 +202,8 @@ static Ref *keytoref(List *const env, const Ref r)
 	assert(env && iskeymap(env->ref));
 
 	Binding *const b = pathlookup(env, r, NULL);
+
+	DBG(DBGKR, "%p", (void *)b);
 
 	if(b)
 	{
@@ -284,7 +288,7 @@ static LoadCurrent core(
 		{
 			assert(r->u.pointer == NULL);
 
-			ERR("no label in the scope: %s",
+			ERR("no label in scope: %s",
 				atombytes(atomat(U, l.u.number)));
 		}
 
@@ -399,6 +403,7 @@ static LoadCurrent node(
 	// атрибутов в текущем dag-е, либо под-dag
 
 	const unsigned isdag = verbmap(ctx->dagmap, verb) != -1;
+
 	const LoadCurrent lc
 		= (!isdag ? loadattr : loadsubdag)(ctx, env, nodes);
 

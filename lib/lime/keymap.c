@@ -6,11 +6,13 @@
 
 #define DBGFREE	1
 #define DBGKM 2
+#define DBGPLU 4
 
 // #define DBGFLAGS (DBGFREE)
 // #define DBGFLAGS (DBGKM)
+#define DBGFLAGS (DBGPLU)
 
-#define DBGFLAGS 0
+// #define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -396,7 +398,15 @@ static int lookone(List *const e, void *const ptr)
 	assert(ptr);
 	PLState *const st = ptr;
 
+	if(DBGFLAGS & DBGPLU)
+	{
+		dumpkeymap(stdout, 1, NULL, e->ref.u.array);
+	}
+
 	Binding *const b = look(e->ref.u.array, st->key);
+
+	DBG(DBGPLU, "%p", (void *)b);
+
 	if(b)
 	{
 		st->b = b;
@@ -411,6 +421,9 @@ static int lookone(List *const e, void *const ptr)
 Binding *pathlookup(
 	const List *const stack, const Ref key, unsigned *const depth)
 {
+	DBG(DBGPLU,
+		"PLU. (key.code key.number) = (%u %u)", key.code, key.u.number);
+
 	PLState st = { .b = NULL, .key = key, .depth = 0 };
 
 	if(forlist((List *)stack, lookone, &st, 0))
@@ -420,8 +433,9 @@ Binding *pathlookup(
 		if(depth)
 		{
 			*depth = st.depth;
-			return st.b;
 		}
+
+		return st.b;
 	}
 
 	return NULL;
@@ -434,10 +448,20 @@ static Binding *maptofree(Array *const map, const Ref key)
 	return b;
 }
 
+static Ref skip(const Ref r)
+{
+	return r;
+}
+
+static Ref dynamark(const Ref r)
+{
+	return r.code <= PTR ? skip(r) : markext(r);
+}
+
 void tunerefmap(Array *const map, const Ref key, const Ref val)
 {
-	Binding *const b = maptofree(map, key);
-	b->ref = val;
+	Binding *const b = maptofree(map, dynamark(key));
+	b->ref = dynamark(val);
 }
 
 Ref refmap(Array *const map, const Ref key)
@@ -447,7 +471,7 @@ Ref refmap(Array *const map, const Ref key)
 		return reffree();
 	}
 
-	return keymap(map, key)->ref;
+	return keymap(map, dynamark(key))->ref;
 }
 
 void tunesetmap(Array *const map, const Ref key)
@@ -560,7 +584,7 @@ typedef struct
 static unsigned listmatch(
 	KMState *const st, const List *const k, const List *const l);
 
-static unsigned keymatchone(KMState *const st, const Ref k, const Ref const *l)
+static unsigned keymatchone(KMState *const st, const Ref k, const Ref *const l)
 {
 	assert(st);
 	assert(st->n <= st->N);

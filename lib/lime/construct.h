@@ -60,7 +60,7 @@ typedef struct
 		Form *form;
 		Array *array;
 		Context *context;
-		Environment *environment;
+//		Environment *environment;
 	} u;
 
 	unsigned code;

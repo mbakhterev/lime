@@ -12,7 +12,7 @@
 // #define DBGFLAGS (DBGDAG | DBGSTD | DBGATTR)
 // #define DBGFLAGS (DBGATTR)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGDAG)
 
 typedef struct
 {
@@ -75,12 +75,8 @@ static void dumpref(
 	case NODE:
 	{
 		assert(isnode(r));
-
 		const Ref n = refmap(nodes, r);
-		assert(n.code == NUMBER);
-
-		const unsigned k = n.u.number;
-
+		
 		// Когда печатаем узел в списке, то не важно, в каком режиме
 		// печатаем, в отладочном или нет. Адреса узлов надо указать для
 		// узлов, а не для ссылок на них, которые могут быть текущими
@@ -88,9 +84,9 @@ static void dumpref(
 		// nodes == NULL во время печати просто списка), то будет
 		// выведен адрес узла, которой поможет его идентифицировать
 
-		if(k != -1)
+		if(n.code != FREE)
 		{
-			assert(fprintf(f, "n%u", k) > 0);
+			assert(fprintf(f, "n%u", n.u.number) > 0);
 		}
 		else
 		{
@@ -231,6 +227,11 @@ static void dumpsubdag(const DState *const st, const Ref dag)
 	dumpdag(st->dbg, f, st->tabs + 1, st->U, dag, st->map);
 }
 
+static unsigned knownverb(const Ref n, Array *const map)
+{
+	return map != NULL && nodeverb(n, map) != -1;
+}
+
 static int dumpone(List *const l, void *const ptr)
 {
 	const DState *const st = ptr;
@@ -263,8 +264,11 @@ static int dumpone(List *const l, void *const ptr)
 			atombytes(atomat(U, nodeverb(n, NULL))), i.u.number));
 	}
 
-	(nodeverb(n, map) == -1 ?
-		dumpattr : dumpsubdag)(st, nodeattribute(n));
+	const unsigned k = knownverb(n, map);
+
+	DBG(DBGDAG, "map = %p; k = %u", (void *)map, k);
+
+	(!k ?  dumpattr : dumpsubdag)(st, nodeattribute(n));
 
 	if(l != st->L)
 	{

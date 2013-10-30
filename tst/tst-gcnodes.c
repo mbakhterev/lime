@@ -9,39 +9,29 @@ const char *unitname = "stdin";
 
 int main(int argc, char *argv[])
 {
-	Array U = makeatomtab();
-//	const Array DM = keymap(&U, 0, ES("Z", "ZA", "ZB"));
+	Array *const U = newatomtab();
+	Array *const map = newverbmap(U, 0, ES("Z", "ZA", "ZB"));
+	Array *const nogo = newverbmap(U, 0, ES("ZB"));
+	Ref l = loaddag(stdin, U, map);
 
-// 	const DagMap DM
-// 		= makedagmap(&U, 0, ES("Z", "ZA", "ZB"), ES("Z", "ZA"));
-// 
-// 	List *l = loaddag(stdin, &U, &DM.map);
+	printf("len(l): %u\n", listlen(l.u.list));
 
-	const Array go = keymap(&U, 0, ES("Z", "ZA"));
-	const Array map = keymap(&U, 0, ES("Z", "ZA", "ZB"));
-	List *l = loaddag(stdin, &U, &map);
+ 	Array *const nonroots = newverbmap(U, 0, ES("X", "Y"));
 
-	printf("len(l): %u\n", listlen(l));
+	gcnodes(&l, nogo, nonroots, NULL);
+	const Ref k = l;
 
- 	const Array nonroots = keymap(&U, 0, ES("X", "Y"));
-
-//	List *k = gcnodes(&l, &DM, &nonroots);
-
-//	List *k = gcnodes(&l, &map, &go, &nonroots);
-	List *k = gcnodes(&l, &go, &nonroots);
-
-	printf("len(l): %u; len(k): %u\n", listlen(l), listlen(k));
+	printf("len(l): %u; len(k): %u\n",
+		listlen(l.u.list), listlen(k.u.list));
 
 	size_t sz = 0;
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
-	dumpdag(1, f, 0, &U, k);
-	// , &map);
+	dumpdag(1, f, 0, U, k, map);
 	fclose(f);
 
 	printf("dag(k):%s\n", d);
-	freedag(k);
-	// , NULL);
+	freeref(k);
 	free((void *)d);
 
 	return 0;

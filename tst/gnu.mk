@@ -28,10 +28,10 @@ lmtstbin = \
 	$(T)/gen-atomtab	\
 	$(T)/tst-atomtab.sh	\
 	$(T)/tst-env		\
-	$(T)/tst-list		
+	$(T)/tst-list		\
+	$(T)/tst-loaddag	\
+	$(T)/tst-gcnodes	\
 
-# 	$(T)/tst-loaddag	\
-# 	$(T)/tst-gcnodes	\
 # 	$(T)/tst-forkdag	\
 # 	$(T)/tst-evallists	\
 # 	$(T)/tst-evalforms	\

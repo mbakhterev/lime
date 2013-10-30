@@ -270,7 +270,7 @@ void gcnodes(
 	{
 		.map = map,
 		.nonroots = nonroots,
-		.marks = marks,
+		.marks = marks != NULL ? marks : newkeymap(),
 		.defs = newkeymap()
 	};
 
@@ -278,4 +278,9 @@ void gcnodes(
 	rebuild(dag, &st);
 	
 	freekeymap(st.defs);
+
+	if(marks)
+	{
+		freekeymap(st.marks);
+	}
 }
