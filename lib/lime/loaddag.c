@@ -405,7 +405,7 @@ static LoadCurrent node(
 	const unsigned isdag = k != -1;
 
 	DBG(DBGNODE, "(map verb -> k) -> isdag = (%p %s -> %u) -> %u",
-		ctx->dagmap, atombytes(atomat(U, verb)), k, isdag);
+		(void *)ctx->dagmap, atombytes(atomat(U, verb)), k, isdag);
 	
 	if(DBGFLAGS & DBGNODE)
 	{
