@@ -14,12 +14,11 @@
 
 // #define DBGFLAGS (DBGLST | DBGLRD)
 // #define DBGFLAGS (DBGLRD | DBGNODE)
-// #define DBGFLAGS 0x1f
 // #define DBGFLAGS (DBGNODE)
 // #define DBGFLAGS (DBGLRD)
-#define DBGFLAGS (DBGKR)
+// #define DBGFLAGS (DBGKR)
 
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 // Подробности: txt/sketch.txt: Fri Apr 26 19:29:46 YEKT 2013
 
@@ -402,7 +401,16 @@ static LoadCurrent node(
 	// Загрузка атрибутов узла. Которые могут составлять либо список
 	// атрибутов в текущем dag-е, либо под-dag
 
-	const unsigned isdag = verbmap(ctx->dagmap, verb) != -1;
+	const unsigned k = verbmap(ctx->dagmap, verb);
+	const unsigned isdag = k != -1;
+
+	DBG(DBGNODE, "(map verb -> k) -> isdag = (%p %s -> %u) -> %u",
+		ctx->dagmap, atombytes(atomat(U, verb)), k, isdag);
+	
+	if(DBGFLAGS & DBGNODE)
+	{
+		dumpkeymap(stderr, 1, U, ctx->dagmap); 
+	}
 
 	const LoadCurrent lc
 		= (!isdag ? loadattr : loadsubdag)(ctx, env, nodes);

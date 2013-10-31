@@ -15,6 +15,8 @@ int main(int argc, char *argv[])
 	Ref l = loaddag(stdin, U, map);
 
 	printf("len(l): %u\n", listlen(l.u.list));
+	dumpdag(1, stdout, 0, U, l, map);
+	fputc('\n', stdout);
 
  	Array *const nonroots = newverbmap(U, 0, ES("X", "Y"));
 

@@ -11,8 +11,9 @@
 
 // #define DBGFLAGS (DBGDAG | DBGSTD | DBGATTR)
 // #define DBGFLAGS (DBGATTR)
+// #define DBGFLAGS (DBGDAG)
 
-#define DBGFLAGS (DBGDAG)
+#define DBGFLAGS 0
 
 typedef struct
 {

@@ -10,9 +10,9 @@
 
 // #define DBGFLAGS (DBGFREE)
 // #define DBGFLAGS (DBGKM)
-#define DBGFLAGS (DBGPLU)
+// #define DBGFLAGS (DBGPLU)
 
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -557,7 +557,7 @@ unsigned verbmap(Array *const map, const unsigned verb)
 		return -1;
 	}
 
-	const Ref r = refmap(map, refnum(verb));
+	const Ref r = refmap(map, refatom(verb));
 
 	switch(r.code)
 	{
