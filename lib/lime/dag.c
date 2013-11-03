@@ -6,8 +6,11 @@
 #include <string.h>
 
 #define DBGGC	1
+#define DBGMRK	2
+#define DBGRB	3
 
-// #define DBGFLAGS (DBGGC)
+// #define DBGFLAGS (DBGMRK)
+
 #define DBGFLAGS 0
 
 Ref forkdag(const Ref dag)
@@ -115,6 +118,7 @@ static void mark(const Ref r, GCState *const st)
 			// узел уже есть в defs, то это нарушение структуры
 			// графа tunesetmap вылетит
 
+			DBG(DBGMRK, "def N:%p", (void *)r.u.list);
 			tunesetmap(D, r);
 
 			// Выясняем является ли узел nonroots и отмечен ли он (в
@@ -134,6 +138,10 @@ static void mark(const Ref r, GCState *const st)
 
 				if(!mrk)
 				{
+					DBG(DBGMRK,
+						"mark root N:%p",
+						(void *)r.u.list);
+
 					tunesetmap(M, r);
 				}
 
@@ -174,6 +182,9 @@ static void mark(const Ref r, GCState *const st)
 			if(setmap(D, r) && !setmap(M, r))
 			{
 				assert(nodeverb(r, NR) != -1);
+
+				DBG(DBGMRK,
+					"mark referred N:%p", (void *)r.u.list);
 
 				tunesetmap(M, r);
 
@@ -260,6 +271,8 @@ static void rebuild(Ref *const r, GCState *const st)
 
 		l = append(l, k);
 	}
+
+	r->u.list = l;
 }
 
 void gcnodes(
