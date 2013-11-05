@@ -60,7 +60,7 @@ static int icmp(const void *const D, const unsigned i, const unsigned j)
 
 Array *newatomtab(void)
 {
-	return newarray(ATOM, sizeof(Atom), icmp, kcmp);
+	return newmap(ATOM, sizeof(Atom), icmp, kcmp);
 }
 
 void freeatomtab(Array *const t)
@@ -78,7 +78,7 @@ void freeatomtab(Array *const t)
 		}
 	}
 
-	freearray(t);
+	freemap(t);
 }
 
 // Структура атома: byte \0 hint length. length - это длина массива байтов, без

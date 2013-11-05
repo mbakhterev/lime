@@ -29,7 +29,7 @@ static Array *tipoffarray(Array **const lptr)
 	return a;
 }
 
-Array *newarray(
+Array *newmap(
 	const unsigned code, const unsigned ilen,
 	const ItemCmp icmp, const KeyCmp kcmp)
 {
@@ -62,7 +62,7 @@ Array *newarray(
 	return a;
 }
 
-void freearray(Array *const a)
+void freemap(Array *const a)
 {
 	assert(a && a->code != FREE);
 

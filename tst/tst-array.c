@@ -33,7 +33,7 @@ int main(int argc, char * argv[])
 {
 	const unsigned N = 1 << 13;
 
-	Array *const a = newarray(0, sizeof(Some), icmp, kcmp);
+	Array *const a = newmap(0, sizeof(Some), icmp, kcmp);
 	Some s;
 
 	s.key = (unsigned)-1;
@@ -58,7 +58,7 @@ int main(int argc, char * argv[])
 		printf("%08x\n", S[I[i]].key);
 	}
 	
-	freearray(a);
+	freemap(a);
 
 	return 0;
 }

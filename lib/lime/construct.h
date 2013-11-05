@@ -128,11 +128,11 @@ struct Array
 	unsigned count;
 };
 
-extern Array *newarray(
+extern Array *newmap(
 	const unsigned code,
 	const unsigned itemlen, const ItemCmp, const KeyCmp);
 
-extern void freearray(Array *const);
+extern void freemap(Array *const);
 
 extern unsigned readin(Array *const, const void *const val);
 extern unsigned lookup(const Array *const, const void *const key);

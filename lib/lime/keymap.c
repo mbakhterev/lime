@@ -136,7 +136,7 @@ static int icmp(const void *const D, const unsigned i, const unsigned j)
 
 Array *newkeymap(void)
 {
-	return newarray(MAP, sizeof(Binding), icmp, kcmp);
+	return newmap(MAP, sizeof(Binding), icmp, kcmp);
 }
 
 unsigned iskeymap(const Ref r)
@@ -160,7 +160,7 @@ void freekeymap(Array *const env)
 		DBG(DBGFREE, "i: %u", i);
 	}
 
-	freearray(env);
+	freemap(env);
 }
 
 static const char *codetostr(const unsigned code)
