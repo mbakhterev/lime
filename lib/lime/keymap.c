@@ -561,14 +561,39 @@ unsigned verbmap(Array *const map, const unsigned verb)
 
 	switch(r.code)
 	{
-		case FREE:
-			return -1;
+	case FREE:
+		return -1;
 
-		case NUMBER:
-			return r.u.number;
+	case NUMBER:
+		return r.u.number;
 
-		default:
-			assert(0);
+	default:
+		assert(0);
+	}
+
+	return -1;
+}
+
+unsigned enummap(Array *const map, const Ref key)
+{
+	assert(map);
+
+	const Ref r = refmap(map, key);
+	switch(r.code)
+	{
+	case NUMBER:
+		return r.u.number;
+
+	case FREE:
+	{
+		const unsigned n = map->count;
+		tunerefmap(map, key, refnum(map->count));
+		assert(n == map->count + 1);
+		return n;
+	}
+
+	default:
+		assert(0);
 	}
 
 	return -1;

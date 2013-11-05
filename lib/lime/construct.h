@@ -415,6 +415,8 @@ extern Array *newverbmap(
 
 extern unsigned verbmap(Array *const, const unsigned verb);
 
+extern unsigned enummap(Array *const map, const Ref);
+
 // Процедура прохода по окружениям. Начинает с map и идёт по Binding-ам (на
 // всякий случай в порядке индекса). Когда walkbindings видит такую связку B,
 // что (B.ref.code == MAP && !B.ref.external), и когда WalkBinding для B вернёт
