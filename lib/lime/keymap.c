@@ -577,6 +577,7 @@ unsigned verbmap(Array *const map, const unsigned verb)
 unsigned enummap(Array *const map, const Ref key)
 {
 	assert(map);
+	const unsigned n = map->count;
 
 	const Ref r = refmap(map, key);
 	switch(r.code)
@@ -586,9 +587,8 @@ unsigned enummap(Array *const map, const Ref key)
 
 	case FREE:
 	{
-		const unsigned n = map->count;
-		tunerefmap(map, key, refnum(map->count));
-		assert(n == map->count + 1);
+		tunerefmap(map, key, refnum(n));
+		assert(n + 1 == map->count);
 		return n;
 	}
 

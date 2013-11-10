@@ -369,6 +369,7 @@ static LoadCurrent node(
 	}
 
 	const unsigned verb = loadtoken(U, f, 0, "[0-9A-Za-z]").u.number;
+	const unsigned here = item;
 
 	Ref *ref = NULL;
 
@@ -425,7 +426,7 @@ static LoadCurrent node(
 		free(ns);
 	}
 
-	const Ref n = newnode(verb, reflist(lc.refs), item);
+	const Ref n = newnode(verb, reflist(lc.refs), here);
 	List *const l = RL(markext(n));
 
 	// Узел создан, и если под него зарезервирована метка в окружении, надо

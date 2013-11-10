@@ -14,7 +14,8 @@ lmtstsrc = \
 	tst-gcnodes.c	\
 	tst-forkdag.c	\
 	tst-evallists.c \
-	tst-evalforms.c
+	tst-evalforms.c \
+	tst-enveval.c
 
 lmtstobj = $(call c2o,$(lmtstbits),$(lmtstsrc))
 
@@ -31,6 +32,7 @@ lmtstbin = \
 	$(T)/tst-list		\
 	$(T)/tst-loaddag	\
 	$(T)/tst-gcnodes	\
+	$(T)/tst-enveval	\
 
 # 	$(T)/tst-forkdag	\
 # 	$(T)/tst-evallists	\
@@ -64,6 +66,8 @@ $(T)/tst-evallists: $(lmtstbits)/tst-evallists.o $(lmlib)
 $(T)/tst-evalforms: $(lmtstbits)/tst-evalforms.o $(lmlib)
 
 $(T)/tst-env: $(lmtstbits)/tst-env.o $(lmlib)
+
+$(T)/tst-enveval: $(lmtstbits)/tst-enveval.o $(lmlib)
 
 lmtstforms = \
 	$(T)/forms/simple-atom.lk

@@ -14,6 +14,7 @@ lmsrc = \
 	dump.c		\
 	dag.c		\
 	loaddag.c	\
+	enveval.c	\
 
 # 	environment.c	\
 # 	walkdag.c	\

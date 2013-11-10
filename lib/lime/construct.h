@@ -415,6 +415,11 @@ extern Array *newverbmap(
 
 extern unsigned verbmap(Array *const, const unsigned verb);
 
+// Процедура, которая строит отображение с информацией о порядковых номерах
+// Ref-ов в этом отображении. Специально его настраивать не нужно, оно всегда
+// возвращает номер Ref-ы в указанном отображении, которое не должно быть
+// NULL-ём.
+
 extern unsigned enummap(Array *const map, const Ref);
 
 // Процедура прохода по окружениям. Начинает с map и идёт по Binding-ам (на
@@ -511,6 +516,19 @@ typedef int WalkOne(
 // verb-узлов пере вызовом wlk
 
 extern void walkdag(const Ref dag, WalkOne wlk, void *const, Array *const vm);
+
+// Процедура для конструирования по графу dag. Обращает внимание на .E и .Env
+// узлы. Результатами работы будет (1) дерево окружений, задаваемое .E-узлами,
+// построенное из корня в env; (2) семантика, записанное в ptrmap-отображение
+// envmarks, в котором узлам с verb-ами из markit будет сопоставлено то
+// окружение, где они объявлены (!Ref.external). enveval можно попросить не
+// трогать подвыражения в атрибутах узлов с verb-ами из escape (нужно для форм) 
+
+extern void enveval(
+	Array *const U,
+	Array *const env,
+	Array *const envmarks,
+	const Ref dag, Array *const escape, Array *const markit);
 
 // Оценка узлов L, LNth и FIn. Параметр map описывает те выражения, в которых
 // оценку проводить не следует

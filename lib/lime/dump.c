@@ -96,6 +96,10 @@ static void dumpref(
 
 		break;
 
+	case PTR:
+		assert(fprintf(f, "P:%p", (void *)r.u.pointer) > 0);
+		break;
+
 	case FORM:
 		assert(r.u.form);
 		assert(fprintf(f, "F:%p (D:%p S:%p)",
@@ -174,7 +178,7 @@ char *strlist(const Array *const U, const List *const l)
 	FILE *f = newmemstream(&buf, &length);
 	assert(f);
 
-	dumplist(f, NULL, l);
+	dumplist(f, U, l);
 
 	assert(fputc(0, f) != EOF);
 	fclose(f);
