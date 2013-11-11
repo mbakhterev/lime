@@ -1,0 +1,29 @@
+(
+	.TEnv ('0.7."pointer"; .T ('0.1."P"; 4));
+	.TEnv ('0.5."float"; .T ('0.1."F"; 4));
+	.TEnv ('0.3."i32"; .T ('0.1."I"; 4));
+	.TEnv ('0.2."i1"; .T ('0.1."I"; 1));
+ 
+	.E ('0.3."ENV"; ('0.4."this"; '0.4."main"; '0.6."parent"); .E('0.3."ENV"; ('0.4."this")));
+	.proc (
+		.S ('0.4."main");
+		.Env ( .E ('0.3."ENV"; ('0.4."this"; '0.4."main"));
+			// Function body
+			.LB(
+				.LB l0 (
+					.S l1 ('0.2."l1";.TEnv ('0.7."pointer"));
+					.S la ('0.1."a";.TEnv ('0.7."pointer"));
+					.S lb ('0.1."b";.TEnv ('0.7."pointer"));
+					.S lc ('0.1."c";.TEnv ('0.7."pointer"));
+					.wr (.TEnv ('0.3."i32"); .addr  (.TEnv ('0.7."pointer"); .S('0.2."l1")); .const (.TEnv ('0.3."i32"); '0.1."0") );
+					.rd  l2 (.TEnv ('0.3."i32"); .addr  (.TEnv ('0.7."pointer"); .S('0.1."b")));
+					.rd  l3 (.TEnv ('0.3."i32"); .addr  (.TEnv ('0.7."pointer"); .S('0.1."c")));
+					.add l4 (.TEnv ('0.3."i32"); l2; l3);
+					.wr (.TEnv ('0.3."i32"); .addr  (.TEnv ('0.7."pointer"); .S('0.1."a")); l4 );
+					.ret (.const (.TEnv ('0.3."i32"); '0.1."0"))
+				);
+				.Label ('0.2."l0"; l0)
+			)
+		) // End ENV
+	)// end proc
+)

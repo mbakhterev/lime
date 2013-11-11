@@ -92,9 +92,12 @@ static void mkenv(
 	{
 	case 2:
 	{
-		Array *const t = newkeymap();
-		newenv = makepath(env, U, R[0], R[1].u.list, refkeymap(t));
-		assert(t == newenv);
+// 		Array *const t = newkeymap();
+
+		newenv = makepath(env, U, R[0], R[1].u.list, reffree());
+		assert(newenv && newenv->code == MAP);
+
+// 		assert(t == newenv);
 
 		break;
 	}
