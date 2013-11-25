@@ -60,7 +60,7 @@ static const List *attrlist(const Ref r, Array *const U)
 
 static void mkenv(
 	Array *const U, const Ref r, Array *const recode,
-	Array *const env, Array *const envdefs)
+	Array *const env, Array *const envdefs, Array *const envmarks)
 {
 	const List *const l = attrlist(r, U);
 	const unsigned len = listlen(l);
@@ -92,12 +92,8 @@ static void mkenv(
 	{
 	case 2:
 	{
-// 		Array *const t = newkeymap();
-
 		newenv = makepath(env, U, R[0], R[1].u.list, reffree());
 		assert(newenv && newenv->code == MAP);
-
-// 		assert(t == newenv);
 
 		break;
 	}
@@ -132,6 +128,7 @@ static void mkenv(
 	// Тут надо запомнить, чему равно текущее выражение с .E
 
 	tuneenvmap(envdefs, r, newenv);
+	tuneenvmap(envmarks, r, newenv);
 }
 
 static void assignenv(
@@ -206,7 +203,7 @@ static int makeassignone(List *const l, void *const ptr)
 	switch(nodeverb(r, st->recode))
 	{
 	case ENODE:
-		mkenv(st->U, r, st->recode, st->env, st->envdefs);
+		mkenv(st->U, r, st->recode, st->env, st->envdefs, st->envmarks);
 		break;
 
 	case ENV:

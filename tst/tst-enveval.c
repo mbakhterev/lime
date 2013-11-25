@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
 	const Ref D = loaddag(stdin, U, lb);
 
 	dumpdag(1, stdout, 0, U, D, lb);
+	fflush(stdout);
 
 	Array *const root = newkeymap();
 	Array *const marks = newkeymap();

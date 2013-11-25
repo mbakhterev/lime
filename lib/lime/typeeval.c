@@ -10,26 +10,26 @@ typedef struct
 	Array *const typemap;
 
 	Array *const escape;
-	Array *const envmap;
+	Array *const envmarks;
 
 	Array *const verbs;
-	Array *const varmap;
 } EState;
 
-static void enumtype(const Ref, EState *const);
+static void nominate(const Ref, EState *const);
 
-static int enumone(List *const l, void *const ptr)
+static int nominateone(List *const l, void *const ptr)
 {
 	assert(l);
 	assert(ptr);
 
-	enumtype(l->ref, ptr);
+	nominate(l->ref, ptr);
 
 	return 0;
 }
 
 #define TNODE 0
 #define TENV 1
+#define TDEF 2
 
 static const char *const verbs[] =
 {
@@ -39,9 +39,17 @@ static const char *const verbs[] =
 	NULL
 };
 
-static void enumnode(
+static Ref totypekey(const Ref r, Array *const envmarks, Array *const typemap)
+{
+	const Ref envtmp = exprewrite(nodeattribute(r), envmarks);
+	const Ref key = exprewrite(envtmp, typemap);
+	freeref(envtmp);
+	return key;
+}
+
+static void nominatenode(
 	Array *const U,
-	Array *const types, Array *const typemap, Array *const varmap,
+	Array *const types, Array *const typemap, Array *const envmarks,
 	const Ref r, Array *const verbs)
 {
 	if(r.external)
@@ -57,82 +65,79 @@ static void enumnode(
 		// Смотрим, во что превращается атрибут узла, в текущем рабочем
 		// контексте
 
-		const Ref key = expeval(nodeattribute(r), varmap);
+		const Ref key = totypekey(nodeattribute(r), envmarks, typemap);
 
 		// Полученное выражение должно быть описанием типа
 
 		if(!istypekey(key))
 		{
-			return;
+			item = nodeline(r);
+			ERR("node \"%s\": wrong attribute structure",
+				atombytes(atomat(U, nodeverb(r, NULL))));
 		}
 
-		// Присваиваем .T-выражению номер типа, которое оно задаёт. При
-		// чём, и в результирующей typemap, и в отображении узлов на
-		// (TYPE + TYPEVAR). Два отображения нам нужны, потому что,
-		// .TEnv-ы при разборе .T и других узлов должны отображаться на
-		// разные объекты. В первом случае это должны быть TVAR-ы, а
-		// во втором - TYPE-ы
+		// Присваиваем .T-выражению номер типа, которое оно задаёт. И
+		// запоминаем это в таблице соответствия узлов значениям
 
 		const unsigned typeid = typeenummap(types, key);
 		freeref(key);
 
-		tunerefmap(workmap, r, reftype(typeid));
 		tunerefmap(typemap, r, reftype(typeid));
 
 		break;
 	}
 		
-	case TENV:
-	{
-		// Нас интересуют те .TEnv-ы, которые задают TVAR-ы, то есть
-		// .TEnv-ы со списками атрибутов единичной длины. Остальные
-		// .TEnv описывают другие сущности и мы их здесь не трогаем
-
-		const Ref attr = nodeattribute(r);
-		if(attr.code != LIST)
-		{
-			return;
-		}
-
-		const unsigned len = listlen(attr.u.list);
-		if(len != 1)
-		{
-			return;
-		}
-
-		// Добываем этот единственный элемент из списка. Он будет
-		// служить нам основным ключом. Нужно проверить, что он подходит
-		// под критерии basic
-
-		const Ref key = attr.u.list->ref;
-
-		if(!isbasickey(key))
-		{
-			return;
-		}
-		
-		// Если ключ подходящий, дополнительно его декорируем и
-		// добавляем в него ссылку на окружение, в котором видим текущий
-		// .TEnv
-
-		const Ref augkey 
-			= reflist(
-				append(
-					RL(refkeymap(envmap(envmarks, r))),
-					decorate(key, U, TYPE)));
-
-		// Теперь надо найти этому выражению место в таблице типов. И
-		// соответствующим образом расширить varmap
-
-		const unsigned id = typeenummap(types, augkey);
-		freeref(augkey);
-
-		tunerefmap(varmap, r, reftvar(id));
-	}
+//	case TENV:
+//	{
+// 		// Нас интересуют те .TEnv-ы, которые задают TVAR-ы, то есть
+// 		// .TEnv-ы со списками атрибутов единичной длины. Остальные
+// 		// .TEnv описывают другие сущности и мы их здесь не трогаем
+// 
+// 		const Ref attr = nodeattribute(r);
+// 		if(attr.code != LIST)
+// 		{
+// 			return;
+// 		}
+// 
+// 		const unsigned len = listlen(attr.u.list);
+// 		if(len != 1)
+// 		{
+// 			return;
+// 		}
+// 
+// 		// Добываем этот единственный элемент из списка. Он будет
+// 		// служить нам основным ключом. Нужно проверить, что он подходит
+// 		// под критерии basic
+// 
+// 		const Ref key = attr.u.list->ref;
+// 
+// 		if(!isbasickey(key))
+// 		{
+// 			return;
+// 		}
+// 		
+// 		// Если ключ подходящий, дополнительно его декорируем и
+// 		// добавляем в него ссылку на окружение, в котором видим текущий
+// 		// .TEnv
+// 
+// 		const Ref augkey 
+// 			= reflist(
+// 				append(
+// 					RL(refkeymap(envmap(envmarks, r))),
+// 					decorate(key, U, TYPE)));
+// 
+// 		// Теперь надо найти этому выражению место в таблице типов. И
+// 		// соответствующим образом расширить varmap
+// 
+// 		const unsigned id = typeenummap(types, augkey);
+// 		freeref(augkey);
+// 
+// 		tunerefmap(varmap, r, reftvar(id));
+// 	}
 	}
 }
 
-static void enumtype(const Ref r, EState *const E)
+static void nominate(const Ref r, EState *const E)
 {
 	switch(r.code)
 	{
@@ -145,12 +150,16 @@ static void enumtype(const Ref r, EState *const E)
 		// В списке могут встретится определения узлов .T и .TEnv
 		// проходим его
 
-		forlist(r.u.list, enumone, E, 0);
+		forlist(r.u.list, nominateone, E, 0);
 		return;
 
 	
 	case NODE:
-		enumnode(E->U, E->types, E->typemap, E->varmap, r, E->verbs);
+		nominatenode(
+			E->U,
+			E->types, E->typemap, E->envmarks,
+			r, E->verbs);
+
 		return;
 	
 	default:
@@ -164,4 +173,5 @@ void typeeval(
 	Array *const typemarks,
 	const Ref dag, Array *const escape, Array *const envmarks)
 {
+	
 }

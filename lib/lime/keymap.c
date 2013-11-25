@@ -59,7 +59,7 @@ unsigned issignaturekey(const Ref r)
 
 unsigned istypekey(const Ref r)
 {
-	return iskey(r, TYPEVAR);
+	return iskey(r, MAP);
 }
 
 static int cmplists(const List *const, const List *const);
@@ -75,14 +75,13 @@ static int cmpkeys(const Ref k, const Ref l)
 		return r;
 	}
 
-// 	if(k.code <= TYPE)
-	if(k.code <= TYPEVAR)
+	if(k.code <= TYPE)
 	{
 		return cmpui(k.u.number, l.u.number);
 	}
 
-// 	if(k.code <= NODE)
-	if(k.code <= MAP)
+//	if(k.code <= MAP)
+	if(k.code < LIST)
 	{
 		// Ограничения на структуру ключа с указателями для
 		// самоконтроля. Важно, потому что такие ключи попадут потом в
@@ -481,7 +480,8 @@ static Ref skip(const Ref r)
 
 static Ref dynamark(const Ref r)
 {
-	return r.code <= PTR ? skip(r) : markext(r);
+// 	return r.code <= PTR ? skip(r) : markext(r);
+	return r.code <= TYPE ? skip(r) : markext(r);
 }
 
 void tunerefmap(Array *const map, const Ref key, const Ref val)
@@ -630,29 +630,40 @@ unsigned verbmap(Array *const map, const unsigned verb)
 	return -1;
 }
 
+// unsigned enummap(Array *const map, const Ref key)
+// {
+// 	assert(map);
+// 	const unsigned n = map->count;
+// 
+// 	const Ref r = refmap(map, key);
+// 	switch(r.code)
+// 	{
+// 	case NUMBER:
+// 		return r.u.number;
+// 
+// 	case FREE:
+// 	{
+// 		tunerefmap(map, key, refnum(n));
+// 		assert(n + 1 == map->count);
+// 		return n;
+// 	}
+// 
+// 	default:
+// 		assert(0);
+// 	}
+// 
+// 	return -1;
+// }
+
 unsigned enummap(Array *const map, const Ref key)
 {
 	assert(map);
-	const unsigned n = map->count;
+	const Binding *const b = keymap(map, dynamark(key));
 
-	const Ref r = refmap(map, key);
-	switch(r.code)
-	{
-	case NUMBER:
-		return r.u.number;
+	const unsigned n = b - (Binding *)map->u.data;
+	assert(n < map->count);
 
-	case FREE:
-	{
-		tunerefmap(map, key, refnum(n));
-		assert(n + 1 == map->count);
-		return n;
-	}
-
-	default:
-		assert(0);
-	}
-
-	return -1;
+	return n;
 }
 
 typedef struct

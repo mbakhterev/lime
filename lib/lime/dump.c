@@ -8,12 +8,14 @@
 #define DBGDAG 1
 #define DBGSTD 2
 #define DBGATTR 4
+#define DBGMAP 8
 
 // #define DBGFLAGS (DBGDAG | DBGSTD | DBGATTR)
 // #define DBGFLAGS (DBGATTR)
 // #define DBGFLAGS (DBGDAG)
+#define DBGFLAGS (DBGMAP)
 
-#define DBGFLAGS 0
+// #define DBGFLAGS 0
 
 typedef struct
 {
