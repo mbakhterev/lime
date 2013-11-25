@@ -21,6 +21,7 @@ Ref refnat(const unsigned code, const unsigned n)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+	case TVAR:
 		break;
 	
 	default:
@@ -124,6 +125,7 @@ Ref forkref(const Ref r, Array *const nodemap)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+	case TYPEVAR:
 		return r;
 	
 	case NODE:
@@ -166,6 +168,7 @@ void freeref(const Ref r)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+	case TYPEVAR:
 	case PTR:
 	case FREE:
 		break;

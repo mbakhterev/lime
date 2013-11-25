@@ -49,13 +49,18 @@ unsigned iskey(const Ref k, const unsigned limit)
 
 unsigned isbasickey(const Ref r)
 {
+	return iskey(r, ATOM);
+}
+
+unsigned issignaturekey(const Ref r)
+{
 	return iskey(r, TYPE);
 }
 
-// static unsigned isgenerickey(const Ref r)
-// {
-// 	return iskey(r, NODE);
-// }
+unsigned istypekey(const Ref r)
+{
+	return iskey(r, TYPEVAR);
+}
 
 static int cmplists(const List *const, const List *const);
 
@@ -70,13 +75,22 @@ static int cmpkeys(const Ref k, const Ref l)
 		return r;
 	}
 
-	if(k.code <= TYPE)
+// 	if(k.code <= TYPE)
+	if(k.code <= TYPEVAR)
 	{
 		return cmpui(k.u.number, l.u.number);
 	}
 
-	if(k.code <= NODE)
+// 	if(k.code <= NODE)
+	if(k.code <= MAP)
 	{
+		// Ограничения на структуру ключа с указателями для
+		// самоконтроля. Важно, потому что такие ключи попадут потом в
+		// окружения. Чтобы не стереть потом лишнее
+
+		assert(k.external);
+		assert(l.external);
+
 		return cmpptr(k.u.pointer, l.u.pointer);
 	}
 
@@ -537,6 +551,36 @@ void *ptrmap(Array *const map, const Ref key)
 
 	case PTR:
 		return r.u.pointer;	
+	
+	default:
+		assert(0);
+	}
+
+	return NULL;
+}
+
+void tuneenvmap(Array *const map, const Ref key, Array *const km)
+{
+	assert(km && km->code == MAP);
+	tunerefmap(map, key, refkeymap(km));
+}
+
+Array *envmap(Array *const map, const Ref key)
+{
+	if(map == NULL)
+	{
+		return NULL;
+	}
+
+	const Ref r = refmap(map, key);
+
+	switch(r.code)
+	{
+	case FREE:
+		return NULL;
+	
+	case MAP:
+		return r.u.array;
 	
 	default:
 		assert(0);

@@ -15,6 +15,8 @@ lmsrc = \
 	dag.c		\
 	loaddag.c	\
 	enveval.c	\
+	typeeval.c	\
+	exprewrite.c	\
 
 # 	environment.c	\
 # 	walkdag.c	\

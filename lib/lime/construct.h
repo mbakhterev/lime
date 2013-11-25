@@ -27,10 +27,18 @@ enum
 	// 
 	// NUMBER, ATOM, TYPE - это числа и номера значений в таблицах атомов и
 	// типов соответственно.
+	// 
+	// TVAR - число, которое задаёт номер выражения в таблице типов,
+	// задающее ключ для поиска некоторого типа. Ссылка на окружение, с
+	// которого следует начинать поиск хранится в этом же выражении.
 	// 	
-	// EXP отмечает выражения, которые представлены списками. Списки
+	// NODE отмечает выражения, которые представлены списками. Списки
 	// выражений должны иметь формат ("some-verb" (attributes)). Они
 	// моделируют узлы в DAG-е программы.
+	// 
+	// MAP - метка для обозначения окружений. MAP перечислена перед LIST,
+	// значит, ссылки на MAP можно использовать в качестве элементов ключей
+	// поиска по окружениям. Необходимо для Си-образного варианта TYPEVAR
 	// 
 	// LIST - это списки из разнообразных Ref-ов. Могут содержать Ref-ы на
 	// другие списки. Поэтому используются для представления S-выражений.
@@ -38,10 +46,10 @@ enum
 	// FORM говорит об указателе на форму - кусочек DAG-а программы,
 	// открытый для подстановки в него некоторых значений
 
-	NUMBER, ATOM, TYPE, PTR, NODE, LIST, FORM,
+	NUMBER, ATOM, TYPE, TVAR, NODE, MAP, LIST, FORM, PTR, 
 
-	// Метка для обозначения окружений
-	MAP,
+// 	// Метка для обозначения окружений
+// 	MAP,
 
 	// Метки, которые в будущем не понадобятся
 	CTX,
@@ -80,6 +88,7 @@ extern Ref refnat(const unsigned code, const unsigned);
 extern Ref refnum(const unsigned);
 extern Ref refatom(const unsigned);
 extern Ref reftype(const unsigned);
+extern Ref reftvar(const unsigned);
 
 extern Ref refptr(void *const);
 
@@ -259,9 +268,6 @@ extern List *forklistcut(
 typedef int (*Oneach)(List *const, void *const);
 extern int forlist(List *const, Oneach, void *const, const int key);
 
-// Выщипать из списка все звенья, в которых записана ref
-extern void trimlist(List *const, const Ref);
-
 extern char *strlist(const Array *const universe, const List *const);
 
 extern void dumplist(
@@ -359,9 +365,15 @@ extern Binding *pathlookup(
 	const List *const stack, const Ref key, unsigned *const depth);
 
 // В некоторых случаях необходима уверенность в том, что ключ состоит только из
-// { NUMBER, ATOM, TYPE } элементов. Это позволяет проверить процедура
+// элементов определённого типа элементов:
+// 
+// 	basic - { NUMBER, ATOM };
+// 	signature - { NUMBER, ATOM, TYPE };
+//	type - { NUMBER, ATOM, TYPE, TYPEVAR }.
 
 extern unsigned isbasickey(const Ref);
+extern unsigned issignaturekey(const Ref);
+extern unsigned istypekey(const Ref);
 
 // Процедура для сопоставления ключей. Рекурсивно идёт по Ref-ам в ключах
 // pattern и k, требуя их полного равенства (external-бит не учитывается) за
@@ -403,6 +415,11 @@ extern unsigned setmap(Array *const map, const Ref key);
 extern void tuneptrmap(Array *const map, const Ref key, void *const ptr);
 extern void *ptrmap(Array *const map, const Ref key);
 
+// Аналогичное ptrmap отображение Ref -> Array.ptr
+
+extern void tuneenvmap(Array *const map, const Ref key, Array *const ptr);
+extern Array *envmap(Array *const map, const Ref key);
+
 // Отображения unsigned -> unsigned. Основное предназначение: осмысливание
 // разных verb-ов выражений в разных контекстах. Чаще всего оно наполняется
 // информацией по списку строчек, которые переводятся в атомы. Поэтому для него
@@ -420,7 +437,14 @@ extern unsigned verbmap(Array *const, const unsigned verb);
 // возвращает номер Ref-ы в указанном отображении, которое не должно быть
 // NULL-ём.
 
-extern unsigned enummap(Array *const map, const Ref);
+extern unsigned enummap(Array *const map, const Ref key);
+
+// Аналогичная по семантике enummap процедура, но работающая только для типов.
+// Ключ должен быть таким, что istypekey(key) истина. И, в отличии от enummap,
+// typeenummap key скопирует в map. Потому что типы живут дольше, чем аргументы
+// этой процедуры
+
+extern unsigned typeenummap(Array *const map, const Ref key);
 
 // Процедура прохода по окружениям. Начинает с map и идёт по Binding-ам (на
 // всякий случай в порядке индекса). Когда walkbindings видит такую связку B,
@@ -529,6 +553,34 @@ extern void enveval(
 	Array *const env,
 	Array *const envmarks,
 	const Ref dag, Array *const escape, Array *const markit);
+
+// Процедура переписи выражения в другое с учётом накопленной информации о
+// значениях узлов. Ссылки на узлы подменяются на значения для них в map.
+// Подменяются только (Ref.code == NODE && Ref.external). Детали работы для
+// ссылки n:
+// 
+// 1.
+// 	Если (map n).code == FREE, то ничего не происходит и ссылка копируется в
+// 	целевое выражение.
+// 
+// 2.
+// 	В других случаях ссылка пропускается через forkref. Процедура forkref
+// 	работает с таблицей соответствий новых и старых узлов. Эта таблица будет
+// 	создана в начале работы expeval.
+// 
+// 3.
+// 	Если (map n).code == LIST, то список, полученный при помощи forkref
+// 	будет дописан прямо в формируемое expeval выражение. Это не особо
+// 	приятная, но необходимая в текущей версии деталь. В следующей версии
+// 	необходимости делать это не будет
+
+extern Ref exprewrite(const Ref exp, Array *const map);
+
+extern void typeeval(
+	Array *const U,
+	Array *const types,
+	Array *const typemarks,
+	const Ref dag, Array *const escape, Array *const envmarks);
 
 // Оценка узлов L, LNth и FIn. Параметр map описывает те выражения, в которых
 // оценку проводить не следует

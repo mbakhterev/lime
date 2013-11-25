@@ -109,7 +109,7 @@ static void mkenv(
 
 		if(!isnode(R[2])
 			|| nodeverb(r, recode) != ENODE
-			|| !(newenv = ptrmap(envdefs, R[2])))
+			|| !(newenv = envmap(envdefs, R[2])))
 		{
 			ERR("line: %u. node: \"%s\": 3rd ref isn't known .E",
 				nodeline(r),
@@ -131,7 +131,7 @@ static void mkenv(
 
 	// Тут надо запомнить, чему равно текущее выражение с .E
 
-	tuneptrmap(envdefs, r, newenv);
+	tuneenvmap(envdefs, r, newenv);
 }
 
 static void assignenv(
@@ -146,8 +146,9 @@ static void assignenv(
 
 	DBG(DBGAE, "(len ((R 0).verb local) env) = (%u (\"%s\" %u) %p)",
 		len,
-		atombytes(atomat(U, nodeverb(R[0], NULL))), nodeverb(R[0], recode),
-		ptrmap(envdefs, R[0]));
+		atombytes(atomat(U, nodeverb(R[0], NULL))),
+		nodeverb(R[0], recode),
+		(void *)envmap(envdefs, R[0]));
 	
 	DBG(DBGAE, "((R 1).verb def (R 1).isnode) = (\"%s\" %u %u)",
 		atombytes(atomat(U, nodeverb(R[1], NULL))),
@@ -160,8 +161,10 @@ static void assignenv(
 	Array *env = NULL;
 
 	if(len != 2
-		|| nodeverb(R[0], recode) != ENODE || !(env = ptrmap(envdefs, R[0]))
-		|| nodeverb(R[1], recode) != -1 || !setmap(defs, R[1]))
+		|| !(nodeverb(R[0], recode) == ENODE
+			&& (env = envmap(envdefs, R[0])))
+		|| !(nodeverb(R[1], recode) == -1
+			&& setmap(defs, R[1])))
 	{
 		ERR("line: %u. node: \"%s\": wrong attribute structure",
 			nodeline(r),
@@ -170,10 +173,10 @@ static void assignenv(
 		return;
 	}
 
-	// Если проверки пройдены, то регистрируем (напоминание: tuneptrmap
+	// Если проверки пройдены, то регистрируем (напоминание: tuneenvmap
 	// сведётся к refmap, которая для своих аргументов делает markext)
 
-	tuneptrmap(envdefs, R[1], env);
+	tuneenvmap(envdefs, R[1], env);
 }
 
 static unsigned knownverb(const Ref n, Array *const map)
@@ -216,7 +219,7 @@ static int makeassignone(List *const l, void *const ptr)
 
 		if(knownverb(r, st->markit))
 		{
-			tuneptrmap(st->envmarks, r, st->env);
+			tuneenvmap(st->envmarks, r, st->env);
 		}
 
 		break;
@@ -258,7 +261,7 @@ static int diveone(List *const l, void *const ptr)
 			// .Env к какому-нибудь окружению, отличному от
 			// текущего. Ну и вызвать enveval рекурсивно
 
-			Array *const t = ptrmap(st->envdefs, r);
+			Array *const t = envmap(st->envdefs, r);
 
 			enveval(st->U,
 				t ? t : st->env, st->envmarks,
@@ -275,7 +278,7 @@ static int diveone(List *const l, void *const ptr)
 	return 0;
 }
 
-static void envevalcore(
+static void evalcore(
 	Array *const U,
 	Array *const env,
 	Array *const envmarks,
@@ -327,21 +330,23 @@ void enveval(
 
 	case NUMBER:
 	case ATOM:
-	case TYPE:
-		break;
+		return;
+
+// 	case TYPE:
+// 		break;
 
 	// Интересные варианты развития событий
 
 	case LIST:
 		// FIXME: возможно, имеет смысл написать assert(!r.external)
 
-		envevalcore(U, env, envmarks, r.u.list, escape, markit);	
+		evalcore(U, env, envmarks, r.u.list, escape, markit);	
 		return;
 
 	case NODE:
 	{
 		DL(nl, RS(r));
-		envevalcore(U, env, envmarks, nl.u.list, escape, markit);	
+		evalcore(U, env, envmarks, nl.u.list, escape, markit);	
 		return;
 	}
 	
