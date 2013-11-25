@@ -666,6 +666,18 @@ unsigned enummap(Array *const map, const Ref key)
 	return n;
 }
 
+unsigned typeenummap(Array *const map, const Ref key)
+{
+	assert(map);
+	assert(istypekey(key));
+	const Binding *const b = keymap(map, key);
+
+	const unsigned n = b - (Binding *)map->u.data;
+	assert(n < map->count);
+
+	return n;
+}
+
 typedef struct
 {
 	const Ref **const uni;
