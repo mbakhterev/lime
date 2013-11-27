@@ -130,3 +130,10 @@ Ref forknode(const Ref node, Array *const M)
 	// Процедура newnode вернёт верную Ref-у. Можно её вернуть выше
 	return n;
 }
+
+unsigned knownverb(const Ref n, Array *const map)
+{
+	return map != NULL && nodeverb(n, map) != -1;
+}
+
+

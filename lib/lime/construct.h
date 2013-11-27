@@ -113,6 +113,13 @@ extern void freeref(const Ref);
 
 extern Ref forkref(const Ref, Array *const map);
 
+// Распечатка разных Ref-ов
+
+extern void dumpref(
+	FILE *const, const Array *const U, Array *const nodemap, const Ref);
+
+extern char *strref(const Array *const U, Array *const nodemap, const Ref);
+
 // Автоматически индексируемые массивы
 
 struct Array
@@ -466,6 +473,8 @@ extern unsigned nodeline(const Ref exp);
 extern Ref nodeattribute(const Ref exp);
 extern const Ref *nodeattributecell(const Ref exp);
 
+extern unsigned knownverb(const Ref exp, Array *const verbs);
+
 // Конструирование узла. Процедура вернёт Ref-у со сброшенным external-битом,
 // что будет трактоваться как ссылка на определение узла, а не просто ссылка на
 // узел (случай (Ref.code == NODE && Ref.external))
@@ -553,8 +562,8 @@ extern void enveval(
 
 // Процедура переписи выражения в другое с учётом накопленной информации о
 // значениях узлов. Ссылки на узлы подменяются на значения для них в map.
-// Подменяются только (Ref.code == NODE && Ref.external). Детали работы для
-// ссылки n:
+// Подменяются только (Ref.code == NODE && Ref.external), verb-ы которых
+// определены в verbs. Детали работы для ссылки n:
 // 
 // 1.
 // 	Если (map n).code == FREE, то ничего не происходит и ссылка копируется в
@@ -571,7 +580,7 @@ extern void enveval(
 // 	приятная, но необходимая в текущей версии деталь. В следующей версии
 // 	необходимости делать это не будет
 
-extern Ref exprewrite(const Ref exp, Array *const map);
+extern Ref exprewrite(const Ref exp, Array *const map, Array *const verbs);
 
 extern void typeeval(
 	Array *const U,

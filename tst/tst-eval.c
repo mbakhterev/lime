@@ -14,19 +14,27 @@ int main(int argc, char *argv[])
 	fflush(stdout);
 
 	Array *const root = newkeymap();
-	Array *const marks = newkeymap();
+	Array *const envmarks = newkeymap();
+	Array *const types = newkeymap();
+	Array *const typemarks = newkeymap();
 
 	Array *const node = newverbmap(U, 0, ES("S", "TEnv"));
 	Array *const escape = newverbmap(U, 0, ES("F"));
 
-	enveval(U, root, marks, D, escape, node);
+	enveval(U, root, envmarks, D, escape, node);
+	typeeval(U, types, typemarks, D, escape, envmarks);
 
 	dumpkeymap(stdout, 0, U, root);
-	dumpkeymap(stdout, 0, U, marks);
+	dumpkeymap(stdout, 0, U, envmarks);
+	dumpkeymap(stdout, 0, U, types);
+	dumpkeymap(stdout, 0, U, typemarks);
 
 	freekeymap(escape);
 	freekeymap(node);
-	freekeymap(marks);
+
+	freekeymap(typemarks);
+	freekeymap(types);
+	freekeymap(envmarks);
 	freekeymap(root);
 
 	freekeymap(lb);

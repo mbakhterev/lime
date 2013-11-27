@@ -9,8 +9,9 @@
 
 // #define DBGFLAGS (DBGEVE | DBGAL)
 // #define DBGFLAGS (DBGEVE)
+// #define DBGFLAGS (DBGAE)
 
-#define DBGFLAGS (DBGAE)
+#define DBGFLAGS 0
 
 typedef struct
 {
@@ -176,10 +177,10 @@ static void assignenv(
 	tuneenvmap(envdefs, R[1], env);
 }
 
-static unsigned knownverb(const Ref n, Array *const map)
-{
-	return map != NULL && nodeverb(n, map) != -1;
-}
+// static unsigned knownverb(const Ref n, Array *const map)
+// {
+// 	return map != NULL && nodeverb(n, map) != -1;
+// }
 
 static int makeassignone(List *const l, void *const ptr)
 {

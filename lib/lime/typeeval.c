@@ -3,17 +3,29 @@
 
 #include <assert.h>
 
+#define DBGNMT 1
+
+// #define DBGFLAGS (DBGNMT)
+
+#define DBGFLAGS 0
+
 typedef struct
 {
 	Array *const U;
 	Array *const types;
-	Array *const typemap;
+	Array *const typemarks;
 
 	Array *const escape;
 	Array *const envmarks;
 
 	Array *const verbs;
+	Array *const envverbs;
+	Array *const typeverbs;
 } EState;
+
+// Nominate - это от номинальных типов. Мы должны сопоставить .T и .TEnv
+// выражениям их уникальные (с учётом внутренней структуры T и окружений для
+// .TEnv) имена (индексы в таблице)
 
 static void nominate(const Ref, EState *const);
 
@@ -39,18 +51,15 @@ static const char *const verbs[] =
 	NULL
 };
 
-static Ref totypekey(const Ref r, Array *const envmarks, Array *const typemap)
+static Ref totypekey(const Ref r, EState *const st)
 {
-	const Ref envtmp = exprewrite(nodeattribute(r), envmarks);
-	const Ref key = exprewrite(envtmp, typemap);
+	const Ref envtmp = exprewrite(r, st->envmarks, st->envverbs);
+	const Ref key = exprewrite(envtmp, st->typemarks, st->typeverbs);
 	freeref(envtmp);
 	return key;
 }
 
-static void nominatenode(
-	Array *const U,
-	Array *const types, Array *const typemap, Array *const envmarks,
-	const Ref r, Array *const verbs)
+static void nominatenode(const Ref r, EState *const st)
 {
 	if(r.external)
 	{
@@ -58,14 +67,28 @@ static void nominatenode(
 		return;
 	}
 
-	switch(nodeverb(r, verbs))
+	switch(nodeverb(r, st->verbs))
 	{
 	case TNODE:
 	{
 		// Смотрим, во что превращается атрибут узла, в текущем рабочем
 		// контексте
 
-		const Ref key = totypekey(nodeattribute(r), envmarks, typemap);
+		const Ref key = totypekey(nodeattribute(r), st);
+
+		if(DBGFLAGS & DBGNMT)
+		{
+			char *const astr
+				= strref(st->U, NULL, nodeattribute(r));
+
+			char *const kstr
+				= strref(st->U, NULL, key);
+			
+			DBG(DBGNMT, "\n\tattr:\t%s\n\tkey:\t%s", astr, kstr);
+
+			free(astr);
+			free(kstr);
+		}
 
 		// Полученное выражение должно быть описанием типа
 
@@ -73,16 +96,16 @@ static void nominatenode(
 		{
 			item = nodeline(r);
 			ERR("node \"%s\": wrong attribute structure",
-				atombytes(atomat(U, nodeverb(r, NULL))));
+				atombytes(atomat(st->U, nodeverb(r, NULL))));
 		}
 
 		// Присваиваем .T-выражению номер типа, которое оно задаёт. И
 		// запоминаем это в таблице соответствия узлов значениям
 
-		const unsigned typeid = typeenummap(types, key);
+		const unsigned typeid = typeenummap(st->types, key);
 		freeref(key);
 
-		tunerefmap(typemap, r, reftype(typeid));
+		tunerefmap(st->typemarks, r, reftype(typeid));
 
 		break;
 	}
@@ -155,11 +178,7 @@ static void nominate(const Ref r, EState *const E)
 
 	
 	case NODE:
-		nominatenode(
-			E->U,
-			E->types, E->typemap, E->envmarks,
-			r, E->verbs);
-
+		nominatenode(r, E);
 		return;
 	
 	default:
@@ -173,5 +192,21 @@ void typeeval(
 	Array *const typemarks,
 	const Ref dag, Array *const escape, Array *const envmarks)
 {
-	
+	EState st =
+	{
+		.U = U,
+		.types = types,
+		.typemarks = typemarks,
+		.escape = escape,
+		.envmarks = envmarks,
+		.verbs = newverbmap(U, 0, verbs),
+		.envverbs = newverbmap(U, 0, ES("E")),
+		.typeverbs = newverbmap(U, 0, ES("T", "TEnv"))
+	};
+
+	nominate(dag, &st);
+
+	freekeymap(st.typeverbs);
+	freekeymap(st.envverbs);
+	freekeymap(st.verbs);
 }

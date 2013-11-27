@@ -39,7 +39,7 @@ typedef struct
 static void dumpreflist(
 	FILE *const, const Array *const, Array *const nodes, const List *const);
 
-static void dumpref(
+void dumpref(
 	FILE *const f, const Array *const U, Array *const nodes, const Ref r)
 {
 	switch(r.code)
@@ -188,6 +188,21 @@ char *strlist(const Array *const U, const List *const l)
 	return buf;
 }
 
+char *strref(const Array *const U, Array *const nodemap, const Ref r)
+{
+	char *buf = NULL;
+	size_t length = 0;
+	FILE *f = newmemstream(&buf, &length);
+	assert(f);
+
+	dumpref(f, U, nodemap, r);
+
+	assert(fputc(0, f) == 0);
+	fclose(f);
+
+	return buf;
+}
+
 static const char *tabstr(const unsigned tabs)
 {
 	char *const s = malloc(tabs + 1);
@@ -232,11 +247,6 @@ static void dumpsubdag(const DState *const st, const Ref dag)
 
 	assert(fputc('\n', f) == '\n');
 	dumpdag(st->dbg, f, st->tabs + 1, st->U, dag, st->map);
-}
-
-static unsigned knownverb(const Ref n, Array *const map)
-{
-	return map != NULL && nodeverb(n, map) != -1;
 }
 
 static int dumpone(List *const l, void *const ptr)
