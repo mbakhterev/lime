@@ -384,21 +384,33 @@ static List *tracekey(List *const acc, const Binding *const b, const Ref key)
 	return tracekey(append(acc, RL(markext(M))), look(M.u.array, key), key);
 }
 
+static Ref skip(const Ref r)
+{
+	return r;
+}
+
+static Ref dynamark(const Ref r)
+{
+// 	return r.code <= PTR ? skip(r) : markext(r);
+	return r.code <= TYPE ? skip(r) : markext(r);
+}
+
 List *tracepath(
 	const Array *const map, Array *const U, const Ref path, const Ref name)
 {
 	assert(map && map->code == MAP);
 
-	// markext для того, чтобы при удалении ключей не удалить path и name на
-	// стороне пользователя. look ключи не копирует, поэтому не оптимизация
+	// dynamark для того, чтобы при удалении ключей не удалить path и name
+	// на стороне пользователя. look ключи не копирует, поэтому не
+	// оптимизация
 
 	const Ref pathkey
-		= decorate(reflist(RL(markext(path), markext(name))), U, MAP);
+		= decorate(reflist(RL(dynamark(path), dynamark(name))), U, MAP);
 
 	const Ref thiskey
 		= decorate(
 			reflist(RL(
-				markext(path),
+				dynamark(path),
 				readpack(U, strpack(0, "this")))),
 			U, MAP);
 	
@@ -471,17 +483,6 @@ static Binding *maptofree(Array *const map, const Ref key)
 	Binding *const b = keymap(map, key);
 	assert(b->ref.code == FREE);
 	return b;
-}
-
-static Ref skip(const Ref r)
-{
-	return r;
-}
-
-static Ref dynamark(const Ref r)
-{
-// 	return r.code <= PTR ? skip(r) : markext(r);
-	return r.code <= TYPE ? skip(r) : markext(r);
 }
 
 void tunerefmap(Array *const map, const Ref key, const Ref val)

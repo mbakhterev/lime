@@ -11,9 +11,17 @@ int main(int argc, char *argv[])
 	const Ref D = loaddag(stdin, U, lb);
 
 	dumpdag(1, stdout, 0, U, D, lb);
+	fputc('\n', stdout);
 	fflush(stdout);
 
 	Array *const root = newkeymap();
+
+	DL(names, RS(readpack(U, strpack(0, "this"))));
+	makepath(
+		root, U, 
+		readpack(U, strpack(0, "ENV")), names.u.list,
+		markext(refkeymap(root)));
+
 	Array *const envmarks = newkeymap();
 	Array *const types = newkeymap();
 	Array *const typemarks = newkeymap();

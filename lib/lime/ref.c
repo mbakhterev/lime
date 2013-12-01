@@ -126,6 +126,10 @@ Ref forkref(const Ref r, Array *const nodemap)
 	case TYPE:
 		return r;
 	
+	case MAP:
+		assert(r.external);
+		return r;
+	
 	case NODE:
 		return forknode(r, nodemap);
 

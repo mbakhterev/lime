@@ -183,6 +183,10 @@ static int forkitem(List *const k, void *const ptr)
 		assert(!k->ref.external);
 		break;
 	
+	case MAP:
+		assert(k->ref.external);
+		break;
+	
 	case NODE:
 	case LIST:
 		break;

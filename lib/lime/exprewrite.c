@@ -51,6 +51,10 @@ static Ref rewrite(
 	case TYPE:
 		return r;
 	
+	case MAP:
+		assert(r.external);
+		return r;
+	
 	case LIST:
 	{
 		RState st =

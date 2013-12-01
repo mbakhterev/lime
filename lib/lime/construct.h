@@ -224,12 +224,7 @@ extern void formlist(List listitems[], const Ref refs[], const unsigned len);
 	formlist(DLNAME.u.list, REFS, sizeof(REFS)/sizeof(Ref))
 
 // Записывает ссылки из списка (не рекурсивно, и не спускаясь в подсписки) в
-// массив. Записывает не более N элементов, с учётом последнего с кодом FREE.
-// Возвращает количество записанных элементов. При этом, если
-//
-//	R[writerefs(L, R, N) - 1].code == FREE
-//
-// то список выдан полностью.
+// массив. Записывает не более N элементов.
 
 extern unsigned writerefs(const List *const, Ref refs[], const unsigned N);
 

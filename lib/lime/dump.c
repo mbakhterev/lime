@@ -396,8 +396,15 @@ void dumpkeymap(
 
 	assert(fprintf(f, "\n%smap: %p", st.tabstr, (void *)map) > 0);
 
-	walkbindings((Array *)map, dumpbindingone, &st);
-	forlist(st.L, dumpkeymapone, &st, 0);
+	if(map->count)
+	{
+		walkbindings((Array *)map, dumpbindingone, &st);
+		forlist(st.L, dumpkeymapone, &st, 0);
+	}
+	else
+	{
+		assert(fputc('\n', f) == '\n');
+	}
 
 	free((void *)st.tabstr);
 	freelist(st.L);
