@@ -119,8 +119,10 @@ static unsigned getexisting(Array *const env, Array *const U, const Ref key)
 		free(strpath);
 	}
 
-	const Binding *const b = pathlookup(l, key, NULL);
+	const Ref K = decorate(key, U, TYPE); 
+	const Binding *const b = pathlookup(l, K, NULL);
 
+	freeref(K);
 	freelist(l);
 
 	if(b)
@@ -140,12 +142,18 @@ static unsigned setnew(
 		return -1;
 	}
 
-	Binding *const b = keymap(env, key);
+//	Binding *const b = keymap(env, key);
 
-	if(!b || b->ref.code != FREE)
+	const Ref K = decorate(forkref(key, NULL), U, TYPE);
+	Binding *const b = mapreadin(env, K);
+
+// 	if(!b || b->ref.code != FREE)
+	if(!b)
 	{
 		return -1;
 	}
+
+	assert(b->ref.code == FREE);
 
 	b->ref = typeref;
 	return typeref.u.number;
@@ -186,7 +194,11 @@ static void tenv(const Ref r, EState *const E)
 	// По входным выясняем, на что отображён второй аргумент, если он есть.
 	// Он должен задавать какой-нибудь тип, это будет проверено в setnew
 
-	const Ref typeref = refmap(len == 2 ? E->typemarks : NULL, R[1]);
+// FIXME: надо кое-кому руки починить. При len < 2 R[1] даже не существует
+// 
+// 	const Ref typeref = refmap(len == 2 ? E->typemarks : NULL, R[1]);
+
+	const Ref typeref = len == 2 ? refmap(E->typemarks, R[1]) : reffree();
 
 	// Наконец, по входным данным выясняем, в каком окружении встретился
 	// текущий текущий TEnv (ага, название r очень информативное). Это
@@ -203,21 +215,28 @@ static void tenv(const Ref r, EState *const E)
 			atombytes(atomat(E->U, nodeverb(r, NULL))));
 	}
 
-	// Уточняем, что работаем с ключом для типа. FIXME: необходимость явно
-	// делать forkref, оправдана ли?
-
-	const Ref key = decorate(forkref(R[0], NULL), E->U, TYPE);
-
-	DBG(DBGTENV, "%s", "decorated");
+// Теперь мы можем сделать это более аккуратно
+// 
+// 	// Уточняем, что работаем с ключом для типа. FIXME: необходимость явно
+// 	// делать forkref, оправдана ли?
+// 
+// 	const Ref key = decorate(forkref(R[0], NULL), E->U, TYPE);
+// 
+// 	DBG(DBGTENV, "%s", "decorated");
+// 
+// 	const unsigned typeid
+// 		= (len == 1) ? getexisting(env, E->U, key)
+// 		: (len == 2) ? setnew(env, E->U, key, typeref)
+// 		: -1;
 
 	const unsigned typeid
-		= (len == 1) ? getexisting(env, E->U, key)
-		: (len == 2) ? setnew(env, E->U, key, typeref)
+		= (len == 1) ? getexisting(env, E->U, R[0])
+		: (len == 2) ? setnew(env, E->U, R[0], typeref)
 		: -1;
 
 	DBG(DBGTENV, "typeid = %u", typeid);
 	
-	freeref(key);
+// 	freeref(key);
 	
 	if(typeid == -1)
 	{

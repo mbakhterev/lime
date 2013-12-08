@@ -79,6 +79,7 @@ void dumpref(
 	{
 		assert(isnode(r));
 		const Ref n = refmap(nodes, r);
+// 		const Ref n = refnum(enummap(nodes, r));
 		
 		// Когда печатаем узел в списке, то не важно, в каком режиме
 		// печатаем, в отладочном или нет. Адреса узлов надо указать для
@@ -223,6 +224,7 @@ static int mapone(List *const l, void *const ptr)
 	assert(nodes);
 
 	tunerefmap(nodes, l->ref, refnum(nodes->count));
+// 	enummap(nodes, l->ref);
 
 	return 0;
 }
@@ -266,6 +268,7 @@ static int dumpone(List *const l, void *const ptr)
 	Array *const map = st->map;
 
 	const Ref i = refmap(st->nodes, n);
+// 	const Ref i = refnum(enummap(st->nodes, n));
 
 	if(st->dbg)
 	{

@@ -7,12 +7,15 @@
 #define DBGFREE	1
 #define DBGKM 2
 #define DBGPLU 4
+#define DBGDM 8
 
 // #define DBGFLAGS (DBGFREE)
 // #define DBGFLAGS (DBGKM)
 // #define DBGFLAGS (DBGPLU)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGDM)
+
+// #define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -235,7 +238,8 @@ static Binding *allocate(Array *const map, const Ref key)
 
 	const Binding b =
 	{
-		.key = forkref(key, NULL),
+//		.key = forkref(key, NULL),
+		.key = key,
 		.ref = { .code = FREE, .u.pointer = NULL }
 	};
 
@@ -244,15 +248,32 @@ static Binding *allocate(Array *const map, const Ref key)
 	return (Binding *)map->u.data + k;
 }
 
-Binding *keymap(Array *const map, const Ref key)
+Binding *maplookup(Array *const map, const Ref key)
 {
-	Binding *const b = look(map, key);
-	if(b)
+	if(map)
 	{
-		return b;
+		return look(map, key);
 	}
 
-	return allocate(map, key);
+	return NULL;
+}
+
+Binding *mapreadin(Array *const map, const Ref key)
+{
+// 	Binding *const b = look(map, key);
+// 	if(b)
+// 	{
+// 		return b;
+// 	}
+// 
+// 	return allocate(map, key);
+
+	if(!look(map, key))
+	{
+		return allocate(map, key);
+	}
+
+	return NULL;
 }
 
 typedef struct
@@ -264,6 +285,29 @@ typedef struct
 	const Ref M;
 	unsigned ok;
 } PState;
+
+Binding *bindkey(Array *const map, const Ref key)
+{
+	Binding *b = maplookup(map, key);
+	if(b)
+	{
+		// Binding нашлась, ничего не нужно делать кроме как вернуть
+		// ссылку
+
+		return b;
+	}
+
+	// Здесь необходимо выделить новый Binding. И сохранить в нём копию
+	// ключа. FIXME: копирование - накладные расходы, но это плата за
+	// текущий вариант управления память. В следующей версии в этом не будет
+	// необходимости
+
+	assert(map);
+	b = mapreadin(map, forkref(key, NULL));
+	assert(b);
+
+	return b;
+}
 
 static int makeone(List *const k, void *const ptr)
 {
@@ -281,12 +325,13 @@ static int makeone(List *const k, void *const ptr)
 			reflist(RL(
 				forkref(st->path, NULL),
 				forkref(k->ref, NULL))),
-			st->U, MAP);
+			st->U, 
+			MAP);
 
-	Binding *const b = keymap(st->current, key);
+	Binding *const b = bindkey(st->current, key);
 
-	// Здесь ключ уже можно освободить, потому что keymap скопирует его себе
-	// при необходимости
+	// В случае, когда key копируется в новый Binding отображения, bindkey
+	// выставит key.external, и freekey ничего с этим key не будет делать
 
 	freeref(key);
 
@@ -392,7 +437,26 @@ static Ref skip(const Ref r)
 static Ref dynamark(const Ref r)
 {
 // 	return r.code <= PTR ? skip(r) : markext(r);
-	return r.code <= TYPE ? skip(r) : markext(r);
+//	return r.code <= TYPE ? skip(r) : markext(r);
+
+	switch(r.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+	case PTR:
+		return skip(r);
+
+	case MAP:
+	case NODE:
+	case LIST:
+		return markext(r);
+	}
+
+	DBG(DBGDM, "r.(code pointer) = (%u %p)", r.code, r.u.pointer);
+
+	assert(0);
+	return reffree();
 }
 
 List *tracepath(
@@ -480,8 +544,11 @@ Binding *pathlookup(
 
 static Binding *maptofree(Array *const map, const Ref key)
 {
-	Binding *const b = keymap(map, key);
-	assert(b->ref.code == FREE);
+// 	Binding *const b = keymap(map, key);
+// 	assert(b->ref.code == FREE);
+
+	Binding *const b = mapreadin(map, key);
+	assert(b);
 	return b;
 }
 
@@ -493,12 +560,20 @@ void tunerefmap(Array *const map, const Ref key, const Ref val)
 
 Ref refmap(Array *const map, const Ref key)
 {
-	if(map == NULL)
+// 	if(map == NULL)
+// 	{
+// 		return reffree();
+// 	}
+// 
+// 	return keymap(map, dynamark(key))->ref;
+
+	Binding *const b = maplookup(map, dynamark(key));
+	if(b)
 	{
-		return reffree();
+		return b->ref;
 	}
 
-	return keymap(map, dynamark(key))->ref;
+	return reffree();
 }
 
 void tunesetmap(Array *const map, const Ref key)
@@ -508,10 +583,10 @@ void tunesetmap(Array *const map, const Ref key)
 
 unsigned setmap(Array *const map, const Ref key)
 {
-	if(map == NULL)
-	{
-		return 0;
-	}
+// 	if(map == NULL)
+// 	{
+// 		return 0;
+// 	}
 
 	const Ref r = refmap(map, key);
 
@@ -538,10 +613,10 @@ void tuneptrmap(Array *const map, const Ref key, void *const ptr)
 
 void *ptrmap(Array *const map, const Ref key)
 {
-	if(map == NULL)
-	{
-		return NULL;
-	}
+// 	if(map == NULL)
+// 	{
+// 		return NULL;
+// 	}
 
 	const Ref r = refmap(map, key);
 
@@ -568,10 +643,10 @@ void tuneenvmap(Array *const map, const Ref key, Array *const km)
 
 Array *envmap(Array *const map, const Ref key)
 {
-	if(map == NULL)
-	{
-		return NULL;
-	}
+// 	if(map == NULL)
+// 	{
+// 		return NULL;
+// 	}
 
 	const Ref r = refmap(map, key);
 
@@ -609,10 +684,10 @@ Array *newverbmap(
 
 unsigned verbmap(Array *const map, const unsigned verb)
 {
-	if(map == NULL)
-	{
-		return -1;
-	}
+// 	if(map == NULL)
+// 	{
+// 		return -1;
+// 	}
 
 	const Ref r = refmap(map, refatom(verb));
 
@@ -659,7 +734,12 @@ unsigned verbmap(Array *const map, const unsigned verb)
 unsigned enummap(Array *const map, const Ref key)
 {
 	assert(map);
-	const Binding *const b = keymap(map, dynamark(key));
+	const Binding *b = maplookup(map, dynamark(key));
+	if(!b)
+	{
+		b = mapreadin(map, dynamark(key));
+		assert(b);
+	}
 
 	const unsigned n = b - (Binding *)map->u.data;
 	assert(n < map->count);
@@ -671,7 +751,9 @@ unsigned typeenummap(Array *const map, const Ref key)
 {
 	assert(map);
 	assert(istypekey(key));
-	const Binding *const b = keymap(map, key);
+
+// 	const Binding *const b = keymap(map, key);
+	const Binding *const b = bindkey(map, key);
 
 	const unsigned n = b - (Binding *)map->u.data;
 	assert(n < map->count);

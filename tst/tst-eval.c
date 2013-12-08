@@ -8,11 +8,16 @@ int main(int argc, char *argv[])
 {
 	Array *const U = newatomtab();
 	Array *const lb = newverbmap(U, 0, ES("LB"));
+
+	printf("loading\n");
 	const Ref D = loaddag(stdin, U, lb);
+	printf("loaded\n");
 
 	dumpdag(1, stdout, 0, U, D, lb);
 	fputc('\n', stdout);
 	fflush(stdout);
+
+	printf("going to eval\n");
 
 	Array *const root = newkeymap();
 
