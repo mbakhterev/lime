@@ -419,3 +419,38 @@ void formlist(List L[], const Ref R[], const unsigned N)
 		L[0].ref = R[N - 1];
 	}
 }
+
+static int skipone(List *const l, void *const ptr)
+{
+	CState *const st = ptr;
+
+	if(st->n < st->N)
+	{
+		// Ещё не дошли до цели. Пропускаем
+		return 0;
+	}
+
+	// Добрались до цели, копируем текущую Ref из списка
+
+	*(st->refs) = l->ref;
+	return 1;
+}
+
+Ref listnth(const List *const l, const unsigned N)
+{
+	assert(N < MAXNUM);
+
+	Ref R = reffree();
+
+	CState st =
+	{
+		.N = N,
+		.n = 0,
+		.refs = &R
+	};
+
+	// Небольшая проверка на целостность
+	assert(forlist((List *)l, skipone, &st, 0) == 0 || R.code == FREE);
+
+	return R;
+}

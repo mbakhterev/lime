@@ -231,7 +231,7 @@ extern void freelist(List *const);
 // Получить первый элемент списка или N-ный (счёт от 0)
 
 extern List *tip(const List *const);
-extern List *listnth(const List *const, const unsigned N);
+extern Ref listnth(const List *const, const unsigned N);
 
 extern List *append(List *const, List *const);
 extern List *tipoff(List **const);
