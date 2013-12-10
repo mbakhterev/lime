@@ -17,6 +17,7 @@ lmsrc = \
 	enveval.c	\
 	typeeval.c	\
 	exprewrite.c	\
+	symeval.c	\
 
 # 	environment.c	\
 # 	walkdag.c	\

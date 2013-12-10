@@ -100,6 +100,11 @@ extern Ref refctx(Context *const);
 extern Ref markext(const Ref);
 extern Ref cleanext(const Ref);
 
+// Иногда нужно поставить бит external, в зависимости от типа Ref-ы. Процедура
+// для этого
+
+extern Ref dynamark(const Ref);
+
 // Ориентируясь на Ref.code вызвать соответствующее freexxx из доступных, если
 // необходимо
 
@@ -325,7 +330,7 @@ typedef struct
 //	mapreadin(map, decorate(sourcekey), U, TYPE)
 
 extern Binding *mapreadin(Array *const map, const Ref key);
-extern Binding *maplookup(Array *const map, const Ref key);
+extern const Binding *maplookup(const Array *const map, const Ref key);
 
 // Достаточно часто требуется отыскать Binding по ключу, если соответствующая
 // Binding в отображении есть. А если нет, то создать её и скопировать ключ в
@@ -383,7 +388,7 @@ extern List *tracepath(
 // которой найдена соответствующая Binding. Если Binding с нужным ключём не
 // будет найдена, то pathlookup вернёт NULL
 
-extern Binding *pathlookup(
+extern const Binding *pathlookup(
 	const List *const stack, const Ref key, unsigned *const depth);
 
 // В некоторых случаях необходима уверенность в том, что ключ состоит только из
@@ -423,24 +428,24 @@ extern unsigned keymatch(
 // аргумент, оно вернёт reffree
 
 extern void tunerefmap(Array *const map, const Ref key, const Ref val);
-extern Ref refmap(Array *const map, const Ref key);
+extern Ref refmap(const Array *const map, const Ref key);
 
 // Отображение Ref -> (set 0 1). То есть, характеристическое для множества. Если
 // отображение не знает о соответствующем аргументе, оно возвращает 0
 
 extern void tunesetmap(Array *const map, const Ref key);
-extern unsigned setmap(Array *const map, const Ref key);
+extern unsigned setmap(const Array *const map, const Ref key);
 
 // Отображение Ref -> void.ptr. Если отображение не знает об аргументе, оно
 // возвращает NULL
 
 extern void tuneptrmap(Array *const map, const Ref key, void *const ptr);
-extern void *ptrmap(Array *const map, const Ref key);
+extern void *ptrmap(const Array *const map, const Ref key);
 
 // Аналогичное ptrmap отображение Ref -> Array.ptr
 
 extern void tuneenvmap(Array *const map, const Ref key, Array *const ptr);
-extern Array *envmap(Array *const map, const Ref key);
+extern Array *envmap(const Array *const map, const Ref key);
 
 // Отображения unsigned -> unsigned. Основное предназначение: осмысливание
 // разных verb-ов выражений в разных контекстах. Чаще всего оно наполняется
@@ -452,7 +457,7 @@ extern Array *envmap(Array *const map, const Ref key);
 extern Array *newverbmap(
 	Array *const U, const unsigned hint, const char *const atoms[]);
 
-extern unsigned verbmap(Array *const, const unsigned verb);
+extern unsigned verbmap(const Array *const, const unsigned verb);
 
 // Процедура, которая строит отображение с информацией о порядковых номерах
 // Ref-ов в этом отображении. Специально его настраивать не нужно, оно всегда
@@ -485,12 +490,12 @@ extern void walkbindings(Array *const map, WalkBinding, void *const);
 // через такое отображение. Если vm == NULL, то verb возвращается так, как есть:
 // (vm != NULL -> vm verb : verb)
 
-extern unsigned nodeverb(const Ref exp, Array *const vm);
+extern unsigned nodeverb(const Ref exp, const Array *const vm);
 extern unsigned nodeline(const Ref exp);
 extern Ref nodeattribute(const Ref exp);
 extern const Ref *nodeattributecell(const Ref exp);
 
-extern unsigned knownverb(const Ref exp, Array *const verbs);
+extern unsigned knownverb(const Ref exp, const Array *const verbs);
 
 // Конструирование узла. Процедура вернёт Ref-у со сброшенным external-битом,
 // что будет трактоваться как ссылка на определение узла, а не просто ссылка на
@@ -575,7 +580,7 @@ extern void enveval(
 	Array *const U,
 	Array *const env,
 	Array *const envmarks,
-	const Ref dag, Array *const escape, Array *const markit);
+	const Ref dag, const Array *const escape, const Array *const markit);
 
 // Процедура переписи выражения в другое с учётом накопленной информации о
 // значениях узлов. Ссылки на узлы подменяются на значения для них в map.
@@ -597,15 +602,21 @@ extern void enveval(
 // 	приятная, но необходимая в текущей версии деталь. В следующей версии
 // 	необходимости делать это не будет
 
-extern Ref exprewrite(const Ref exp, Array *const map, Array *const verbs);
+extern Ref exprewrite(const Ref exp, const Array *const map, const Array *const verbs);
 
 extern void typeeval(
 	Array *const U,
 	Array *const types,
 	Array *const typemarks,
-	const Ref dag, Array *const escape, Array *const envmarks);
+	const Ref dag, const Array *const escape, const Array *const envmarks);
 
 extern const Binding *typeat(const Array *const, const unsigned);
+
+extern void symeval(
+	Array *const U,
+	Array *const symmarks,
+	const Ref dag, const Array *const escape,
+	const Array *const envmarks, const Array *const typemarks);
 
 // Оценка узлов L, LNth и FIn. Параметр map описывает те выражения, в которых
 // оценку проводить не следует

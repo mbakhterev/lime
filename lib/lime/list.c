@@ -450,7 +450,7 @@ Ref listnth(const List *const l, const unsigned N)
 	};
 
 	// Небольшая проверка на целостность
-	assert(forlist((List *)l, skipone, &st, 0) == 0 || R.code == FREE);
+	assert(forlist((List *)l, skipone, &st, 0) != 0 || R.code == FREE);
 
 	return R;
 }

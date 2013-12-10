@@ -218,7 +218,7 @@ Ref decorate(const Ref key, Array *const U, const unsigned code)
 	return reflist(RL(decoatom(U, code), key));
 }
 
-static Binding *look(const Array *const map, const Ref key)
+static const Binding *look(const Array *const map, const Ref key)
 {
 	assert(map && map->code == MAP);
 
@@ -226,7 +226,7 @@ static Binding *look(const Array *const map, const Ref key)
 
 	if(k != -1)
 	{
-		return (Binding *)map->u.data + k;
+		return (const Binding *)map->u.data + k;
 	}
 
 	return NULL;
@@ -248,7 +248,7 @@ static Binding *allocate(Array *const map, const Ref key)
 	return (Binding *)map->u.data + k;
 }
 
-Binding *maplookup(Array *const map, const Ref key)
+const Binding *maplookup(const Array *const map, const Ref key)
 {
 	if(map)
 	{
@@ -260,14 +260,6 @@ Binding *maplookup(Array *const map, const Ref key)
 
 Binding *mapreadin(Array *const map, const Ref key)
 {
-// 	Binding *const b = look(map, key);
-// 	if(b)
-// 	{
-// 		return b;
-// 	}
-// 
-// 	return allocate(map, key);
-
 	if(!look(map, key))
 	{
 		return allocate(map, key);
@@ -288,7 +280,7 @@ typedef struct
 
 Binding *bindkey(Array *const map, const Ref key)
 {
-	Binding *b = maplookup(map, key);
+	Binding *b = (Binding *)maplookup(map, key);
 	if(b)
 	{
 		// Binding нашлась, ничего не нужно делать кроме как вернуть
@@ -429,36 +421,6 @@ static List *tracekey(List *const acc, const Binding *const b, const Ref key)
 	return tracekey(append(acc, RL(markext(M))), look(M.u.array, key), key);
 }
 
-static Ref skip(const Ref r)
-{
-	return r;
-}
-
-static Ref dynamark(const Ref r)
-{
-// 	return r.code <= PTR ? skip(r) : markext(r);
-//	return r.code <= TYPE ? skip(r) : markext(r);
-
-	switch(r.code)
-	{
-	case NUMBER:
-	case ATOM:
-	case TYPE:
-	case PTR:
-		return skip(r);
-
-	case MAP:
-	case NODE:
-	case LIST:
-		return markext(r);
-	}
-
-	DBG(DBGDM, "r.(code pointer) = (%u %p)", r.code, r.u.pointer);
-
-	assert(0);
-	return reffree();
-}
-
 List *tracepath(
 	const Array *const map, Array *const U, const Ref path, const Ref name)
 {
@@ -488,7 +450,7 @@ List *tracepath(
 
 typedef struct
 {
-	Binding *b;
+	const Binding *b;
 	const Ref key;
 	unsigned depth;	
 } PLState;
@@ -504,7 +466,7 @@ static int lookone(List *const e, void *const ptr)
 		dumpkeymap(stdout, 1, NULL, e->ref.u.array);
 	}
 
-	Binding *const b = look(e->ref.u.array, st->key);
+	const Binding *const b = look(e->ref.u.array, st->key);
 
 	DBG(DBGPLU, "%p", (void *)b);
 
@@ -519,7 +481,7 @@ static int lookone(List *const e, void *const ptr)
 	return 0;
 }
 
-Binding *pathlookup(
+const Binding *pathlookup(
 	const List *const stack, const Ref key, unsigned *const depth)
 {
 	DBG(DBGPLU,
@@ -558,16 +520,9 @@ void tunerefmap(Array *const map, const Ref key, const Ref val)
 	b->ref = dynamark(val);
 }
 
-Ref refmap(Array *const map, const Ref key)
+Ref refmap(const Array *const map, const Ref key)
 {
-// 	if(map == NULL)
-// 	{
-// 		return reffree();
-// 	}
-// 
-// 	return keymap(map, dynamark(key))->ref;
-
-	Binding *const b = maplookup(map, dynamark(key));
+	const Binding *const b = maplookup(map, dynamark(key));
 	if(b)
 	{
 		return b->ref;
@@ -581,13 +536,8 @@ void tunesetmap(Array *const map, const Ref key)
 	tunerefmap(map, key, refnum(0));
 }
 
-unsigned setmap(Array *const map, const Ref key)
+unsigned setmap(const Array *const map, const Ref key)
 {
-// 	if(map == NULL)
-// 	{
-// 		return 0;
-// 	}
-
 	const Ref r = refmap(map, key);
 
 	switch(r.code)
@@ -611,13 +561,8 @@ void tuneptrmap(Array *const map, const Ref key, void *const ptr)
 	tunerefmap(map, key, refptr(ptr));
 }
 
-void *ptrmap(Array *const map, const Ref key)
+void *ptrmap(const Array *const map, const Ref key)
 {
-// 	if(map == NULL)
-// 	{
-// 		return NULL;
-// 	}
-
 	const Ref r = refmap(map, key);
 
 	switch(r.code)
@@ -641,13 +586,8 @@ void tuneenvmap(Array *const map, const Ref key, Array *const km)
 	tunerefmap(map, key, refkeymap(km));
 }
 
-Array *envmap(Array *const map, const Ref key)
+Array *envmap(const Array *const map, const Ref key)
 {
-// 	if(map == NULL)
-// 	{
-// 		return NULL;
-// 	}
-
 	const Ref r = refmap(map, key);
 
 	switch(r.code)
@@ -682,13 +622,8 @@ Array *newverbmap(
 	return map;
 }
 
-unsigned verbmap(Array *const map, const unsigned verb)
+unsigned verbmap(const Array *const map, const unsigned verb)
 {
-// 	if(map == NULL)
-// 	{
-// 		return -1;
-// 	}
-
 	const Ref r = refmap(map, refatom(verb));
 
 	switch(r.code)

@@ -200,8 +200,7 @@ static Ref *keytoref(List *const env, const Ref r)
 {
 	assert(env && iskeymap(env->ref));
 
-// 	Binding *const b
-	Binding *b = pathlookup(env, r, NULL);
+	Binding *b = (Binding *)pathlookup(env, r, NULL);
 
 	DBG(DBGKR, "%p", (void *)b);
 
@@ -209,8 +208,6 @@ static Ref *keytoref(List *const env, const Ref r)
 	{
 		return &b->ref;
 	}
-
-// 	return &keymap(tip(env)->ref.u.array, r)->ref;
 
 	b = mapreadin(tip(env)->ref.u.array, r);
 	assert(b);

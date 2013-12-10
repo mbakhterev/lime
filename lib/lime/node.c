@@ -37,7 +37,7 @@ unsigned isnode(const Ref node)
 	return node.code == NODE && isnodelist(node.u.list);
 }
 
-unsigned nodeverb(const Ref n, Array *const map)
+unsigned nodeverb(const Ref n, const Array *const map)
 {
 	assert(n.code == NODE);
 
@@ -131,7 +131,7 @@ Ref forknode(const Ref node, Array *const M)
 	return n;
 }
 
-unsigned knownverb(const Ref n, Array *const map)
+unsigned knownverb(const Ref n, const Array *const map)
 {
 	return map != NULL && nodeverb(n, map) != -1;
 }

@@ -30,21 +30,30 @@ int main(int argc, char *argv[])
 	Array *const envmarks = newkeymap();
 	Array *const types = newkeymap();
 	Array *const typemarks = newkeymap();
+	Array *const symmarks = newkeymap();
 
 	Array *const node = newverbmap(U, 0, ES("S", "TEnv"));
 	Array *const escape = newverbmap(U, 0, ES("F"));
 
 	enveval(U, root, envmarks, D, escape, node);
+	printf("environments done\n");
+
 	typeeval(U, types, typemarks, D, escape, envmarks);
+	printf("types done\n");
+
+	symeval(U, symmarks, D, escape, envmarks, typemarks);
+	printf("symbols done\n");
 
 	dumpkeymap(stdout, 0, U, root);
 	dumpkeymap(stdout, 0, U, envmarks);
 	dumpkeymap(stdout, 0, U, types);
 	dumpkeymap(stdout, 0, U, typemarks);
+	dumpkeymap(stdout, 0, U, symmarks);
 
 	freekeymap(escape);
 	freekeymap(node);
 
+	freekeymap(symmarks);
 	freekeymap(typemarks);
 	freekeymap(types);
 	freekeymap(envmarks);

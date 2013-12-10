@@ -2,6 +2,7 @@
 #include "util.h"
 
 #define DBGSB 1
+#define DBGDM 2
 
 // #define DBGFLAGS (DBGSB)
 
@@ -115,6 +116,33 @@ Ref markext(const Ref r)
 Ref cleanext(const Ref r)
 {
 	return setbit(r, 0);
+}
+
+static Ref skip(const Ref r)
+{
+	return r;
+}
+
+Ref dynamark(const Ref r)
+{
+	switch(r.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+	case PTR:
+		return skip(r);
+
+	case MAP:
+	case NODE:
+	case LIST:
+		return markext(r);
+	}
+
+	DBG(DBGDM, "r.(code pointer) = (%u %p)", r.code, r.u.pointer);
+
+	assert(0);
+	return reffree();
 }
 
 Ref forkref(const Ref r, Array *const nodemap)

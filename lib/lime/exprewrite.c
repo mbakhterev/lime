@@ -10,14 +10,14 @@
 #define DBGFLAGS 0
 
 static Ref rewrite(
-	const Ref, Array *const map, Array *const verbs, Array *const nodemap);
+	const Ref, const Array *const map, const Array *const verbs, Array *const nodemap);
 
 typedef struct
 {
 	List *result;
-	Array *const map;
-	Array *const verbs;
 	Array *const nodemap;
+	const Array *const map;
+	const Array *const verbs;
 } RState;
 
 static int rewriteone(List *const l, void *const ptr)
@@ -45,7 +45,8 @@ static int rewriteone(List *const l, void *const ptr)
 }
 
 static Ref rewrite(
-	const Ref r, Array *const map, Array *const verbs, Array *const nodemap)
+	const Ref r, const Array *const map, const Array *const verbs,
+	Array *const nodemap)
 {
 	switch(r.code)
 	{
@@ -106,7 +107,7 @@ static Ref rewrite(
 	return reffree();
 }
 
-Ref exprewrite(const Ref r, Array *const map, Array *const verbs)
+Ref exprewrite(const Ref r, const Array *const map, const Array *const verbs)
 {
 	Array *const nodemap = newkeymap();
 	const Ref rnew = rewrite(r, map, verbs, nodemap);

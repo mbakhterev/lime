@@ -8,23 +8,31 @@
 #define DBGGE 4
 
 // #define DBGFLAGS (DBGNMT)
+// #define DBGFLAGS (DBGTENV | DBGGE)
 
-#define DBGFLAGS (DBGTENV | DBGGE)
-
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 typedef struct
 {
 	Array *const U;
+
+	// Результаты: таблица типов и метки для T и TEnv узлов с номерами
+	// типов, которые они задают
+
 	Array *const types;
 	Array *const typemarks;
 
-	Array *const escape;
-	Array *const envmarks;
+	// Информация об узлах: что не надо разбирать, и в какие окружения они
+	// приписаны
 
-	Array *const verbs;
-	Array *const envverbs;
-	Array *const typeverbs;
+	const Array *const escape;
+	const Array *const envmarks;
+
+	// verbmap-ы на разные случаи
+
+	const Array *const verbs;
+	const Array *const envverbs;
+	const Array *const typeverbs;
 } EState;
 
 // Nominate - это от номинальных типов. Мы должны сопоставить .T и .TEnv
@@ -119,7 +127,7 @@ static unsigned getexisting(Array *const env, Array *const U, const Ref key)
 		free(strpath);
 	}
 
-	const Ref K = decorate(key, U, TYPE); 
+	const Ref K = decorate(dynamark(key), U, TYPE); 
 	const Binding *const b = pathlookup(l, K, NULL);
 
 	freeref(K);
@@ -150,6 +158,7 @@ static unsigned setnew(
 // 	if(!b || b->ref.code != FREE)
 	if(!b)
 	{
+		freeref(K);
 		return -1;
 	}
 
@@ -359,7 +368,7 @@ void typeeval(
 	Array *const U,
 	Array *const types,
 	Array *const typemarks,
-	const Ref dag, Array *const escape, Array *const envmarks)
+	const Ref dag, const Array *const escape, const Array *const envmarks)
 {
 	EState st =
 	{
@@ -375,9 +384,9 @@ void typeeval(
 
 	nominate(dag, &st);
 
-	freekeymap(st.typeverbs);
-	freekeymap(st.envverbs);
-	freekeymap(st.verbs);
+	freekeymap((Array *)st.typeverbs);
+	freekeymap((Array *)st.envverbs);
+	freekeymap((Array *)st.verbs);
 }
 
 const Binding *typeat(const Array *const types, const unsigned n)

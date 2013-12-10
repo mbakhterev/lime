@@ -59,6 +59,7 @@ do { \
 	fprintf(stderr, \
 		__FILE__ "(%u) %s: ERR:\t%s(%u): " fmt "\n", \
 		__LINE__, __func__, unitname, item, __VA_ARGS__); \
+	fflush(stderr); \
 	checkout(STRIKE); \
 } while(0)
 

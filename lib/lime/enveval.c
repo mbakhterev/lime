@@ -16,15 +16,26 @@
 typedef struct
 {
 	Array *const U;
-	Array *const escape;
-	Array *const markit;
+
+	// В аттрибуты каких узлов ходить не следует и какие из узлов следует
+	// помечать
+
+	const Array *const escape;
+	const Array *const markit;
+
+	// Результат работы: дерево новых окружений вписанное в текущий env и
+	// метки о том, в каких окружениях находятся те или иные узлы
 
 	Array *const env;
 	Array *const envmarks;
 
+	// Вспомогательные отображения
+
 	Array *const defs;
-	Array *const recode;
 	Array *const envdefs;
+
+	// Отображение для узнавания E и Env
+	const Array *const recode;
 } EState;
 
 #define ENODE 0
@@ -60,7 +71,7 @@ static const List *attrlist(const Ref r, Array *const U)
 }
 
 static void mkenv(
-	Array *const U, const Ref r, Array *const recode,
+	Array *const U, const Ref r, const Array *const recode,
 	Array *const env, Array *const envdefs, Array *const envmarks)
 {
 	const List *const l = attrlist(r, U);
@@ -133,8 +144,7 @@ static void mkenv(
 }
 
 static void assignenv(
-	Array *const U,
-	const Ref r, Array *const recode,
+	Array *const U, const Ref r, const Array *const recode,
 	Array *const defs, Array *const envdefs)
 {
 	const List *const l = attrlist(r, U);
@@ -280,7 +290,7 @@ static void evalcore(
 	Array *const U,
 	Array *const env,
 	Array *const envmarks,
-	List *const l, Array *const escape, Array *const markit)
+	List *const l, const Array *const escape, const Array *const markit)
 {
 	assert(U);
 	assert(env && env->code == MAP);
@@ -310,7 +320,7 @@ static void evalcore(
 	forlist(l, diveone, &st, 0);
 
 	freekeymap(st.envdefs);
-	freekeymap(st.recode);
+	freekeymap((Array *)st.recode);
 	freekeymap(st.defs);
 }
 
@@ -318,7 +328,7 @@ void enveval(
 	Array *const U,
 	Array *const env,
 	Array *const envmarks,
-	const Ref r, Array *const escape, Array *const markit)
+	const Ref r, const Array *const escape, const Array *const markit)
 {
 	switch(r.code)
 	{
