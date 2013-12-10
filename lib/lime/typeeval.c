@@ -254,6 +254,57 @@ static void tenv(const Ref r, EState *const E)
 	tunerefmap(E->typemarks, r, reftype(typeid));
 }
 
+static void tdef(const Ref N, EState *const E)
+{
+	const Ref r = nodeattribute(N);
+	const unsigned len = r.code == LIST ? listlen(r.u.list) : -1;
+	if(len != 2)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure",
+			atombytes(atomat(E->U, nodeverb(N, NULL))));
+
+		return;
+	}
+
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+
+	const Ref type = refmap(E->typemarks, R[0]);
+	if(type.code != TYPE)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": attribute 0 should evaluate to typeref",
+			atombytes(atomat(E->U, nodeverb(N, NULL))));
+
+		return;
+	}
+
+	const Ref def = exprewrite(R[1], E->typemarks, E->typeverbs);
+	if(!issignaturekey(def))
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": attribute 1 should evaluate to signature",
+			atombytes(atomat(E->U, nodeverb(N, NULL))));
+
+		freeref(def);
+		return;
+	}
+
+	Binding *const b = (Binding *)typeat(E->types, type.u.number);
+	if(b->ref.code != FREE)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't redefine type",
+			atombytes(atomat(E->U, nodeverb(N, NULL))));
+
+		freeref(def);
+		return;
+	}
+
+	b->ref = def;
+}
+
 static void nominatenode(const Ref r, EState *const st)
 {
 	if(r.external)
@@ -271,54 +322,10 @@ static void nominatenode(const Ref r, EState *const st)
 	case TENV:
 		tenv(r, st);
 		break;
-		
-//	case TENV:
-//	{
-// 		// Нас интересуют те .TEnv-ы, которые задают TVAR-ы, то есть
-// 		// .TEnv-ы со списками атрибутов единичной длины. Остальные
-// 		// .TEnv описывают другие сущности и мы их здесь не трогаем
-// 
-// 		const Ref attr = nodeattribute(r);
-// 		if(attr.code != LIST)
-// 		{
-// 			return;
-// 		}
-// 
-// 		const unsigned len = listlen(attr.u.list);
-// 		if(len != 1)
-// 		{
-// 			return;
-// 		}
-// 
-// 		// Добываем этот единственный элемент из списка. Он будет
-// 		// служить нам основным ключом. Нужно проверить, что он подходит
-// 		// под критерии basic
-// 
-// 		const Ref key = attr.u.list->ref;
-// 
-// 		if(!isbasickey(key))
-// 		{
-// 			return;
-// 		}
-// 		
-// 		// Если ключ подходящий, дополнительно его декорируем и
-// 		// добавляем в него ссылку на окружение, в котором видим текущий
-// 		// .TEnv
-// 
-// 		const Ref augkey 
-// 			= reflist(
-// 				append(
-// 					RL(refkeymap(envmap(envmarks, r))),
-// 					decorate(key, U, TYPE)));
-// 
-// 		// Теперь надо найти этому выражению место в таблице типов. И
-// 		// соответствующим образом расширить varmap
-// 
-// 		const unsigned id = typeenummap(types, augkey);
-// 		freeref(augkey);
-// 
-// 		tunerefmap(varmap, r, reftvar(id));
-// 	}
+
+	case TDEF:
+		tdef(r, st);
+		break;
 	}
 }
 
@@ -371,4 +378,10 @@ void typeeval(
 	freekeymap(st.typeverbs);
 	freekeymap(st.envverbs);
 	freekeymap(st.verbs);
+}
+
+const Binding *typeat(const Array *const types, const unsigned n)
+{
+	assert(n < types->count);
+	return (Binding *)types->u.data + n;
 }

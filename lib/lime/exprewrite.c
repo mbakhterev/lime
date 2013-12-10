@@ -31,8 +31,11 @@ static int rewriteone(List *const l, void *const ptr)
 
 	DBG(DBGRONE, "%s", "rewriting");
 
-	if(r.code != LIST)
+	if(r.code != LIST || l->ref.code == LIST)
 	{
+		// Если получился не список, или если изначально переписывался
+		// список, то добавляем узел, как он есть
+
 		st->result = append(st->result, RL(r));
 		return 0;
 	}

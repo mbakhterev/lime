@@ -1,9 +1,38 @@
 (
-	.TEnv
-	(
-		('00.2."st"; '00.1."X");
-		.T ('00.2."st"; '00.1."X"; .E ('00.3."ENV"; ('00.4."this")))
-	);
+	.TEnv ('0.7."pointer"; .T ('0.1."P"; 4));
+	.TEnv ('0.5."float"; .T ('0.1."F"; 4));
+	.TEnv ('0.3."i32"; .T ('0.1."I"; 4));
+	.TEnv ('0.2."i1"; .T ('0.1."I"; 1));
+	.TEnv (('0.6."struct"; '0.8."struct.X"); .T ('0.6."struct"; '0.8."struct.X"; (.E ('0.3."ENV"; ('0.4."this")))));
+	.TDef ( .TEnv (('0.6."struct"; '0.8."struct.X")); (( .T ('0.5."array"; .T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 30); 0); ( .TEnv ('0.3."i32"); 1); ( .TEnv ('0.2."i8"); 2); ( .T ('0.5."array"; .TEnv ('0.5."float"); 10); 3)));
 
-	.S ('00.1."A"; .TEnv (('00.2."st"; '00.1."X")))
+	.S gF ('0.1."F"; .T ('0.3."GBL"; .T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") ))));
+	.init (gF; ((.Zeroinit()); (.const (.TEnv ('0.3."i32"); '0.3."123")); (.const (.TEnv ('0.2."i8"); '0.1."0")); (.const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.3."777"); .const (.TEnv ('0.5."float"); '0.1."0"))));
+	.S gR ('0.1."R"; .T ('0.3."GBL"; .T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") ))));
+	.init (gR; ((.Zeroinit())));
+	.S gT ('0.1."T"; .T ('0.3."GBL"; .T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") ))));
+	.init (gT; (((.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); gR); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0)); (.const (.TEnv ('0.3."i32"); '0.3."999")); (.const (.TEnv ('0.2."i8"); '0.1."0")); (.const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."5"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"); .const (.TEnv ('0.5."float"); '0.1."0"))));
+	.S gb ('0.1."b"; .T ('0.3."GBL"; .T ('0.7."pointer"; .T ('0.5."array"; .TEnv ('0.3."i32"); 20))));
+	.init (gb; (.const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.3."555"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0"); .const (.TEnv ('0.3."i32"); '0.1."0")));
+	.E ('0.3."ENV"; ('0.4."this"; '0.4."main"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+	.proc (
+		.S ('0.4."main");
+		.Env ( .E ('0.3."ENV"; ('0.4."this"; '0.4."main"));
+		.LB(
+			.LB spec (
+				.S sprv ('0.5."SP.RV"; .T ('0.3."RET"))
+			);
+			// Function body
+			.LB l0 (
+				.S l1 ('0.2."l1"; .T ('0.3."LOC"; .T ('0.7."pointer"; .TEnv ('0.3."i32"))));
+				.S lg ('0.1."g"; .T ('0.3."LOC"; .T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") ))));
+				.wr (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")); .const (.TEnv ('0.3."i32"); '0.1."0") );
+				.add l2 (.T ('0.7."pointer"); .addr  (.T ('0.7."pointer"); .S ('0.1."g")); .offset (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.8."struct.X") )); 0; 1));
+				.rd  l3 (.TEnv ('0.3."i32"); l2);
+				.ret (l3)
+			);
+			.Label ('0.2."l0"; l0) 
+			) //end function body
+		) // End ENV
+	)// end proc
 )

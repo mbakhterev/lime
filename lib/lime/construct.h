@@ -605,6 +605,8 @@ extern void typeeval(
 	Array *const typemarks,
 	const Ref dag, Array *const escape, Array *const envmarks);
 
+extern const Binding *typeat(const Array *const, const unsigned);
+
 // Оценка узлов L, LNth и FIn. Параметр map описывает те выражения, в которых
 // оценку проводить не следует
 
