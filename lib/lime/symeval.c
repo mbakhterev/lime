@@ -71,6 +71,8 @@ static const Binding *setnew(
 		freeref(K);
 	}
 
+	b->ref = typeref;
+
 	return b;
 }
 
@@ -150,10 +152,10 @@ static void snode(const Ref N, EState *const E)
 
 static void evalnode(const Ref N, EState *const E)
 {
-	if(N.external)
-	{
-		return;
-	}
+// 	if(N.external)
+// 	{
+// 		return;
+// 	}
 
 	switch(nodeverb(N, E->verbs))
 	{
@@ -176,7 +178,22 @@ static void eval(const Ref N, EState *const E)
 		return;
 	
 	case NODE:
-		evalnode(N, E);
+		if(N.external)
+		{
+			return;
+		}
+
+		if(knownverb(N, E->verbs))
+		{
+			evalnode(N, E);
+			return;
+		}
+
+		if(!knownverb(N, E->escape))
+		{
+			eval(nodeattribute(N), E);
+		}
+
 		return;
 	
 	default:

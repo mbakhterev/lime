@@ -37,6 +37,8 @@ int main(int argc, char *argv[])
 
 	enveval(U, root, envmarks, D, escape, node);
 	printf("environments done\n");
+// 	dumpkeymap(stdout, 0, U, root);
+// 	dumpkeymap(stdout, 0, U, envmarks);
 
 	typeeval(U, types, typemarks, D, escape, envmarks);
 	printf("types done\n");

@@ -316,11 +316,11 @@ static void tdef(const Ref N, EState *const E)
 
 static void nominatenode(const Ref r, EState *const st)
 {
-	if(r.external)
-	{
-		// Ссылками не интересуемся. Нам важны только определения
-		return;
-	}
+// 	if(r.external)
+// 	{
+// 		// Ссылками не интересуемся. Нам важны только определения.
+// 		return 1;
+// 	}
 
 	switch(nodeverb(r, st->verbs))
 	{
@@ -354,9 +354,37 @@ static void nominate(const Ref r, EState *const E)
 		forlist(r.u.list, nominateone, E, 0);
 		return;
 
-	
 	case NODE:
-		nominatenode(r, E);
+		if(r.external)
+		{
+			// Ссылками не интересуемся. Нам важны только
+			// определения
+
+			return;
+		}
+
+		if(knownverb(r, E->verbs))
+		{
+			// Если это один из обрабатываемых узлов, то занимаемся
+			// анализом и обработкой его атрибутов по специальному
+			// алгоритму
+
+			nominatenode(r, E);
+			return;
+		}
+
+		
+		// Если это определение просто некоторого узла, надо разбирать
+		// его атрибуты в поисках значимого 
+
+		if(!knownverb(r, E->escape))
+		{
+			// Но только если нас не попросили не совать туда свой
+			// нос
+
+			nominate(nodeattribute(r), E);
+		}
+
 		return;
 	
 	default:
