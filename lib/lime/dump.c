@@ -13,9 +13,9 @@
 // #define DBGFLAGS (DBGDAG | DBGSTD | DBGATTR)
 // #define DBGFLAGS (DBGATTR)
 // #define DBGFLAGS (DBGDAG)
-#define DBGFLAGS (DBGMAP)
+// #define DBGFLAGS (DBGMAP)
 
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 typedef struct
 {
@@ -79,7 +79,6 @@ void dumpref(
 	{
 		assert(isnode(r));
 		const Ref n = refmap(nodes, r);
-// 		const Ref n = refnum(enummap(nodes, r));
 		
 		// Когда печатаем узел в списке, то не важно, в каком режиме
 		// печатаем, в отладочном или нет. Адреса узлов надо указать для
@@ -179,7 +178,6 @@ char *strlist(const Array *const U, const List *const l)
 	char *buf = NULL;
 	size_t length = 0;
 	FILE *f = newmemstream(&buf, &length);
-	assert(f);
 
 	dumplist(f, U, l);
 
@@ -194,7 +192,6 @@ char *strref(const Array *const U, Array *const nodemap, const Ref r)
 	char *buf = NULL;
 	size_t length = 0;
 	FILE *f = newmemstream(&buf, &length);
-	assert(f);
 
 	dumpref(f, U, nodemap, r);
 
@@ -224,7 +221,6 @@ static int mapone(List *const l, void *const ptr)
 	assert(nodes);
 
 	tunerefmap(nodes, l->ref, refnum(nodes->count));
-// 	enummap(nodes, l->ref);
 
 	return 0;
 }
@@ -268,7 +264,6 @@ static int dumpone(List *const l, void *const ptr)
 	Array *const map = st->map;
 
 	const Ref i = refmap(st->nodes, n);
-// 	const Ref i = refnum(enummap(st->nodes, n));
 
 	if(st->dbg)
 	{
@@ -414,66 +409,41 @@ void dumpkeymap(
 	freelist(st.F);
 }
 
-// typedef struct
-// {
-// 	FILE *const file;
-// 	const Array *const universe;
-// 	const char *const tabstr;
-// 	const unsigned tabs;
-// 	unsigned depth;
-// } DEnvState;
-// 
-// static int dumpenvone(List *const l, void *const ptr)
-// {
-// 	assert(ptr);
-// 	assert(l && l->ref.code == ENV && l->ref.u.environment);
-// 
-// 	DEnvState *const st = ptr;
-// 	FILE *const f = st->file;
-// 	const Array *const U = st->universe;
-// 	const char *const tabs = st->tabstr;
-// 	assert(f);
-// 	assert(U);
-// 
-// 	const Array *const E = l->ref.u.environment;
-// 	const Binding *const B = E->data;
-// 
-// 	assert(fprintf(f, "\n%sENV{%u}:", tabs, st->depth) > 0);
-// 
-// 	for(unsigned i = 0; i < E->count; i += 1)
-// 	{
-// 		assert(fprintf(f, "\n%s\tkey: ", tabs) > 0);
-// 		dumplist(f, U, B[i].key);
-// 
-// 		assert(fprintf(f, "\n%s\tvalue: ", tabs) > 0);
-// 		dumpref(f, U, NULL, B[i].ref);
-// 
-// 		assert(fputc('\n', f) == '\n');
-// 	}
-// 
-// 	st->depth += 1;
-// 
-// 	return 0;
-// }
-// 
-// void dumpenvironment(
-// 	FILE *const f, const unsigned tabs,
-// 	const Array *const U, const List *const env)
-// {
-// 	DEnvState st =
-// 	{
-// 		.tabs = tabs,
-// 		.tabstr = tabstr(tabs),
-// 		.file = f,
-// 		.universe = U,
-// 		.depth = 0
-// 	};
-// 
-// 	forlist((List *)env, dumpenvone, &st, 0);
-// 
-// 	free((char *)st.tabstr);
-// }
-// 
+void dumptypes(
+	FILE *const f, const unsigned tabs, const Array *const U,
+	const Array *const types)
+{
+	assert(f);
+	assert(U);
+	assert(types);
+
+	assert(printf("\ntypes:") > 0);
+
+	if(!types->count)
+	{
+		assert(fputc('\n', f) == '\n');
+		return;
+	}
+
+	const char *const pad = tabstr(tabs);
+	const Binding *const B = types->u.data;
+
+	for(unsigned i = 0; i < types->count; i += 1)
+	{
+		assert(fprintf(f,
+			"\n%s\t%u.\tkey(%u): ", pad, i, B[i].key.external) > 0);
+		dumpref(f, U, NULL, B[i].key);
+
+		assert(fprintf(f,
+			"\n%s\t\tdef(%u): ", pad, B[i].ref.external) > 0);
+		dumpref(f, U, NULL, B[i].ref);
+
+		assert(fputc('\n', f) == '\n');
+	}
+
+	free((char *)pad);
+}
+
 // typedef struct
 // {
 // 	const Array *const U;

@@ -48,7 +48,9 @@ int main(int argc, char *argv[])
 
 	dumpkeymap(stdout, 0, U, root);
 	dumpkeymap(stdout, 0, U, envmarks);
-	dumpkeymap(stdout, 0, U, types);
+
+	dumptypes(stdout, 0, U, types);
+
 	dumpkeymap(stdout, 0, U, typemarks);
 	dumpkeymap(stdout, 0, U, symmarks);
 

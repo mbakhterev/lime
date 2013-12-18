@@ -48,7 +48,10 @@ Ref reftype(const unsigned n)
 
 Ref refptr(void *const p)
 {
-	return (Ref) { .code = PTR, .u.pointer = p, .external = 0 };
+// 	return (Ref) { .code = PTR, .u.pointer = p, .external = 0 };
+
+	// Внимание на 1
+	return (Ref) { .code = PTR, .u.pointer = p, .external = 1 };
 }
 
 Ref refnode(List *const exp)
