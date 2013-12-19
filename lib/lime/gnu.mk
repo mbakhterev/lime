@@ -19,8 +19,6 @@ lmsrc = \
 	exprewrite.c	\
 	symeval.c	\
 
-# 	environment.c	\
-# 	walkdag.c	\
 # 	evallists.c	\
 # 	context.c	\
 # 	form.c		\
