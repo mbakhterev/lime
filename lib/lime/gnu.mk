@@ -18,10 +18,10 @@ lmsrc = \
 	typeeval.c	\
 	exprewrite.c	\
 	symeval.c	\
+	form.c		\
 
 # 	evallists.c	\
 # 	context.c	\
-# 	form.c		\
 # 	evalforms.c	\
 # 	progress.c	\
 	

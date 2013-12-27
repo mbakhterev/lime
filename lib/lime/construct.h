@@ -11,7 +11,7 @@ enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 // Имена для основных типов
 
 typedef struct List List;
-typedef struct Form Form;
+// typedef struct Form Form;
 typedef struct Array Array;
 typedef struct Context Context;
 typedef struct Environment Environment;
@@ -62,7 +62,7 @@ typedef struct
 		unsigned number;
 		void *pointer;
 		List *list;
-		Form *form;
+// 		Form *form;
 		Array *array;
 		Context *context;
 	} u;
@@ -91,7 +91,8 @@ extern Ref refptr(void *const);
 extern Ref refnode(List *const);
 
 extern Ref reflist(List *const);
-extern Ref refform(Form *const);
+// extern Ref refform(Form *const);
+extern Ref refform(List *const);
 
 extern Ref refkeymap(Array *const);
 
@@ -629,37 +630,55 @@ extern List *evallists(
 	Array *const U,
 	const Ref dag, const Array *const map, const List *const arguments);
 
-// Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
-// выводимый граф и dag с описанием тела формы. Счётчик необходим для
-// отслеживания процесса активации формы. Форма активируется, когда в контексте
-// вывода появляется необходимое количество выходов, соответствующих её
-// сигнатуре
+// // Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
+// // выводимый граф и dag с описанием тела формы. Счётчик необходим для
+// // отслеживания процесса активации формы. Форма активируется, когда в контексте
+// // вывода появляется необходимое количество выходов, соответствующих её
+// // сигнатуре
+// 
+// struct Form 
+// {
+// 	union
+// 	{
+// 		const Ref dag;
+// 		struct Form *nextfree;
+// 	} u;
+// 
+// 	const List *const signature;
+// 
+// 	unsigned count;
+// };
+// 
+// // Из-за сложной жизни форм (cf. txt/worklog.txt:2690 2013-09-04 11:55:50) имеет
+// // смысл во freeform передавать Ref и, соответственно, возвращать Ref из
+// // newform. Потому что они всегда связаны: формы бывают либо в окружениях (там
+// // Ref-ы), либо в списках (тоже Ref-ы)
+// 
+// extern void freeform(const Ref);
+// 
+// extern Ref newform(const List *const dag, const List *const signature);
+// 
+// // Структура контекста вывода
+// 
+// // В соответствии с txt/worklog.txt:2331 2013-09-01 22:31:36
 
-struct Form 
-{
-	union
-	{
-		const Ref dag;
-		struct Form *nextfree;
-	} u;
+// Формы. Реализованы в виде списков из: списка сигнатур, списка узлов (тела
+// формы) и счётчика для отслеживания готовых входов для формы. Для счётчика
+// имеет смысл сделать дополнительный интерфейс, так как он становится
+// актуальным только при попадании формы в область вывода.
 
-	const List *const signature;
+extern Ref newform(const Ref keys, const Ref dag);
+extern Ref forkform(const Ref form);
+extern void freeform(const Ref form);
 
-	unsigned count;
-};
+extern Ref formdag(const Ref form);
+extern Ref formkeys(const Ref form);
 
-// Из-за сложной жизни форм (cf. txt/worklog.txt:2690 2013-09-04 11:55:50) имеет
-// смысл во freeform передавать Ref и, соответственно, возвращать Ref из
-// newform. Потому что они всегда связаны: формы бывают либо в окружениях (там
-// Ref-ы), либо в списках (тоже Ref-ы)
+extern Ref setcounter(const Ref form);
+extern unsigned countdown(const Ref *const form);
 
-extern void freeform(const Ref);
-
-extern Ref newform(const List *const dag, const List *const signature);
-
-// Структура контекста вывода
-
-// В соответствии с txt/worklog.txt:2331 2013-09-01 22:31:36
+extern unsigned isformlist(const List *const);
+extern unsigned isform(const Ref);
 
 typedef struct
 {

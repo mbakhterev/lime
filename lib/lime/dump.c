@@ -103,11 +103,17 @@ void dumpref(
 		break;
 
 	case FORM:
-		assert(r.u.form);
+// 		assert(r.u.form);
+// 		assert(fprintf(f, "F:%p (D:%p S:%p)",
+// 			(void *)r.u.form,
+// 			(void *)r.u.form->u.dag.u.list,
+// 			(void *)r.u.form->signature) > 0);
+
+		assert(isformlist(r.u.list));
 		assert(fprintf(f, "F:%p (D:%p S:%p)",
-			(void *)r.u.form,
-			(void *)r.u.form->u.dag.u.list,
-			(void *)r.u.form->signature) > 0);
+			(void *)r.u.list,
+			(void *)formdag(r).u.list,
+			(void *)formkeys(r).u.list) > 0);
 		break;
 
 	case MAP:

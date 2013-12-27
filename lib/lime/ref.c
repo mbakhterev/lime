@@ -48,8 +48,6 @@ Ref reftype(const unsigned n)
 
 Ref refptr(void *const p)
 {
-// 	return (Ref) { .code = PTR, .u.pointer = p, .external = 0 };
-
 	// Внимание на 1
 	return (Ref) { .code = PTR, .u.pointer = p, .external = 1 };
 }
@@ -67,9 +65,11 @@ Ref reflist(List *const l)
 	return (Ref) { .code = LIST, .u.list = l, .external = 0 };
 }
 
-Ref refform(Form *const f)
+Ref refform(List *const f)
 {
-	return (Ref) { .code = FORM, .u.form = f, .external = 0 };
+	assert(isformlist(f));
+
+	return (Ref) { .code = FORM, .u.list = f, .external = 0 };
 }
 
 Ref refkeymap(Array *const a)
@@ -186,7 +186,10 @@ Ref forkref(const Ref r, Array *const nodemap)
 
 		return r;
 	}
-	
+
+	case FORM:
+		return forkform(r);	
+
 	default:
 		assert(0);
 	}

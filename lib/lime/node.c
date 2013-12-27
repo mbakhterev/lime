@@ -135,5 +135,3 @@ unsigned knownverb(const Ref n, const Array *const map)
 {
 	return map != NULL && nodeverb(n, map) != -1;
 }
-
-

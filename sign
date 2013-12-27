@@ -2,5 +2,5 @@
 
 set -e
 
-tag="0.dev-sig-$USER-$(date +%Y.%m.%d)"
+tag="0.dev-$(date +%V).$(git log --pretty=oneline | wc -l)-sig-${USER}"
 git tag -sm "ЭЦП: ${tag}" "${tag}"
