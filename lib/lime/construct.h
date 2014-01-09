@@ -628,7 +628,7 @@ extern void symeval(
 
 extern List *evallists(
 	Array *const U,
-	const Ref dag, const Array *const map, const List *const arguments);
+	const Ref dag, const Array *const escape, const List *const arguments);
 
 // // Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
 // // выводимый граф и dag с описанием тела формы. Счётчик необходим для
