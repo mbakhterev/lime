@@ -11,10 +11,7 @@ enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 // Имена для основных типов
 
 typedef struct List List;
-// typedef struct Form Form;
 typedef struct Array Array;
-typedef struct Context Context;
-typedef struct Environment Environment;
 
 // Типы различных значений, используемых в алгоритмах. Метки записываются в поля
 // с именем code в структурах Ref и Array
@@ -48,8 +45,8 @@ enum
 
 	FORM,
 
-	// Метки, которые в будущем не понадобятся
-	CTX,
+	// Отсылка к области вывода
+	AREA,
 
 	// Свободная ссылка, в которой ничего нет
 	FREE = -1
@@ -623,44 +620,12 @@ extern void symeval(
 	const Ref dag, const Array *const escape,
 	const Array *const envmarks, const Array *const typemarks);
 
-// Оценка узлов L, LNth и FIn. Параметр map описывает те выражения, в которых
-// оценку проводить не следует
+// Оценка узлов Nth и FIn. Параметр map описывает те выражения, в которых оценку
+// проводить не следует
 
 extern List *evallists(
 	Array *const U,
 	const Ref dag, const Array *const escape, const List *const arguments);
-
-// // Форма. У неё есть сигнатура, определяющая способ встраивания формы в текущий
-// // выводимый граф и dag с описанием тела формы. Счётчик необходим для
-// // отслеживания процесса активации формы. Форма активируется, когда в контексте
-// // вывода появляется необходимое количество выходов, соответствующих её
-// // сигнатуре
-// 
-// struct Form 
-// {
-// 	union
-// 	{
-// 		const Ref dag;
-// 		struct Form *nextfree;
-// 	} u;
-// 
-// 	const List *const signature;
-// 
-// 	unsigned count;
-// };
-// 
-// // Из-за сложной жизни форм (cf. txt/worklog.txt:2690 2013-09-04 11:55:50) имеет
-// // смысл во freeform передавать Ref и, соответственно, возвращать Ref из
-// // newform. Потому что они всегда связаны: формы бывают либо в окружениях (там
-// // Ref-ы), либо в списках (тоже Ref-ы)
-// 
-// extern void freeform(const Ref);
-// 
-// extern Ref newform(const List *const dag, const List *const signature);
-// 
-// // Структура контекста вывода
-// 
-// // В соответствии с txt/worklog.txt:2331 2013-09-01 22:31:36
 
 // Формы. Реализованы в виде списков из: списка сигнатур, списка узлов (тела
 // формы) и счётчика для отслеживания готовых входов для формы. Для счётчика
@@ -680,58 +645,23 @@ extern unsigned countdown(const Ref *const form);
 extern unsigned isformlist(const List *const);
 extern unsigned isform(const Ref);
 
+// Область вывода, в которой происходит всё самое интересное. Результат вывода -
+// это ripe - пара из (накиданных в forward-реактор форм и выводов: .FPut (1;
+// ...) и .FOut (1; ...)) и накопленного графа программы. В области вывода есть
+// ещё и текущий реактор.
+
 typedef struct
 {
-	List *outs;
-	List *ins;
-	List *forms;
-} Reactor;
+	struct
+	{
+		Array *const current;
+		List *dag;
+	} ripe;
 
-struct contexttag
-{
-	// Выращенная в этом контексте часть графа программы. Сюда дописывается
-	// содержимое активированных форм.
+	Array *const current;
+} Area;
 
-	List *dag;
-
-	// Это та часть, которая называется в worklog реакторами. Но всерьёз
-	// писать ->reactor в коде? Настолько ли мы безумные программисты?
-
-	Reactor R[2];
-
-	// marker пригодится для проверки соответствий. Нужен ли state - пока не
-	// понятно
-
-	unsigned state;
-	const unsigned marker;
-};
-
-// Варианты состояния контекста
-
-enum { EMPTY, RIPENING, RIPE };
-
-// Контексты собираются в стеки
-
-// При размещении нового контекста имеет смысл указать его состояние и маркер
-// (последний для проверки корректности). Маркер - это номер атома
-
-extern List *pushcontext(
-	List *const ctx, const unsigned state, const unsigned marker);
-
-// При очищении контекста нужно знать структуру выращенного в нём графа, не
-// понятно наперёд, какая именно это карта должна быть (взятая из форм или что?
-// любые гипотезы приветствуются). Поэтому просто параметр
-
-extern List *popcontext(List **const pctx);
-
-// Слияние двух контекстов на вершине стека. Тот, что сверху дописывается к
-// тому, что снизу - это описание формирования порядка dag-ов
-
-extern List *mergecontext(const Array *const U, List *const ctx);
-
-extern unsigned isforwardempty(const List *const ctx);
-
-extern void dumpcontext(FILE *const, const Array *const, const List *const ctx);
+extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
 // Выбирает из текущего графа формы и размещает их в соответствии с указаниями
 // публикации: .FPut, .FGPut, .FEPut. Публикация осуществляется на вершинах
