@@ -12,6 +12,7 @@ enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 
 typedef struct List List;
 typedef struct Array Array;
+typedef struct { int a; } Context;
 
 // Типы различных значений, используемых в алгоритмах. Метки записываются в поля
 // с именем code в структурах Ref и Array
@@ -46,7 +47,7 @@ enum
 	FORM,
 
 	// Отсылка к области вывода
-	AREA,
+	AREA, CTX,
 
 	// Свободная ссылка, в которой ничего нет
 	FREE = -1
