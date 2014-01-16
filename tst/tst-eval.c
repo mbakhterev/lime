@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	Array *const typemarks = newkeymap();
 	Array *const symmarks = newkeymap();
 
-	Array *const node = newverbmap(U, 0, ES("S", "TEnv"));
+	Array *const node = newverbmap(U, 0, ES("S", "TEnv", "LB"));
 	Array *const escape = newverbmap(U, 0, ES("F"));
 
 	enveval(U, root, envmarks, D, escape, node);

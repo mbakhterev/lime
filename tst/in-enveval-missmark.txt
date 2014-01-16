@@ -1,0 +1,73 @@
+(
+        .TEnv ('0.7."pointer"; .T ('0.1."P"; 4));
+        .TEnv ('0.5."float"; .T ('0.1."F"; 4));
+        .TEnv ('0.3."i32"; .T ('0.1."I"; 4));
+        .TEnv ('0.2."i8"; .T ('0.1."I"; 1));
+        .TEnv ('0.2."i1"; .T ('0.1."I"; 1));
+
+        .E ('0.3."ENV"; ('0.4."this"; '0.1."f"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .E ('0.3."ENV";
+                 ('0.4."this"; '0.1."f"; '0.4."this");
+                 .E ('0.3."ENV"; ('0.4."this"; '0.1."f")));
+        .S ('0.1."f";.T ('0.8."function";.TEnv ('0.3."i32"); .TEnv ('0.3."i32")));
+        .proc (
+                .S ('0.1."f");
+                .Env ( .E ('0.3."ENV"; ('0.4."this"; '0.1."f"));
+                .LB (
+                        .LB fbody (
+                        // Function ARGV
+                        .LB (
+                                .S fa ('0.1."a"; .T ('0.3."ARG"; .TEnv ('0.3."i32")))
+                        );
+                        .LB spec (
+                                .S sprv ('0.5."SP.RV"; .T ('0.3."RET"))
+                        );
+                        // Function body
+                        .LB l0 (
+                                .S l1 ('0.2."l1"; .T ('0.3."LOC"; .TEnv ('0.3."i32")));
+                                .wr (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")); .rd (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.1."a"))) );
+                                .rd  l2 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .ret (l2)
+                        );
+                        .Label ('0.2."l0"; l0)
+                        ) //end function body
+                ) // End ENV LB
+                ) // End ENV
+        ); // end proc
+        .E ('0.3."ENV"; ('0.4."this"; '0.4."main"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .E ('0.3."ENV";
+                 ('0.4."this"; '0.4."main"; '0.4."this");
+                 .E ('0.3."ENV"; ('0.4."this"; '0.4."main")));
+        .S ('0.4."main";.T ('0.8."function";.TEnv ('0.3."i32"); .TEnv ('0.3."i32"); .T ('0.7."pointer"; .T ('0.7."pointer"; .TEnv ('0.2."i8")))));
+        .proc (
+                .S ('0.4."main");
+                .Env ( .E ('0.3."ENV"; ('0.4."this"; '0.4."main"));
+                .LB (
+                        .LB mainbody (
+                        // Function ARGV
+                        .LB (
+                                .S fargc ('0.4."argc"; .T ('0.3."ARG"; .TEnv ('0.3."i32")));
+                                .S fargv ('0.4."argv"; .T ('0.3."ARG"; .T ('0.7."pointer"; .T ('0.7."pointer"; .TEnv ('0.2."i8")))))
+                        );
+                        .LB spec (
+                                .S sprv ('0.5."SP.RV"; .T ('0.3."RET"))
+                        );
+                        // Function body
+                        .LB l0 (
+                                .S l1 ('0.2."l1"; .T ('0.3."LOC"; .TEnv ('0.3."i32")));
+                                .S l2 ('0.2."l2"; .T ('0.3."LOC"; .TEnv ('0.3."i32")));
+                                .S l3 ('0.2."l3"; .T ('0.3."LOC"; .TEnv ('0.3."i32")));
+                                .wr (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")); .const (.TEnv ('0.3."i32"); '0.1."0") );
+                                .wr (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")); .rd (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.4."argc"))) );
+                                .wr (.T ('0.7."pointer"); .addr  (.T ('0.7."pointer"); .S ('0.2."l3")); .rd (.T ('0.7."pointer"); .addr  (.T ('0.7."pointer"); .S ('0.4."argv"))) );
+                                .call l4 (.addr  (.T ('0.7."pointer"); .S ('0.1."f")); (.arg (.TEnv ('0.3."i32"); .const (.TEnv ('0.3."i32"); '0.1."5"))));
+                                .call l5 (.addr  (.T ('0.7."pointer"); .S ('0.1."f")); (.arg (.TEnv ('0.3."i32"); .const (.TEnv ('0.3."i32"); '0.1."6"))));
+                                .add l6 (.TEnv ('0.3."i32"); l4; l5);
+                                .ret (l6)
+                        );
+                        .Label ('0.2."l0"; l0)
+                        ) //end function body
+                ) // End ENV LB
+                ) // End ENV
+        )// end proc
+)

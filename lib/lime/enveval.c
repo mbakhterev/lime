@@ -17,7 +17,7 @@ typedef struct
 {
 	Array *const U;
 
-	// В аттрибуты каких узлов ходить не следует и какие из узлов следует
+	// В атрибуты каких узлов ходить не следует и какие из узлов следует
 	// помечать
 
 	const Array *const escape;
@@ -187,11 +187,6 @@ static void assignenv(
 	tuneenvmap(envdefs, R[1], env);
 }
 
-// static unsigned knownverb(const Ref n, Array *const map)
-// {
-// 	return map != NULL && nodeverb(n, map) != -1;
-// }
-
 static int makeassignone(List *const l, void *const ptr)
 {
 	assert(l);
@@ -221,18 +216,55 @@ static int makeassignone(List *const l, void *const ptr)
 		assignenv(st->U, r, st->recode, st->defs, st->envdefs);
 		break;
 
-	default:
-		// Здесь мы имеем дело с неким другим узлом. Для некоторых из
-		// них мы запоминаем окружение
-
-		if(knownverb(r, st->markit))
-		{
-			tuneenvmap(st->envmarks, r, st->env);
-		}
-
-		break;
+// 	default:
+// 		// Здесь мы имеем дело с неким другим узлом. Для некоторых из
+// 		// них мы запоминаем окружение
+// 
+// 		if(knownverb(r, st->markit))
+// 		{
+// 			tuneenvmap(st->envmarks, r, st->env);
+// 		}
+// 
+// 		break;
 	}
 
+	return 0;
+}
+
+static int markone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	EState *const st = ptr;
+	const Ref r = l->ref;
+
+	if(r.code != NODE || r.external)
+	{
+		return 0;
+	}
+
+	// Здесь мы имеем дело с определённым узлом. Но если нас не просили его
+	// отмечать, то не отмечаем
+
+	if(!knownverb(r, st->markit))
+	{
+		return 0;
+	}
+
+	// Узел надо отмечать. Возможны два варианта: для узла явно задано
+	// окружение через envdefs (результат обработки Env на предыдущем
+	// шаге), либо ничего в envdefs не сказано. В первом случае назначаем
+	// окружение из envdefs, во втором - текущее.
+
+	Array *const env = envmap(st->envdefs, r);
+
+	if(env)
+	{
+		tuneenvmap(st->envmarks, r, env);
+		return 0;
+	}
+
+	tuneenvmap(st->envmarks, r, st->env);
 	return 0;
 }
 
@@ -253,6 +285,7 @@ static int diveone(List *const l, void *const ptr)
 	
 	case LIST:
 		// Погружаемся этой же процедурой глубже
+
 		forlist(r.u.list, diveone, st, 0);
 		break;
 	
@@ -309,11 +342,15 @@ static void evalcore(
 	};
 
 	// Первая стадия оценки окружений. Проходим по текущим атрибутам,
-	// формируем окружения и размечаем интересные узлы
+	// формируем окружения и определяем окружения при помощи Env
 
 	forlist(l, makeassignone, &st, 0);
 
-	// Вторая стадия оценки окружений. Проходим по текущим атрибутам и
+	// Вторая стадия оценки окружений. Размечаем узлы
+
+	forlist(l, markone, &st, 0);
+
+	// Третья стадия оценки окружений. Проходим по текущим атрибутам и
 	// рекурсивно вызываем enveval с учётом накопленной об окружениях
 	// информации
 
