@@ -12,7 +12,6 @@ enum { MAXHINT = 255, MAXLEN = (unsigned)-1 >> 1, CHUNKLEN = 32 };
 
 typedef struct List List;
 typedef struct Array Array;
-typedef struct { int a; } Context;
 
 // Типы различных значений, используемых в алгоритмах. Метки записываются в поля
 // с именем code в структурах Ref и Array
@@ -47,7 +46,7 @@ enum
 	FORM,
 
 	// Отсылка к области вывода
-	AREA, CTX,
+	AREA,
 
 	// Свободная ссылка, в которой ничего нет
 	FREE = -1
@@ -60,9 +59,7 @@ typedef struct
 		unsigned number;
 		void *pointer;
 		List *list;
-// 		Form *form;
 		Array *array;
-		Context *context;
 	} u;
 
 	unsigned code;
@@ -621,12 +618,14 @@ extern void symeval(
 	const Ref dag, const Array *const escape,
 	const Array *const envmarks, const Array *const typemarks);
 
-// Оценка узлов Nth и FIn. Параметр map описывает те выражения, в которых оценку
-// проводить не следует
+// Оценка узлов Nth и FIn. Процедура сконструирует новый граф с подставленными
+// вместо FIn и Nth значениями. Самих узлов не будет в новом графе. Отображения
+// symmarks и typemarks нужны для разбора на части символов и типов
 
-extern List *evallists(
-	Array *const U,
-	const Ref dag, const Array *const escape, const List *const arguments);
+extern Ref ntheval(
+	const Array *const U,
+	const Ref dag, const Array *const escape,
+	const Array *const symmarks, const Array *const typemarks);
 
 // Формы. Реализованы в виде списков из: списка сигнатур, списка узлов (тела
 // формы) и счётчика для отслеживания готовых входов для формы. Для счётчика
@@ -646,21 +645,13 @@ extern unsigned countdown(const Ref *const form);
 extern unsigned isformlist(const List *const);
 extern unsigned isform(const Ref);
 
-// Область вывода, в которой происходит всё самое интересное. Результат вывода -
-// это ripe - пара из (накиданных в forward-реактор форм и выводов: .FPut (1;
-// ...) и .FOut (1; ...)) и накопленного графа программы. В области вывода есть
-// ещё и текущий реактор.
+// Области вывода. Они являются keymap-ами особой структуры. Потому что надо
+// связывать их в цепочки
 
-typedef struct
-{
-	struct
-	{
-		Array *const current;
-		List *dag;
-	} ripe;
-
-	Array *const current;
-} Area;
+extern Array *newarea(void);
+extern Array *areacurrent(const Array *const area);
+extern Array *areaforward(const Array *const area);
+extern Ref areadag(const Array *const area);
 
 extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
