@@ -625,7 +625,8 @@ extern void symeval(
 extern Ref ntheval(
 	const Array *const U,
 	const Ref dag, const Array *const escape,
-	const Array *const symmarks, const Array *const typemarks);
+	const Array *const symmarks, const Array *const typemarks,
+	const List *const inlist);
 
 // Формы. Реализованы в виде списков из: списка сигнатур, списка узлов (тела
 // формы) и счётчика для отслеживания готовых входов для формы. Для счётчика
