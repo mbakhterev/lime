@@ -86,12 +86,11 @@ extern Ref refptr(void *const);
 extern Ref refnode(List *const);
 
 extern Ref reflist(List *const);
-// extern Ref refform(Form *const);
 extern Ref refform(List *const);
 
 extern Ref refkeymap(Array *const);
 
-extern Ref refctx(Context *const);
+// extern Ref refctx(Context *const);
 
 extern Ref markext(const Ref);
 extern Ref cleanext(const Ref);
@@ -714,12 +713,14 @@ enum { ITLOCAL = 0, ITEXTERNAL };
 
 extern void intakeform(
 	const Array *const U,
-	Context *const, const unsigned level,
+//	Context *const, const unsigned level,
+	Array *const area, const unsigned level,
 	const List *const dag,
 	const List *const signature, const unsigned external);
 
 extern void intakeout(
 	const Array *const U,
-	Context *const, const unsigned level, const List *const outs);
+//	Context *const, const unsigned level, const List *const outs);
+	Array *const area, cons unsigned level, const List *const outs);
 
 #endif
