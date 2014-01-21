@@ -19,7 +19,7 @@ lmsrc = \
 	exprewrite.c	\
 	symeval.c	\
 	form.c		\
-	ntheval		\
+	ntheval.c	\
 
 # 	context.c	\
 # 	evalforms.c	\

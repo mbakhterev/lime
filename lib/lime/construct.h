@@ -721,6 +721,6 @@ extern void intakeform(
 extern void intakeout(
 	const Array *const U,
 //	Context *const, const unsigned level, const List *const outs);
-	Array *const area, cons unsigned level, const List *const outs);
+	Array *const area, const unsigned level, const List *const outs);
 
 #endif

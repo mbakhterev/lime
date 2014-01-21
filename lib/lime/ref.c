@@ -78,10 +78,10 @@ Ref refkeymap(Array *const a)
 	return (Ref) { .code = MAP, .u.array = a, .external = 0 };
 }
 
-Ref refctx(Context *const c)
-{
-	return (Ref) { .code = CTX, .u.context = c, .external = 0 };
-}
+// Ref refctx(Context *const c)
+// {
+// 	return (Ref) { .code = CTX, .u.context = c, .external = 0 };
+// }
 
 static Ref setbit(const Ref r, const unsigned bit)
 {

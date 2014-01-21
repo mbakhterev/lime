@@ -1,6 +1,8 @@
 #include "construct.h"
 #include "util.h"
 
+#include <assert.h>
+
 #define FIN 0U
 #define NTH 1U
 #define SNODE 2U
@@ -43,6 +45,8 @@ typedef struct
 	const unsigned valid;
 } Index;
 
+static void eval(const Ref, NState *const);
+
 static int evalone(List *const l, void *const ptr)
 {
 	assert(l);
@@ -53,7 +57,8 @@ static int evalone(List *const l, void *const ptr)
 
 typedef struct
 {
-	List *L;
+	Ref L;
+	const Array *const verbs;
 } DCState;
 
 static unsigned reftoidx(
@@ -65,7 +70,7 @@ static unsigned reftoidx(
 	switch(r.code)
 	{
 	case NUMBER:
-		assert(r.u.number < MAXINT);
+		assert(r.u.number < MAXNUM);
 		*correct = 1;
 		return r.u.number;
 	
@@ -73,7 +78,7 @@ static unsigned reftoidx(
 		// Нам здесь везёт, что конец списка обозначается так же, как и
 		// узел T
 
-		if(verbmap(verbs, r) == TNODE)
+		if(verbmap(verbs, r.u.number) == TNODE)
 		{
 			*correct = 1;
 			return -1;
@@ -94,7 +99,7 @@ static Index index(const Ref r, const Array *const verbs)
 	case ATOM:
 	{
 		unsigned valid = 0;
-		const unsigned idx = reftoidx(r, verbs, &valid)
+		const unsigned idx = reftoidx(r, verbs, &valid);
 		return (Index) { .from = idx, .to = idx, .valid = valid };
 	}
 
@@ -122,7 +127,55 @@ static Index index(const Ref r, const Array *const verbs)
 	}
 	}
 
-	return (Index) { .from = -1, .to = -1, valid = 0 };
+	return (Index) { .from = -1, .to = -1, .valid = 0 };
+}
+
+static Ref reexpress(List *const l)
+{
+	if(listlen(l) == 1)
+	{
+		return l->ref;
+	}
+
+	return reflist(l);
+}
+
+static int indexone(List *const i, void *const ptr)
+{
+	assert(i);
+	assert(ptr);
+	DCState *const st = ptr;
+	const Index idx = index(i->ref, st->verbs);
+
+	if(!idx.valid)
+	{
+		// Прекращаем этот проход, если получили не пару индексов
+		return 1;
+	}
+
+	if(st->L.code != LIST)
+	{
+		// Прекращаем этот проход, если нас просят разобрать не список
+		return 1;
+	}
+
+	unsigned valid = 0;
+	List *const l = forklistcut(st->L.u.list, idx.from, idx.to, &valid);
+
+	if(!idx.valid)
+	{
+		freelist(l);
+		return 1;
+	}
+
+	freeref(st->L);
+
+	// Здесь нужен небольшой грязный хак отождествления списков из одного
+	// элемента с самим этим элементом
+
+	st->L = reexpress(l);
+
+	return 0;
 }
 
 
@@ -152,7 +205,7 @@ static List *deconstruct(const Ref N, NState *const S)
 	const Ref R[len];
 	writerefs(r.u.list, (Ref *)R, len);
 
-	if(!isnode(R[0]) || !knowverb(N, S->verbs) || R[1].code != LIST)
+	if(!isnode(R[0]) || !knownverb(N, S->verbs) || R[1].code != LIST)
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": wrong attribute structure",
@@ -160,6 +213,12 @@ static List *deconstruct(const Ref N, NState *const S)
 
 		return NULL;
 	}
+
+	// Параметры разобрали, теперь нужно понять, какой список нужно
+	// разобрать на кусочки
+
+	forlist(NULL, indexone, NULL, 0);
+	return NULL;
 }
 
 static void eval(const Ref N, NState *const S)
@@ -194,7 +253,7 @@ static void eval(const Ref N, NState *const S)
 		default:
 			if(!knownverb(N, S->escape))
 			{
-				eval(nodeattribute(B), S);
+				eval(nodeattribute(N), S);
 			}
 		}
 
@@ -203,4 +262,27 @@ static void eval(const Ref N, NState *const S)
 	default:
 		assert(0);
 	}
+}
+
+Ref ntheval(
+	const Array *const U,
+	const Ref dag, const Array *const escape,
+	const Array *const symmarks, const Array *const typemarks,
+	const List *const inlist)
+{
+	NState st =
+	{
+		.U = U,
+		.escape = escape,
+		.symmarks = symmarks,
+		.typemarks = typemarks,
+		.inlist = inlist,
+		.evalmarks = newkeymap()
+	};
+
+	eval(dag, &st);
+
+	freekeymap(st.evalmarks);
+
+	return reffree();
 }
