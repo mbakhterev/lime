@@ -10,7 +10,8 @@
 #define DBGFLAGS 0
 
 static Ref rewrite(
-	const Ref, const Array *const map, const Array *const verbs, Array *const nodemap);
+	const Ref, const Array *const map,
+	const Array *const verbs, Array *const nodemap);
 
 typedef struct
 {
@@ -45,8 +46,8 @@ static int rewriteone(List *const l, void *const ptr)
 }
 
 static Ref rewrite(
-	const Ref r, const Array *const map, const Array *const verbs,
-	Array *const nodemap)
+	const Ref r, const Array *const map,
+	const Array *const verbs, Array *const nodemap)
 {
 	switch(r.code)
 	{
@@ -76,10 +77,10 @@ static Ref rewrite(
 
 	case NODE:
 	{
-		// Переписываем мы только ссылки. И такова должна быть структура
-		// выражения
-
-		assert(isnode(r) && r.external);
+// 		// Переписываем мы только ссылки. И такова должна быть структура
+// 		// выражения
+// 
+// 		assert(isnode(r) && r.external);
 
 		if(!knownverb(r, verbs))
 		{

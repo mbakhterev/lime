@@ -597,7 +597,8 @@ extern void enveval(
 // 	приятная, но необходимая в текущей версии деталь. В следующей версии
 // 	необходимости делать это не будет
 
-extern Ref exprewrite(const Ref exp, const Array *const map, const Array *const verbs);
+extern Ref exprewrite(
+	const Ref exp, const Array *const map, const Array *const verbs);
 
 extern void typeeval(
 	Array *const U,
