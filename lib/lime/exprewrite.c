@@ -44,6 +44,38 @@ static int rewriteone(List *const l, void *const ptr)
 	st->result = append(st->result, r.u.list);
 	return 0;
 }
+static Ref reref(
+	const Ref N, const Array *const verbs,
+	Array *const nodemap, const Array *const map)
+{
+	// Убедимся, что клиент наш
+	assert(isnode(N) && N.external);
+
+	if(!knownverb(r, verbs))
+	{
+		// Если нас не попросили переписывать ссылки с такими
+		// verb-ами
+
+		return r;
+	}
+
+	const Ref val = refmap(map, r);
+	
+	if(val.code == FREE)
+	{
+		// Ничего не знаем про эту ссылку
+		return r;
+	}
+
+	return forkref(val, nodemap);
+}
+
+static Ref redef(
+	const Ref N, const Array *const verbs,
+	Array *const nodemap, const Array *const map)
+{
+	return reffree();
+}
 
 static Ref rewrite(
 	const Ref r, const Array *const map,
@@ -77,28 +109,11 @@ static Ref rewrite(
 
 	case NODE:
 	{
-// 		// Переписываем мы только ссылки. И такова должна быть структура
-// 		// выражения
-// 
-// 		assert(isnode(r) && r.external);
+		// Возможны два варианта: (1) мы видим определение узла; (2)
+		// видим ссылку
 
-		if(!knownverb(r, verbs))
-		{
-			// Если нас не попросили переписывать ссылки с такими
-			// verb-ами
+		return (r.external ? reref : redef)(r, verbs, nodemap, map);
 
-			return r;
-		}
-
-		const Ref val = refmap(map, r);
-		
-		if(val.code == FREE)
-		{
-			// Ничего не знаем про эту ссылку
-			return r;
-		}
-
-		return forkref(val, nodemap);
 	}
 
 	default:
