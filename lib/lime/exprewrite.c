@@ -32,6 +32,14 @@ static int rewriteone(List *const l, void *const ptr)
 
 	DBG(DBGRONE, "%s", "rewriting");
 
+	if(r.code == FREE)
+	{
+		// Ничего не добавляем в этом случае. Предусмотрено для
+		// ситуации, когда мы должны пропустить узел исходного графа
+
+		return 0;
+	}
+
 	if(r.code != LIST || l->ref.code == LIST)
 	{
 		// Если получился не список, или если изначально переписывался
@@ -44,6 +52,24 @@ static int rewriteone(List *const l, void *const ptr)
 	st->result = append(st->result, r.u.list);
 	return 0;
 }
+
+static Ref noderemap(const Ref N, const Array *const nodemap)
+{
+	const Ref n = refmap(nodemap, N);
+	if(n.code == FREE)
+	{
+		// Ссылка ведёт во вне. Её и возвращаем тогда - не наша
+		// ответственность
+
+		return N;
+	}
+
+	// В противном случае это должен быть узел
+
+	assert(isnode(n));
+	return markext(n);
+}
+
 static Ref reref(
 	const Ref N, const Array *const verbs,
 	Array *const nodemap, const Array *const map)
@@ -51,20 +77,24 @@ static Ref reref(
 	// Убедимся, что клиент наш
 	assert(isnode(N) && N.external);
 
-	if(!knownverb(r, verbs))
+	if(!knownverb(N, verbs))
 	{
-		// Если нас не попросили переписывать ссылки с такими
-		// verb-ами
+		// Если нас не просили переписывать ссылки с такими verb-ами,
+		// значит и не переписываем. Но ссылка может вести в
+		// скопированный узел, который теперь на новом месте. Надо это
+		// учесть 
 
-		return r;
+		return noderemap(N, nodemap);
 	}
 
-	const Ref val = refmap(map, r);
+	const Ref val = refmap(map, N);
 	
 	if(val.code == FREE)
 	{
-		// Ничего не знаем про эту ссылку
-		return r;
+		// Ничего не знаем про эту ссылку, но она может ввести на
+		// скопированное определение. Учитываем
+
+		return noderemap(N, nodemap);
 	}
 
 	return forkref(val, nodemap);
@@ -74,6 +104,16 @@ static Ref redef(
 	const Ref N, const Array *const verbs,
 	Array *const nodemap, const Array *const map)
 {
+	assert(isnode(N) && !N.external);
+
+	const Ref n = refmap(map, N);
+
+	if(knownverb(N, verbs) && n.code != FREE)
+	{
+		// Простой случай, когда узел будет заменён на нечто, отличное
+		// от самого себя
+	}
+
 	return reffree();
 }
 
