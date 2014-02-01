@@ -359,7 +359,7 @@ static void eval(const Ref N, NState *const S)
 }
 
 Ref ntheval(
-	const Array *const U,
+	Array *const U,
 	const Ref dag, const Array *const escape,
 	const Array *const symmarks, const Array *const typemarks,
 	const List *const inlist)
@@ -371,12 +371,18 @@ Ref ntheval(
 		.symmarks = symmarks,
 		.typemarks = typemarks,
 		.inlist = inlist,
+		.verbs = newverbmap(U, 0, verbs),
 		.evalmarks = newkeymap()
 	};
 
 	eval(dag, &st);
 
-	freekeymap(st.evalmarks);
+	const Array *const torewrite = newverbmap(U, 0, ES("FIn", "Nth"));
+	const Ref r = exprewrite(dag, st.evalmarks, torewrite);
 
-	return reffree();
+	freekeymap((Array *)torewrite);
+	freekeymap(st.evalmarks);
+	freekeymap((Array *)st.verbs);
+
+	return r;
 }

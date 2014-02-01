@@ -623,7 +623,7 @@ extern void symeval(
 // symmarks и typemarks нужны для разбора на части символов и типов
 
 extern Ref ntheval(
-	const Array *const U,
+	Array *const U,
 	const Ref dag, const Array *const escape,
 	const Array *const symmarks, const Array *const typemarks,
 	const List *const inlist);

@@ -32,13 +32,13 @@ static int rewriteone(List *const l, void *const ptr)
 
 	DBG(DBGRONE, "%s", "rewriting");
 
-	if(r.code == FREE)
-	{
-		// Ничего не добавляем в этом случае. Предусмотрено для
-		// ситуации, когда мы должны пропустить узел исходного графа
-
-		return 0;
-	}
+// 	if(r.code == FREE)
+// 	{
+// 		// Ничего не добавляем в этом случае. Предусмотрено для
+// 		// ситуации, когда мы должны пропустить узел исходного графа
+// 
+// 		return 0;
+// 	}
 
 	if(r.code != LIST || l->ref.code == LIST)
 	{
@@ -53,22 +53,22 @@ static int rewriteone(List *const l, void *const ptr)
 	return 0;
 }
 
-static Ref noderemap(const Ref N, const Array *const nodemap)
-{
-	const Ref n = refmap(nodemap, N);
-	if(n.code == FREE)
-	{
-		// Ссылка ведёт во вне. Её и возвращаем тогда - не наша
-		// ответственность
-
-		return N;
-	}
-
-	// В противном случае это должен быть узел
-
-	assert(isnode(n));
-	return markext(n);
-}
+// static Ref noderemap(const Ref N, const Array *const nodemap)
+// {
+// 	const Ref n = refmap(nodemap, N);
+// 	if(n.code == FREE)
+// 	{
+// 		// Ссылка ведёт во вне. Её и возвращаем тогда - не наша
+// 		// ответственность
+// 
+// 		return N;
+// 	}
+// 
+// 	// В противном случае это должен быть узел
+// 
+// 	assert(isnode(n));
+// 	return markext(n);
+// }
 
 static Ref reref(
 	const Ref N, const Array *const verbs,
@@ -80,22 +80,24 @@ static Ref reref(
 	if(!knownverb(N, verbs))
 	{
 		// Если нас не просили переписывать ссылки с такими verb-ами,
-		// значит и не переписываем. Но ссылка может вести в
-		// скопированный узел, который теперь на новом месте. Надо это
-		// учесть 
+		// значит и не переписываем. Возвращаем как есть. Ссылка будет
+		// выправлена на нужный узел на следующей стадии обработки (fix)
 
-		return noderemap(N, nodemap);
+		return N;
 	}
 
 	const Ref val = refmap(map, N);
 	
 	if(val.code == FREE)
 	{
-		// Ничего не знаем про эту ссылку, но она может ввести на
-		// скопированное определение. Учитываем
+		// Ничего не знаем про эту ссылку. Рассчитываем на то, что она
+		// будет выправлена в процессе fix
 
-		return noderemap(N, nodemap);
+		return N;
 	}
+
+	// Возвращаем копию значения из отображения. Если и появятся какие-то
+	// внешние ссылки в этом месте, то они будут исправлены на fix-стадии
 
 	return forkref(val, nodemap);
 }
@@ -106,15 +108,18 @@ static Ref redef(
 {
 	assert(isnode(N) && !N.external);
 
-	const Ref n = refmap(map, N);
+	// Имеем дело с определением узла. Надо его скопировать. Перед этим
+	// выполнив подстановки в его атрибутах.
 
-	if(knownverb(N, verbs) && n.code != FREE)
-	{
-		// Простой случай, когда узел будет заменён на нечто, отличное
-		// от самого себя
-	}
-
-	return reffree();
+	const Ref n
+		= newnode(
+			nodeverb(N, NULL),
+			rewrite(nodeattribute(N), map, verbs, nodemap),
+			nodeline(N));
+	
+	tunerefmap(nodemap, N, n);
+	
+	return n;
 }
 
 static Ref rewrite(
@@ -153,7 +158,6 @@ static Ref rewrite(
 		// видим ссылку
 
 		return (r.external ? reref : redef)(r, verbs, nodemap, map);
-
 	}
 
 	default:
@@ -163,10 +167,68 @@ static Ref rewrite(
 	return reffree();
 }
 
+static int fixone(List *const l, void *const ptr);
+
+static void fix(Ref *const r, const Array *const nodemap)
+{
+	switch(r->code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+		// Это всё нелокальные ссылки, их менять не нужно
+		break;	
+
+	case MAP:
+		assert(r->external);
+		break;
+
+	case LIST:
+		forlist(r->u.list, fixone, (void *)nodemap, 0);
+		break;
+
+	case NODE:
+		// В этом случае нам интересны: (1) локальные ссылки - это
+		// (Ref.external == 1), о которых знает nodemap; (2) аттрибуты в
+		// определениях узлов
+
+		if(r->external)
+		{
+			const Ref n = refmap(nodemap, *r);
+			if(n.code == NODE)
+			{
+				r->u.list = n.u.list;
+			}
+			else
+			{
+				assert(n.code == FREE);
+			}
+		}
+		else
+		{
+			fix((Ref *)nodeattributecell(*r), nodemap);
+		}
+
+		break;
+		
+	default:
+		assert(0);
+	}
+}
+
+int fixone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	fix(&l->ref, ptr);
+	return 0;
+}
+
 Ref exprewrite(const Ref r, const Array *const map, const Array *const verbs)
 {
 	Array *const nodemap = newkeymap();
-	const Ref rnew = rewrite(r, map, verbs, nodemap);
+	Ref q = rewrite(r, map, verbs, nodemap);
+	fix(&q, nodemap);
 	freekeymap(nodemap);
-	return rnew;
+	return q;
 }
