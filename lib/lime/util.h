@@ -57,7 +57,7 @@ extern unsigned therearepoints(void);
 #define ERR(fmt, ...) \
 do { \
 	fprintf(stderr, \
-		__FILE__ "(%u) %s: ERR:\t%s(%u): " fmt "\n", \
+		__FILE__ "(%u) %s: ERR: %s(%u): " fmt "\n", \
 		__LINE__, __func__, unitname, item, __VA_ARGS__); \
 	fflush(stderr); \
 	checkout(STRIKE); \
@@ -66,7 +66,7 @@ do { \
 #define DBG(f, fmt, ...) \
 	(void)((f & DBGFLAGS) \
 		&& fprintf(stderr, \
-			__FILE__ "(%u) %s: DBG:\t" fmt "\n", \
+			__FILE__ "(%u) %s: DBG: " fmt "\n", \
 			__LINE__, __func__, __VA_ARGS__))
 
 #define MAXNUM ((unsigned)-1 >> 1)

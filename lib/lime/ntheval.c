@@ -3,6 +3,11 @@
 
 #include <assert.h>
 
+#define DBGNTH 1
+#define DBGIDX 2
+
+#define DBGFLAGS (DBGNTH | DBGIDX)
+
 #define FIN 0U
 #define NTH 1U
 #define SNODE 2U
@@ -15,7 +20,8 @@ static const char *const verbs[] =
 	[NTH] = "Nth",
 	[SNODE] = "S",
 	[TNODE] = "T",
-	[TENV] = "TEnv"
+	[TENV] = "TEnv",
+	NULL
 };
 
 typedef struct
@@ -30,6 +36,7 @@ typedef struct
 	// извлечь компоненты
 
 	const Array *const typemarks;
+	const Array *const types;
 	const Array *const symmarks;
 	
 	// Соответствия узлов Nth и FIn выражениям
@@ -141,6 +148,7 @@ typedef struct
 	const Array *const symmarks;
 	const Array *const types;
 	const Array *const typemarks;
+	const Array *const evalmarks;
 } DCState;
 
 static Ref reftolist(const Ref r, const DCState *const st)
@@ -190,6 +198,16 @@ static Ref reftolist(const Ref r, const DCState *const st)
 			assert(b);
 			return reflist(RL(markext(b->key), markext(b->ref)));
 		}
+
+		// Мы можем так же иметь дело с FIn или Nth. Информация о них
+		// уже должна быть в evalmarks. Нужно выдать копию списка из
+		// этого отображения, потому что вызывающая indexone будет эту
+		// информацию освобождать
+
+		if(verb == FIN || verb == NTH)
+		{
+			return forkref(refmap(st->evalmarks, r), NULL);
+		}
 	}
 	}
 
@@ -206,26 +224,35 @@ static int indexone(List *const i, void *const ptr)
 
 	if(!idx.valid)
 	{
+		DBG(DBGIDX, "%s", "!idx.valid");
+
 		// Прекращаем этот проход, если получили не пару индексов
 		return 1;
 	}
 
-// 	if(st->L.code != LIST)
-// 	{
-// 		// Прекращаем этот проход, если нас просят разобрать не список
-// 		return 1;
-// 	}
-// 
-// 	unsigned valid = 0;
-// 	List *const l = forklistcut(st->L.u.list, idx.from, idx.to, &valid);
+	DBG(DBGIDX, "cut index: (%u %u)", idx.from, idx.to);
 
 	// По текущей Ref-е st->L нам надо получить список, который будет
 	// отправлен на индексирование
 
 	const Ref src = reftolist(st->L, st);
 
+	if(DBGFLAGS & DBGIDX)
+	{
+		char *const srcstr = strref(NULL, NULL, src);
+		char *const lstr = strref(NULL, NULL, st->L);
+
+		DBG(DBGIDX, "L.code = %u: %s -> src.code = %u: %s",
+			st->L.code, lstr, src.code, srcstr);
+
+		free(lstr);
+		free(srcstr);
+	}
+
 	if(src.code != LIST)
 	{
+		DBG(DBGIDX, "%s", "invalid source");
+
 		return 1;
 	}
 
@@ -236,6 +263,8 @@ static int indexone(List *const i, void *const ptr)
 
 	if(!valid)
 	{
+		DBG(DBGIDX, "%s", "cutting failed");
+
 		freelist(l);
 		return 1;
 	}
@@ -297,7 +326,11 @@ static Ref deconstruct(const Ref N, NState *const S)
 	DCState st =
 	{
 		.L = R[0],
-		.verbs = S->verbs
+		.verbs = S->verbs,
+		.types = S->types,
+		.symmarks = S->symmarks,
+		.typemarks = S->typemarks,
+		.evalmarks = S->evalmarks
 	};
 
 	if(forlist(R[1].u.list, indexone, &st, 0))
@@ -361,7 +394,8 @@ static void eval(const Ref N, NState *const S)
 Ref ntheval(
 	Array *const U,
 	const Ref dag, const Array *const escape,
-	const Array *const symmarks, const Array *const typemarks,
+	const Array *const symmarks,
+	const Array *const typemarks, const Array *const types,
 	const List *const inlist)
 {
 	NState st =
@@ -372,13 +406,22 @@ Ref ntheval(
 		.typemarks = typemarks,
 		.inlist = inlist,
 		.verbs = newverbmap(U, 0, verbs),
+		.types = types,
 		.evalmarks = newkeymap()
 	};
 
 	eval(dag, &st);
 
+	if(DBGFLAGS & DBGNTH)
+	{
+		DBG(DBGNTH, "%s", "evaluated");
+		dumpkeymap(stderr, 0, U, st.evalmarks);
+	}
+
 	const Array *const torewrite = newverbmap(U, 0, ES("FIn", "Nth"));
 	const Ref r = exprewrite(dag, st.evalmarks, torewrite);
+
+	DBG(DBGNTH, "%s", "rewritten");
 
 	freekeymap((Array *)torewrite);
 	freekeymap(st.evalmarks);

@@ -26,7 +26,7 @@ typedef struct
 {
 	FILE *const file;
 	Array *const universe;
-	Array *const dagmap;
+	const Array *const dagmap;
 } LoadContext;
 
 typedef struct
@@ -444,7 +444,7 @@ static LoadCurrent node(
 }
 
 Ref loaddag(
-	FILE *const f, Array *const U, Array *const dagmap)
+	FILE *const f, Array *const U, const Array *const dagmap)
 {
 	List *const env = NULL;
 	List *const nodes = NULL;

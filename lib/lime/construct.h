@@ -520,7 +520,7 @@ extern Ref forknode(const Ref, Array *const nodemap);
 // узлы, в атрибутах которых должен быть записан замкнутый граф
 
 extern Ref loaddag(
-	FILE *const, Array *const U, Array *const map);
+	FILE *const, Array *const U, const Array *const map);
 
 // Выгрузка dag-а. tabs - для красивой печати с отступами. dbg - выдавать ли
 // указатели на узлы (для закрепления: на списки особого формата) в выводе
@@ -528,7 +528,7 @@ extern Ref loaddag(
 
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
-	const Array *const U, const Ref dag, Array *const map);
+	const Array *const U, const Ref dag, const Array *const map);
 
 extern Ref forkdag(const Ref dag);
 
@@ -536,8 +536,8 @@ extern Ref forkdag(const Ref dag);
 // verbmap-ой nonroots. После обработки структура графа поменяется,
 
 extern void gcnodes(
-	Ref *const dag, Array *const map,
-	Array *const nonroots, Array *const marks);
+	Ref *const dag, const Array *const map,
+	const Array *const nonroots, Array *const marks);
 
 // Процедура для записи меток в setmap, которую можно потом передать в качестве
 // marks в gcnodes
@@ -625,7 +625,8 @@ extern void symeval(
 extern Ref ntheval(
 	Array *const U,
 	const Ref dag, const Array *const escape,
-	const Array *const symmarks, const Array *const typemarks,
+	const Array *const symmarks,
+	const Array *const typemarks, const Array *const types,
 	const List *const inlist);
 
 // Формы. Реализованы в виде списков из: списка сигнатур, списка узлов (тела

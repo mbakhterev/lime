@@ -25,7 +25,7 @@ typedef struct
 	List *L;
 	List *F;
 
-	Array *const map;
+	const Array *const map;
 	Array *const nodes;
 
 	const char *const tabstr;
@@ -267,7 +267,7 @@ static int dumpone(List *const l, void *const ptr)
 	assert(f);
 	assert(U);
 
-	Array *const map = st->map;
+	const Array *const map = st->map;
 
 	const Ref i = refmap(st->nodes, n);
 
@@ -301,7 +301,7 @@ static int dumpone(List *const l, void *const ptr)
 
 void dumpdag(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
-	const Array *const U, const Ref dag, Array *const map)
+	const Array *const U, const Ref dag, const Array *const map)
 {
 	assert(f);
 

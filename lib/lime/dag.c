@@ -71,9 +71,10 @@ void walkdag(const Ref dag, WalkOne wlk, void *const ptr, Array *const vm)
 typedef struct
 {
 	Array *const marks;
-	Array *const nonroots;
+	const Array *const nonroots;
+	const Array *const map;
+
 	Array *const defs;
-	Array *const map;
 } GCState;
 
 static void mark(const Ref dag, GCState *const st);
@@ -106,8 +107,8 @@ static void mark(const Ref r, GCState *const st)
 	{
 		Array *const D = st->defs;
 		Array *const M = st->marks;
-		Array *const NR = st->nonroots;
-		Array *const map = st->map;
+		const Array *const NR = st->nonroots;
+		const Array *const map = st->map;
 
 		// Тут возможны варианты
 
@@ -234,7 +235,7 @@ static void rebuild(Ref *const r, GCState *const st)
 	List *l = NULL;
 
 	Array *const M = st->marks;
-	Array *const map = st->map;
+	const Array *const map = st->map;
 
 	while(r->u.list)
 	{
@@ -276,8 +277,8 @@ static void rebuild(Ref *const r, GCState *const st)
 }
 
 void gcnodes(
-	Ref *const dag, Array *const map,
-	Array *const nonroots, Array *const marks)
+	Ref *const dag, const Array *const map,
+	const Array *const nonroots, Array *const marks)
 {
 	GCState st =
 	{
@@ -292,7 +293,7 @@ void gcnodes(
 	
 	freekeymap(st.defs);
 
-	if(marks)
+	if(!marks)
 	{
 		freekeymap(st.marks);
 	}

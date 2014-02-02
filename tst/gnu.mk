@@ -13,7 +13,7 @@ lmtstsrc = \
 	tst-loaddag.c	\
 	tst-gcnodes.c	\
 	tst-forkdag.c	\
-	tst-evallists.c \
+	tst-ntheval.c	\
 	tst-evalforms.c \
 	tst-eval.c
 
@@ -33,9 +33,9 @@ lmtstbin = \
 	$(T)/tst-loaddag	\
 	$(T)/tst-gcnodes	\
 	$(T)/tst-eval		\
+	$(T)/tst-ntheval	\
 
 # 	$(T)/tst-forkdag	\
-# 	$(T)/tst-evallists	\
 # 	$(T)/tst-evalforms	\
 # 	$(T)/tst-knl.sh
 
@@ -62,7 +62,7 @@ $(T)/tst-list: $(lmtstbits)/tst-list.o $(lmlib)
 $(T)/tst-loaddag: $(lmtstbits)/tst-loaddag.o $(lmlib)
 $(T)/tst-gcnodes: $(lmtstbits)/tst-gcnodes.o $(lmlib)
 $(T)/tst-forkdag: $(lmtstbits)/tst-forkdag.o $(lmlib)
-$(T)/tst-evallists: $(lmtstbits)/tst-evallists.o $(lmlib)
+$(T)/tst-ntheval: $(lmtstbits)/tst-ntheval.o $(lmlib)
 $(T)/tst-evalforms: $(lmtstbits)/tst-evalforms.o $(lmlib)
 
 $(T)/tst-env: $(lmtstbits)/tst-env.o $(lmlib)
