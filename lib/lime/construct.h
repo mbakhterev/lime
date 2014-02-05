@@ -650,23 +650,24 @@ extern unsigned isform(const Ref);
 // Области вывода. Они являются keymap-ами особой структуры. Потому что надо
 // связывать их в цепочки
 
-extern Array *newarea(void);
-extern Array *areacurrent(const Array *const area);
-extern Array *areaforward(const Array *const area);
-extern Ref areadag(const Array *const area);
+extern Array *newarea(Array *const U);
+extern Ref areadag(Array *const U, const Array *const area);
+extern Array *areareactor(
+	Array *const U, const Array *const area, const unsigned id);
+
 
 extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
-// Выбирает из текущего графа формы и размещает их в соответствии с указаниями
-// публикации: .FPut, .FGPut, .FEPut. Публикация осуществляется на вершинах
-// двух указанных стеков: областей видимости и контекстов вывода.
+// Обработка связанных с формами конструкций: F, FPut, FEnv, FOut. В процессе
+// обработки может поменяться состояние текущего окружения и некоторых
+// областей вывода (area), с которыми текущая область вывода связана. Окурежение
+// и область вывода могут быть NULL-евыми, в этой ситуации выполнение
+// соответствующих операций будет приводить к сообщениям об ошибках.
 
-// WARN: У формы есть ссылка на карту графа, эта ссылка будет взята из аргумента
-// evalforms
-
-extern void evalforms(
-	Array *const U, const List *const dag, const Ref go,
-	const List *const env, const List *const ctx);
+extern void formeval(
+	Array *const U,
+	Array *const env, Array *const area,
+	const Ref dag, const Array *const escape);
 
 // Синтаксические команды. Тут и дальше получается некий свободный поток
 // примитивов, не сгруппированный и не упорядоченный

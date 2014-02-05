@@ -20,6 +20,7 @@ lmsrc = \
 	symeval.c	\
 	form.c		\
 	ntheval.c	\
+	area.c		\
 
 # 	context.c	\
 # 	evalforms.c	\
