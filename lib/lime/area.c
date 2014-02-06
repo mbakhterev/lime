@@ -8,17 +8,38 @@ static Ref readtoken(Array *const U, const char *const str)
 	return readpack(U, strpack(0, str));
 }
 
+// FIXME: не нравится мне код для initreactor
+
 static void initreactor(Array *const U, const unsigned id, Array *const area)
 {
-	DL(rkey, RS(readtoken(U, "R"), refnum(id)));
+	const Ref rkey = decorate(refnum(id), U, DREACTOR);
 
-	// Чистим external-бит для "уверенного" копирования ключа внутрь
+	// Чистим external-бит для уверенности
 	Binding *const b = mapreadin(area, cleanext(rkey));
 
-	// Вхождения с таким ключом в area быть не должно
-	assert(b);
+	if(!b)
+	{
+		// mapreadin не должен вернуть NULL, говорящий о том, что
+		// mapreadin нашёл существующую в area запись с rkey
 
-	b->ref = cleanext(refkeymap(newkeymap()));
+		freeref(rkey);
+		assert(0);
+		return;
+	}
+
+	Array *const r = newkeymap();
+	Binding *const fb = mapreadin(r, readtoken(U, "FORMS"));
+
+	if(!fb)
+	{
+		freekeymap(r);
+		assert(0);
+		return;
+	}
+
+	fb->ref = reflist(NULL);
+	b->ref = cleanext(refkeymap(r));
+	return;
 }
 
 static void initdag(Array *const U, Array *const area)
@@ -44,7 +65,7 @@ Array *newarea(Array *const U)
 
 Array *areareactor(Array *const U, const Array *const area, const unsigned id)
 {
-	DL(rkey, RS(readtoken(U, "R"), refnum(id)));
+	DL(rkey, RS(decoatom(U, DREACTOR), refnum(id)));
 	const Binding *const b = maplookup(area, rkey);
 	
 	// Можно было бы создавать реакторы по запросу, но для лучшего контроля
@@ -62,4 +83,16 @@ Ref areadag(Array *const U, const Array *const area)
 	assert(b);
 	assert(b->ref.code == LIST);
 	return b->ref;
+}
+
+Ref *reactorforms(Array *const U, const Array *const area, const unsigned id)
+{
+	const Binding *const b
+		= maplookup(areareactor(U, area, id), readtoken(U, "FORMS"));
+	
+	assert(b);
+	assert(b->ref.code == LIST
+		&& (!b->ref.u.list || isform(b->ref.u.list->ref)));
+	
+	return (Ref *)&b->ref;
 }

@@ -21,6 +21,7 @@ lmsrc = \
 	form.c		\
 	ntheval.c	\
 	area.c		\
+	formeval.c	\
 
 # 	context.c	\
 # 	evalforms.c	\

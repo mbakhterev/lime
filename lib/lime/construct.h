@@ -339,7 +339,12 @@ extern Binding *bindkey(Array *const map, const Ref key);
 // если code ей поддерживается: (deco-atom key). Бит external в Ref-е установлен
 // не будет. В противном случае вылетит с assert-ом
 
+enum { DATOM = ATOM, DTYPE = TYPE, DMAP = MAP, DIN, DOUT, DREACTOR };
+
 extern Ref decorate(const Ref key, Array *const U, const unsigned code);
+
+// Возвращает атом для декорации по её коду
+extern Ref decoatom(Array *const U, const unsigned code);
 
 // Окружения
 
@@ -641,7 +646,7 @@ extern void freeform(const Ref form);
 extern Ref formdag(const Ref form);
 extern Ref formkeys(const Ref form);
 
-extern Ref setcounter(const Ref form);
+extern unsigned formcounter(const Ref form);
 extern unsigned countdown(const Ref *const form);
 
 extern unsigned isformlist(const List *const);
@@ -707,19 +712,20 @@ extern void progress(
 	const List **const penv, const List **const ctx,
 	const SyntaxNode cmd);
 
-// Процедура вбрасывания в контекст новой формы. Параметр level задаёт тот R
-// (реактор - гы, я это всерьёз написал), в который следует забрать форму. Форма
-// задаётся тройкой параметров: (dag; map), signature и external. U необходима
-// для распечатки ошибок внутри intakeform
+// Процедура вбрасывания в реактор R области area новой формы. Форма задаётся
+// как единое целое. Напоминание: форма - это список из графа, сигнатуры
+// (formkeys). Должен быть ещё счётчик и его должна добавить intakeform.
+// Поэтому, забирать внутрь area форму она будет при помощи:
+// 
+// 	newform(formdag(form), formkeys(form));
+// 
+// Это всё согласовано с вызывающими intakeform. При обработке .FPut, всё равно,
+// надо будет создавать новую форму, чтобы общим способом обрабатывать форму из
+// .FEnv и непосредственно из графа. Ну и в этом месте обработчик .FPut может
+// отрегулировать external-флаги для компонент целевой формы.
 
-enum { ITLOCAL = 0, ITEXTERNAL };
-
-extern void intakeform(
-	const Array *const U,
-//	Context *const, const unsigned level,
-	Array *const area, const unsigned level,
-	const List *const dag,
-	const List *const signature, const unsigned external);
+extern unsigned intakeform(
+	Array *const U, Array *const area, const unsigned R, const Ref form);
 
 extern void intakeout(
 	const Array *const U,

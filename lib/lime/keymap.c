@@ -183,27 +183,39 @@ static const char *codetostr(const unsigned code)
 {
 	switch(code)
 	{
-	case MAP:
+	case DMAP:
 		return "/";
 	
-	case TYPE:
+	case DTYPE:
 		return "@";
 	
-	case ATOM:
+	case DATOM:
 		return "$";
+	
+	case DIN:
+		return "-";
+	
+	case DOUT:
+		return "+";
+	
+	case DREACTOR:
+		return "?";
 	}
 
 	assert(0);
 	return NULL;
 }
 
-static Ref decoatom(Array *const U, const unsigned code)
+Ref decoatom(Array *const U, const unsigned code)
 {
 	switch(code)
 	{
-	case MAP:
-	case TYPE:
-	case ATOM:
+	case DMAP:
+	case DTYPE:
+	case DATOM:
+	case DIN:
+	case DOUT:
+	case DREACTOR:
 		return readpack(U, strpack(0, codetostr(code)));
 
 	default:

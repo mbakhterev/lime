@@ -263,7 +263,6 @@ static LoadCurrent core(
 
 	case '\'':
 		// Загрузка атома
-
 		return ce(ctx, env, nodes, append(refs, RL(loadatom(U, f))));
 	}
 
