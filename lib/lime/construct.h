@@ -657,9 +657,12 @@ extern unsigned isform(const Ref);
 
 extern Array *newarea(Array *const U);
 extern Ref areadag(Array *const U, const Array *const area);
+
 extern Array *areareactor(
 	Array *const U, const Array *const area, const unsigned id);
 
+extern Ref *reactorforms(
+	Array *const U, const Array *const area, const unsigned id);
 
 extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
@@ -724,7 +727,7 @@ extern void progress(
 // .FEnv и непосредственно из графа. Ну и в этом месте обработчик .FPut может
 // отрегулировать external-флаги для компонент целевой формы.
 
-extern unsigned intakeform(
+extern void intakeform(
 	Array *const U, Array *const area, const unsigned R, const Ref form);
 
 extern void intakeout(
