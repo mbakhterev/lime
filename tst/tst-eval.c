@@ -46,13 +46,13 @@ int main(int argc, char *argv[])
 	symeval(U, symmarks, D, escape, envmarks, typemarks);
 	printf("symbols done\n");
 
-	dumpkeymap(stdout, 0, U, root);
-	dumpkeymap(stdout, 0, U, envmarks);
+	dumpkeymap(1, stdout, 0, U, root);
+	dumpkeymap(1, stdout, 0, U, envmarks);
 
 	dumptypes(stdout, 0, U, types);
 
-	dumpkeymap(stdout, 0, U, typemarks);
-	dumpkeymap(stdout, 0, U, symmarks);
+	dumpkeymap(1, stdout, 0, U, typemarks);
+	dumpkeymap(1, stdout, 0, U, symmarks);
 
 	freekeymap(escape);
 	freekeymap(node);

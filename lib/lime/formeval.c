@@ -68,7 +68,7 @@ extern void intakeform(
 
 	const Ref keys = formkeys(form);
 	assert(keys.code == LIST);
-	const Ref f = newform(formdag(form), formkeys(form));
+	const Ref f = newform(keys, formdag(form));
 
 	// Форму надо засунуть в список реактора. Корректность F проверяется в
 	// самой reactorforms. Но для надёжности

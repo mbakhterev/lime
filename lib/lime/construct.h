@@ -287,6 +287,7 @@ extern void freekeymap(Array *const);
 // Печать окружения keymap. Рекурсивная по тому же принципу, что и freekeymap
 
 extern void dumpkeymap(
+	const unsigned debug,
 	FILE *const, const unsigned tabs, const Array *const U,
 	const Array *const keymap);
 

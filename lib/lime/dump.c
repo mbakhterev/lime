@@ -342,10 +342,22 @@ static int dumpbindingone(Binding *const b, void *const ptr)
 	FILE *const f = st->f;
 	assert(f);
 
-	assert(fprintf(f, "\n%s\tkey(%u): ", st->tabstr, b->key.external) > 0);
+	char addr[64];
+	addr[0] = '\0';
+
+	if(st->dbg)
+	{
+		sprintf(addr, "%p: ", (void *)b);
+	}
+
+	assert(
+		fprintf(f, "\n%s\t%skey(%u): ",
+			st->tabstr, addr, b->key.external) > 0);
 	dumpref(st->f, st->U, NULL, b->key);
 
-	assert(fprintf(f, "\n%s\tval(%u): ", st->tabstr, b->ref.external) > 0);
+	assert(
+		fprintf(f, "\n%s\t%sval(%u): ",
+			st->tabstr, addr, b->ref.external) > 0);
 	dumpref(st->f, st->U, NULL, b->ref);
 
 	assert(fputc('\n', st->f) == '\n');
@@ -376,12 +388,13 @@ static int dumpkeymapone(List *const l, void *const ptr)
 	assert(ptr);
 	const DState *const st = ptr;
 
-	dumpkeymap(st->f, st->tabs + 1, st->U, l->ref.u.array);
+	dumpkeymap(st->dbg, st->f, st->tabs + 1, st->U, l->ref.u.array);
 
 	return 0;
 }
 
 void dumpkeymap(
+	const unsigned debug,
 	FILE *const f, const unsigned tabs, const Array *const U,
 	const Array *const map)
 {
@@ -395,7 +408,8 @@ void dumpkeymap(
 		.L = NULL,
 		.F = NULL,
 		.tabs = tabs,
-		.tabstr = tabstr(tabs)
+		.tabstr = tabstr(tabs),
+		.dbg = debug
 	};
 
 	assert(fprintf(f, "\n%smap: %p", st.tabstr, (void *)map) > 0);
@@ -449,107 +463,3 @@ void dumptypes(
 
 	free((char *)pad);
 }
-
-// typedef struct
-// {
-// 	const Array *const U;
-// 	FILE *const f;
-// 	unsigned depth;
-// } DCState;
-// 
-// static void dumpforms(
-// 	FILE *const f, const unsigned tabs,
-// 	const Array *const U, const List *const forms);
-// 
-// static int dumpctxone(List *const c, void *const ptr)
-// {
-// 	assert(c && c->ref.code == CTX);
-// 	const Context *const ctx = c->ref.u.context;
-// 
-// 	assert(ptr);
-// 	DCState *const st = ptr;
-// 	const Array *const U = st->U;
-// 	FILE *const f = st->f;
-// 
-// 	assert(U);
-// 	assert(f);
-// 
-// 	assert(fprintf(f, "\nCTX{%u}:", st->depth) > 0);
-// 
-// 	for(unsigned i = 0; i < sizeof(ctx->R) / sizeof(Reactor); i += 1)
-// 	{
-// 		assert(fprintf(f, "\n\tR{%u}.outs:", i) > 0);
-// 		dumpenvironment(f, 2, U, ctx->R[i].outs);
-// 
-// 		assert(fprintf(f, "\n\tR{%u}.ins:", i) > 0);
-// 		dumpenvironment(f, 2, U, ctx->R[i].ins);
-// 
-// 		assert(fprintf(f, "\n\tR{%u}.forms: ", i) > 0);
-// 		dumpforms(f, 2, U, ctx->R[i].forms);
-// 
-// 	}
-// 
-// 	assert(fprintf(f, "\n\tDAG:\n") > 0);
-// 	dumpdag(1, f, 1, U, ctx->dag);
-// 	assert(fputc('\n', f) == '\n');
-// 
-// 	st->depth += 1;
-// 
-// 	return 1;
-// }
-// 
-// void dumpcontext(
-// 	FILE *const f, const Array *const U, const List *const ctx)
-// {
-// 	DCState st =
-// 	{
-// 		.f = f, .U = U, .depth = 0
-// 	};
-// 
-// 	forlist((List *)ctx, dumpctxone, &st, 0);
-// }
-// 
-// typedef struct
-// {
-// 	const Array *const U;
-// 	FILE *const f;
-// 	const char *const tabstr;
-// 	const unsigned tabs;
-// } DFState;
-// 
-// static int dumpformone(List *const l, void *const ptr)
-// {
-// 	assert(l && l->ref.code == FORM && l->ref.u.form);
-// 	assert(ptr);
-// 
-// 	const Form *frm = l->ref.u.form;
-// 	const DFState *const st = ptr;
-// 	FILE *const f = st->f;
-// 	assert(st->U);
-// 	assert(f);
-// 
-// 	assert(fprintf(f, "\n%sform: %p", st->tabstr, (void *)frm) > 0);
-// 
-// 	assert(fprintf(f, "\n%ssig %p: ",
-// 		st->tabstr, (void *)frm->signature) > 0);
-// 	dumplist(f, st->U, frm->signature);	
-// 
-// 	assert(fprintf(f, "\n%sdag %p:\n", st->tabstr, (void *)frm->u.dag) > 0);
-// 	dumpdag(1, f, st->tabs, st->U, frm->u.dag);
-// 
-// 	assert(fputc('\n', f) == '\n');
-// 
-// 	return 0;
-// }
-// 
-// void dumpforms(
-// 	FILE *const f, const unsigned tabs,
-// 	const Array *const U, const List *const forms)
-// {
-// 	DFState st =
-// 	{
-// 		.U = U, .f = f, .tabs = tabs, .tabstr = tabstr(tabs)
-// 	};
-// 
-// 	forlist((List *)forms, dumpformone, &st, 0);
-// }

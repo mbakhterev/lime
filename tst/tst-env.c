@@ -54,7 +54,7 @@ int main(int argc, char *const argv[])
 	assert(makepath(M, U, B, names.u.list, markext(refkeymap(N))) == N);
 	assert(makepath(M, U, B, names.u.list, reffree()) == N);
 
-	dumpkeymap(stdout, 0, U, M);
+	dumpkeymap(1, stdout, 0, U, M);
 	fputc('\n', stdout);
 
 	freekeymap(M);

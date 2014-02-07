@@ -475,7 +475,7 @@ static int lookone(List *const e, void *const ptr)
 
 	if(DBGFLAGS & DBGPLU)
 	{
-		dumpkeymap(stdout, 1, NULL, e->ref.u.array);
+		dumpkeymap(1, stdout, 1, NULL, e->ref.u.array);
 	}
 
 	const Binding *const b = look(e->ref.u.array, st->key);
