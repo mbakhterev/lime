@@ -16,18 +16,6 @@ static unsigned isformrefs(const Ref R[], const unsigned len)
 		&& R[COUNT].code == NUMBER;
 }
 
-// static Ref setcounter(const Ref r)
-// {
-// 	assert(r.code == FORM);
-// 
-// 	const unsigned len = listlen(r.u.list);
-// 	const Ref R[len];
-// 	assert(writerefs(r.u.list, (Ref *)R, len) == len && keydag(R, len));
-// 	assert(len == 2);
-// 
-// 	return refform(append(r.u.list, RL(refnum(listlen(R[KEYS].u.list)))));	
-// }
-
 // Заряжаем счётчик сразу. Иначе придётся усложнять интерфейс. А не хочется
 
 Ref newform(const Ref keys, const Ref dag)
@@ -61,19 +49,6 @@ unsigned isformlist(const List *const l)
 	const unsigned len = listlen(l);
 	const Ref R[len];
 	assert(writerefs(l, (Ref *)R, len) == len);
-
-// 	const unsigned form = keydag(R, len);
-// 
-// 	switch(len)
-// 	{
-// 	case 2:
-// 		return form;
-// 
-// 	case 3:
-// 		return form && R[COUNT].code == NUMBER;
-// 	}
-// 
-// 	return 0;
 
 	return isformrefs(R, len);
 }
@@ -123,7 +98,8 @@ unsigned countdown(const Ref *const r)
 	const Ref *R[3];
 
 	{
-		DL(pattern, RS(reffree(), reffree(), reffree()));
+		DL(list, RS(reffree(), reffree(), reffree()));
+		const Ref pattern = { .code = FORM, .u.list = list.u.list };
 		unsigned matches = 0;
 		assert(keymatch(pattern, r, R, 3, &matches) && matches == 3);
 	}

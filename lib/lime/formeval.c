@@ -5,7 +5,7 @@
 
 static unsigned areforms(const Ref r)
 {
-	return r.code == LIST && (r.u.list != NULL || isform(r.u.list->ref));
+	return r.code == LIST && (r.u.list == NULL || isform(r.u.list->ref));
 }
 
 typedef struct

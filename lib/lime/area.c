@@ -92,7 +92,7 @@ Ref *reactorforms(Array *const U, const Array *const area, const unsigned id)
 	
 	assert(b);
 	assert(b->ref.code == LIST
-		&& (!b->ref.u.list || isform(b->ref.u.list->ref)));
+		&& (b->ref.u.list == NULL || isform(b->ref.u.list->ref)));
 	
 	return (Ref *)&b->ref;
 }

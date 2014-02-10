@@ -757,11 +757,13 @@ static unsigned keymatchone(KMState *const st, const Ref k, const Ref *const l)
 		break;
 	
 	case PTR:
-	case NODE:
+// 	case NODE:
 		match = k.u.pointer == l->u.pointer;
 		break;
 	
 	case LIST:
+	case NODE:
+	case FORM:
 		match = listmatch(st, k.u.list, l->u.list);
 		break;
 	
