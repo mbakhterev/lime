@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
 	Array *const envmarks = newkeymap();
 	Array *const types = newkeymap();
 	Array *const typemarks = newkeymap();
+	Array *const symbols = newkeymap();
 	Array *const symmarks = newkeymap();
 
 	Array *const node = newverbmap(U, 0, ES("S", "TEnv", "LB"));
@@ -43,7 +44,7 @@ int main(int argc, char *argv[])
 	typeeval(U, types, typemarks, D, escape, envmarks);
 	printf("types done\n");
 
-	symeval(U, symmarks, D, escape, envmarks, typemarks);
+	symeval(U, symbols, symmarks, D, escape, envmarks, typemarks);
 	printf("symbols done\n");
 
 	dumpkeymap(1, stdout, 0, U, root);
@@ -53,6 +54,8 @@ int main(int argc, char *argv[])
 
 	dumpkeymap(1, stdout, 0, U, typemarks);
 	dumpkeymap(1, stdout, 0, U, symmarks);
+
+	dumptypes(stdout, 0, U, symbols);
 
 	freekeymap(escape);
 	freekeymap(node);

@@ -189,7 +189,7 @@ static const char *codetostr(const unsigned code)
 	case DTYPE:
 		return "@";
 	
-	case DATOM:
+	case DSYM:
 		return "$";
 	
 	case DIN:
@@ -212,7 +212,7 @@ Ref decoatom(Array *const U, const unsigned code)
 	{
 	case DMAP:
 	case DTYPE:
-	case DATOM:
+	case DSYM:
 	case DIN:
 	case DOUT:
 	case DREACTOR:

@@ -340,7 +340,7 @@ extern Binding *bindkey(Array *const map, const Ref key);
 // если code ей поддерживается: (deco-atom key). Бит external в Ref-е установлен
 // не будет. В противном случае вылетит с assert-ом
 
-enum { DATOM = ATOM, DTYPE = TYPE, DMAP = MAP, DIN, DOUT, DREACTOR };
+enum { DSYM = ATOM, DTYPE = TYPE, DMAP = MAP, DIN, DOUT, DREACTOR };
 
 extern Ref decorate(const Ref key, Array *const U, const unsigned code);
 
@@ -620,9 +620,21 @@ extern void dumptypes(
 
 extern void symeval(
 	Array *const U,
+	Array *const symbols,
 	Array *const symmarks,
 	const Ref dag, const Array *const escape,
 	const Array *const envmarks, const Array *const typemarks);
+
+// Уникальный идентификатор символа (пока просто номер). Завёрнуто в Ref, чтобы
+// сразу можно было писать (как пример): ptrmap(map, symid(symmarks, N))
+
+extern Ref symid(const Array *const symmarks, const Ref N);
+
+// Процедуры для доступа к составляющим символа с уникальным идентификатором
+// id. Примерный вариант использования: symname(symbols, symid(symmarks, N))
+
+extern Ref symtype(const Array *const symbols, const Ref id);
+extern Ref symname(const Array *const symbols, const Ref id);
 
 // Оценка узлов Nth и FIn. Процедура сконструирует новый граф с подставленными
 // вместо FIn и Nth значениями. Самих узлов не будет в новом графе. Отображения

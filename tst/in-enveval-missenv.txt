@@ -1,0 +1,199 @@
+(
+        .TEnv ('0.7."pointer"; .T ('0.1."P"; 4));
+        .TEnv ('0.5."float"; .T ('0.1."F"; 4));
+        .TEnv ('0.6."double"; .T ('0.1."F"; 4));
+        .TEnv ('0.3."i64"; .T ('0.1."I"; 8));
+        .TEnv ('0.3."i32"; .T ('0.1."I"; 4));
+        .TEnv ('0.3."i16"; .T ('0.1."I"; 2));
+        .TEnv ('0.2."i8"; .T ('0.1."I"; 1));
+        .TEnv ('0.2."i1"; .T ('0.1."I"; 1));
+        .TEnv (('0.6."struct"; '0.19."struct.MAT_PARAMS_S"); .T ('0.6."struct"; '0.19."struct.MAT_PARAMS_S"; (.E ('0.3."ENV"; ('0.4."this")))));
+        .TDef ( .TEnv (('0.6."struct"; '0.19."struct.MAT_PARAMS_S")); (( .TEnv ('0.3."i32"); 0); ( .T ('0.7."pointer"; .TEnv ('0.3."i16")); 1); ( .T ('0.7."pointer"; .TEnv ('0.3."i16")); 2); ( .T ('0.7."pointer"; .TEnv ('0.3."i32")); 3)));
+
+// PROTOTYPES
+        .E ('0.3."ENV"; ('0.4."this"; '0.17."core_bench_matrix"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.17."core_bench_matrix";.T ('0.8."function";.TEnv ('0.3."i16"); (.T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.19."struct.MAT_PARAMS_S") )); .TEnv ('0.3."i16"); .TEnv ('0.3."i16"))));
+        .E ('0.3."ENV"; ('0.4."this"; '0.5."crc16"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.5."crc16";.T ('0.8."function";.TEnv ('0.3."i16"); (.TEnv ('0.3."i16"); .TEnv ('0.3."i16"))));
+        .E ('0.3."ENV"; ('0.4."this"; '0.11."matrix_test"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.11."matrix_test";.T ('0.8."function";.TEnv ('0.3."i16"); (.TEnv ('0.3."i32"); .T ('0.7."pointer"; .TEnv ('0.3."i32")); .T ('0.7."pointer"; .TEnv ('0.3."i16")); .T ('0.7."pointer"; .TEnv ('0.3."i16")); .TEnv ('0.3."i16"))));
+        .E ('0.3."ENV"; ('0.4."this"; '0.16."matrix_add_const"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.16."matrix_add_const";.T ('0.8."function";.T ('0.4."void"); (.TEnv ('0.3."i32"); .T ('0.7."pointer"; .TEnv ('0.3."i16")); .TEnv ('0.3."i16"))));
+        .E ('0.3."ENV"; ('0.4."this"; '0.16."matrix_mul_const"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.16."matrix_mul_const";.T ('0.8."function";.T ('0.4."void"); (.TEnv ('0.3."i32"); .T ('0.7."pointer"; .TEnv ('0.3."i32")); .T ('0.7."pointer"; .TEnv ('0.3."i16")); .TEnv ('0.3."i16"))));
+        .E ('0.3."ENV"; ('0.4."this"; '0.10."matrix_sum"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.10."matrix_sum";.T ('0.8."function";.TEnv ('0.3."i16"); (.TEnv ('0.3."i32"); .T ('0.7."pointer"; .TEnv ('0.3."i32")); .TEnv ('0.3."i16"))));
+        .E ('0.3."ENV"; ('0.4."this"; '0.15."matrix_mul_vect"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.15."matrix_mul_vect";.T ('0.8."function";.T ('0.4."void"); (.TEnv ('0.3."i32"); .T ('0.7."pointer"; .TEnv ('0.3."i32")); .T ('0.7."pointer"; .TEnv ('0.3."i16")); .T ('0.7."pointer"; .TEnv ('0.3."i16")))));
+        .E ('0.3."ENV"; ('0.4."this"; '0.17."matrix_mul_matrix"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.17."matrix_mul_matrix";.T ('0.8."function";.T ('0.4."void"); (.TEnv ('0.3."i32"); .T ('0.7."pointer"; .TEnv ('0.3."i32")); .T ('0.7."pointer"; .TEnv ('0.3."i16")); .T ('0.7."pointer"; .TEnv ('0.3."i16")))));
+        .E ('0.3."ENV"; ('0.4."this"; '0.28."matrix_mul_matrix_bitextract"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.28."matrix_mul_matrix_bitextract";.T ('0.8."function";.T ('0.4."void"); (.TEnv ('0.3."i32"); .T ('0.7."pointer"; .TEnv ('0.3."i32")); .T ('0.7."pointer"; .TEnv ('0.3."i16")); .T ('0.7."pointer"; .TEnv ('0.3."i16")))));
+        .E ('0.3."ENV"; ('0.4."this"; '0.16."core_init_matrix"; '0.6."parent"); .E ('0.3."ENV"; ('0.4."this")));
+        .S ('0.16."core_init_matrix";.T ('0.8."function";.TEnv ('0.3."i32"); (.TEnv ('0.3."i32"); .T ('0.7."pointer"; .TEnv ('0.2."i8")); .TEnv ('0.3."i32"); .T ('0.7."pointer"; .TEnv ( ('0.6."struct"; '0.19."struct.MAT_PARAMS_S") )))));
+
+
+
+        .E ('0.3."ENV";
+                 ('0.4."this"; '0.11."matrix_test"; '0.4."this");
+                 .E ('0.3."ENV"; ('0.4."this"; '0.11."matrix_test")));
+        .proc (
+                .S ('0.11."matrix_test");
+                .Env ( .E ('0.3."ENV"; ('0.4."this"; '0.11."matrix_test"));
+                .LB (
+                        .LB (
+                                .S fN ('0.1."N"; .T ('0.3."ARG"; .TEnv ('0.3."i32")));
+                                .S fC ('0.1."C"; .T ('0.3."ARG"; .T ('0.7."pointer"; .TEnv ('0.3."i32"))));
+                                .S fA ('0.1."A"; .T ('0.3."ARG"; .T ('0.7."pointer"; .TEnv ('0.3."i16"))));
+                                .S fB ('0.1."B"; .T ('0.3."ARG"; .T ('0.7."pointer"; .TEnv ('0.3."i16"))));
+                                .S fval ('0.3."val"; .T ('0.3."ARG"; .TEnv ('0.3."i16")))
+                        );
+                        .LB spec (
+                                .S sprv ('0.5."SP.RV"; .T ('0.3."RET"))
+                        );
+                        // Function body
+                        .LB l0 (
+                                .S l1 ('0.2."l1"; .T ('0.3."LOC"; .TEnv ('0.3."i32")));
+                                .S l2 ('0.2."l2"; .T ('0.3."LOC"; .T ('0.7."pointer"; .TEnv ('0.3."i32"))));
+                                .S l3 ('0.2."l3"; .T ('0.3."LOC"; .T ('0.7."pointer"; .TEnv ('0.3."i16"))));
+                                .S l4 ('0.2."l4"; .T ('0.3."LOC"; .T ('0.7."pointer"; .TEnv ('0.3."i16"))));
+                                .S l5 ('0.2."l5"; .T ('0.3."LOC"; .TEnv ('0.3."i16")));
+                                .S crc ('0.3."crc"; .T ('0.3."LOC"; .TEnv ('0.3."i16")));
+                                .S clipval ('0.7."clipval"; .T ('0.3."LOC"; .TEnv ('0.3."i16")));
+                                .wr (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")); .rd  (.TEnv ('0.3."i32"); .addr (.T ('0.7."pointer"); .S ('0.1."N"))) );
+                                .wr (.T ('0.7."pointer"); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")); .rd  (.T ('0.7."pointer"); .addr (.T ('0.7."pointer"); .S ('0.1."C"))) );
+                                .wr (.T ('0.7."pointer"); .addr  (.T ('0.7."pointer"); .S ('0.2."l3")); .rd  (.T ('0.7."pointer"); .addr (.T ('0.7."pointer"); .S ('0.1."A"))) );
+                                .wr (.T ('0.7."pointer"); .addr  (.T ('0.7."pointer"); .S ('0.2."l4")); .rd  (.T ('0.7."pointer"); .addr (.T ('0.7."pointer"); .S ('0.1."B"))) );
+                                .wr (.TEnv ('0.3."i16"); .addr  (.T ('0.7."pointer"); .S ('0.2."l5")); .rd  (.TEnv ('0.3."i16"); .addr (.T ('0.7."pointer"); .S ('0.3."val"))) );
+                                .wr (.TEnv ('0.3."i16"); .addr  (.T ('0.7."pointer"); .S ('0.3."crc")); .const (.TEnv ('0.3."i16"); '0.1."0") );
+                                .addr tal5 (.T ('0.7."pointer"); .S ('0.2."l5"));
+                                .rd b1l6 (.T ('0.2."i8"); tal5);
+                                .rd b2l6 (.T ('0.2."i8"); .add (.T ('0.3."i32"); tal5; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l6 (.T ('0.3."i32");  b1l6; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l6 (.T ('0.3."i32"); shb1l6; b2l6);
+                                .cvt l7 (.TEnv ('0.3."i32"); .TEnv ('0.3."i16");  l6 );
+                                .or l8 (.TEnv ('0.3."i32"); .const (.TEnv ('0.3."i32"); '0.5."61440"); l7);
+                                .cvt l9 (.TEnv ('0.3."i16"); .TEnv ('0.3."i32");  l8 );
+                                .wr (.TEnv ('0.3."i16"); .addr  (.T ('0.7."pointer"); .S ('0.7."clipval")); l9 );
+                                .rd  l10 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l11 (.T ('0.7."pointer"; .TEnv ('0.3."i16")); .addr  (.T ('0.7."pointer"); .S ('0.2."l3")));
+                                                                .rd b1l12 (.T ('0.2."i8"); tal5);
+                                .rd b2l12 (.T ('0.2."i8"); .add (.T ('0.3."i32"); tal5; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l12 (.T ('0.3."i32");  b1l12; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l12 (.T ('0.3."i32"); shb1l12; b2l12);
+                                .call (.addr  (.T ('0.7."pointer"); .S ('0.16."matrix_add_const")); (.arg (.TEnv ('0.3."i32"); l10); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i16")); l11); .arg (.TEnv ('0.3."i16"); l12)));
+                                .rd  l13 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l14 (.T ('0.7."pointer"; .TEnv ('0.3."i32")); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")));
+                                .rd  l15 (.T ('0.7."pointer"; .TEnv ('0.3."i16")); .addr  (.T ('0.7."pointer"); .S ('0.2."l3")));
+                                                                .rd b1l16 (.T ('0.2."i8"); tal5);
+                                .rd b2l16 (.T ('0.2."i8"); .add (.T ('0.3."i32"); tal5; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l16 (.T ('0.3."i32");  b1l16; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l16 (.T ('0.3."i32"); shb1l16; b2l16);
+                                .call (.addr  (.T ('0.7."pointer"); .S ('0.16."matrix_mul_const")); (.arg (.TEnv ('0.3."i32"); l13); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i32")); l14); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i16")); l15); .arg (.TEnv ('0.3."i16"); l16)));
+                                .rd  l17 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l18 (.T ('0.7."pointer"; .TEnv ('0.3."i32")); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")));
+                                .addr taclipval (.T ('0.7."pointer"); .S ('0.7."clipval"));
+                                .rd b1l19 (.T ('0.2."i8"); taclipval);
+                                .rd b2l19 (.T ('0.2."i8"); .add (.T ('0.3."i32"); taclipval; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l19 (.T ('0.3."i32");  b1l19; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l19 (.T ('0.3."i32"); shb1l19; b2l19);
+                                .addr  cl20 (.TEnv ('0.7."pointer"); .S ('0.3."l20"; .T ('0.3."LOC"; .TEnv ('0.3."i16"))));
+                                .call (.TEnv ('0.3."i16"); cl20; .addr  (.T ('0.7."pointer"); .S ('0.10."matrix_sum")); (.arg (.TEnv ('0.3."i32"); l17); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i32")); l18); .arg (.TEnv ('0.3."i16"); l19)));
+                                .rd l20 (.TEnv ('0.3."i16"); cl20);
+                                .addr tacrc (.T ('0.7."pointer"); .S ('0.3."crc"));
+                                .rd b1l21 (.T ('0.2."i8"); tacrc);
+                                .rd b2l21 (.T ('0.2."i8"); .add (.T ('0.3."i32"); tacrc; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l21 (.T ('0.3."i32");  b1l21; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l21 (.T ('0.3."i32"); shb1l21; b2l21);
+                                .addr  cl22 (.TEnv ('0.7."pointer"); .S ('0.3."l22"; .T ('0.3."LOC"; .TEnv ('0.3."i16"))));
+                                .call (.TEnv ('0.3."i16"); cl22; .addr  (.T ('0.7."pointer"); .S ('0.5."crc16")); (.arg (.TEnv ('0.3."i16"); l20); .arg (.TEnv ('0.3."i16"); l21)));
+                                .rd l22 (.TEnv ('0.3."i16"); cl22);
+                                .wr (.TEnv ('0.3."i16"); .addr  (.T ('0.7."pointer"); .S ('0.3."crc")); .rd  (.TEnv ('0.3."i16"); .addr (.T ('0.7."pointer"); .S ('0.5."SP.RV"))) );
+                                .rd  l23 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l24 (.T ('0.7."pointer"; .TEnv ('0.3."i32")); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")));
+                                .rd  l25 (.T ('0.7."pointer"; .TEnv ('0.3."i16")); .addr  (.T ('0.7."pointer"); .S ('0.2."l3")));
+                                .rd  l26 (.T ('0.7."pointer"; .TEnv ('0.3."i16")); .addr  (.T ('0.7."pointer"); .S ('0.2."l4")));
+                                .call (.addr  (.T ('0.7."pointer"); .S ('0.15."matrix_mul_vect")); (.arg (.TEnv ('0.3."i32"); l23); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i32")); l24); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i16")); l25); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i16")); l26)));
+                                .rd  l27 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l28 (.T ('0.7."pointer"; .TEnv ('0.3."i32")); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")));
+                                                                .rd b1l29 (.T ('0.2."i8"); taclipval);
+                                .rd b2l29 (.T ('0.2."i8"); .add (.T ('0.3."i32"); taclipval; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l29 (.T ('0.3."i32");  b1l29; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l29 (.T ('0.3."i32"); shb1l29; b2l29);
+                                .addr  cl30 (.TEnv ('0.7."pointer"); .S ('0.3."l30"; .T ('0.3."LOC"; .TEnv ('0.3."i16"))));
+                                .call (.TEnv ('0.3."i16"); cl30; .addr  (.T ('0.7."pointer"); .S ('0.10."matrix_sum")); (.arg (.TEnv ('0.3."i32"); l27); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i32")); l28); .arg (.TEnv ('0.3."i16"); l29)));
+                                .rd l30 (.TEnv ('0.3."i16"); cl30);
+                                                                .rd b1l31 (.T ('0.2."i8"); tacrc);
+                                .rd b2l31 (.T ('0.2."i8"); .add (.T ('0.3."i32"); tacrc; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l31 (.T ('0.3."i32");  b1l31; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l31 (.T ('0.3."i32"); shb1l31; b2l31);
+                                .addr  cl32 (.TEnv ('0.7."pointer"); .S ('0.3."l32"; .T ('0.3."LOC"; .TEnv ('0.3."i16"))));
+                                .call (.TEnv ('0.3."i16"); cl32; .addr  (.T ('0.7."pointer"); .S ('0.5."crc16")); (.arg (.TEnv ('0.3."i16"); l30); .arg (.TEnv ('0.3."i16"); l31)));
+                                .rd l32 (.TEnv ('0.3."i16"); cl32);
+                                .wr (.TEnv ('0.3."i16"); .addr  (.T ('0.7."pointer"); .S ('0.3."crc")); .rd  (.TEnv ('0.3."i16"); .addr (.T ('0.7."pointer"); .S ('0.5."SP.RV"))) );
+                                .rd  l33 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l34 (.T ('0.7."pointer"; .TEnv ('0.3."i32")); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")));
+                                .rd  l35 (.T ('0.7."pointer"; .TEnv ('0.3."i16")); .addr  (.T ('0.7."pointer"); .S ('0.2."l3")));
+                                .rd  l36 (.T ('0.7."pointer"; .TEnv ('0.3."i16")); .addr  (.T ('0.7."pointer"); .S ('0.2."l4")));
+                                .call (.addr  (.T ('0.7."pointer"); .S ('0.17."matrix_mul_matrix")); (.arg (.TEnv ('0.3."i32"); l33); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i32")); l34); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i16")); l35); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i16")); l36)));
+                                .rd  l37 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l38 (.T ('0.7."pointer"; .TEnv ('0.3."i32")); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")));
+                                                                .rd b1l39 (.T ('0.2."i8"); taclipval);
+                                .rd b2l39 (.T ('0.2."i8"); .add (.T ('0.3."i32"); taclipval; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l39 (.T ('0.3."i32");  b1l39; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l39 (.T ('0.3."i32"); shb1l39; b2l39);
+                                .addr  cl40 (.TEnv ('0.7."pointer"); .S ('0.3."l40"; .T ('0.3."LOC"; .TEnv ('0.3."i16"))));
+                                .call (.TEnv ('0.3."i16"); cl40; .addr  (.T ('0.7."pointer"); .S ('0.10."matrix_sum")); (.arg (.TEnv ('0.3."i32"); l37); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i32")); l38); .arg (.TEnv ('0.3."i16"); l39)));
+                                .rd l40 (.TEnv ('0.3."i16"); cl40);
+                                                                .rd b1l41 (.T ('0.2."i8"); tacrc);
+                                .rd b2l41 (.T ('0.2."i8"); .add (.T ('0.3."i32"); tacrc; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l41 (.T ('0.3."i32");  b1l41; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l41 (.T ('0.3."i32"); shb1l41; b2l41);
+                                .addr  cl42 (.TEnv ('0.7."pointer"); .S ('0.3."l42"; .T ('0.3."LOC"; .TEnv ('0.3."i16"))));
+                                .call (.TEnv ('0.3."i16"); cl42; .addr  (.T ('0.7."pointer"); .S ('0.5."crc16")); (.arg (.TEnv ('0.3."i16"); l40); .arg (.TEnv ('0.3."i16"); l41)));
+                                .rd l42 (.TEnv ('0.3."i16"); cl42);
+                                .wr (.TEnv ('0.3."i16"); .addr  (.T ('0.7."pointer"); .S ('0.3."crc")); .rd  (.TEnv ('0.3."i16"); .addr (.T ('0.7."pointer"); .S ('0.5."SP.RV"))) );
+                                .rd  l43 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l44 (.T ('0.7."pointer"; .TEnv ('0.3."i32")); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")));
+                                .rd  l45 (.T ('0.7."pointer"; .TEnv ('0.3."i16")); .addr  (.T ('0.7."pointer"); .S ('0.2."l3")));
+                                .rd  l46 (.T ('0.7."pointer"; .TEnv ('0.3."i16")); .addr  (.T ('0.7."pointer"); .S ('0.2."l4")));
+                                .call (.addr  (.T ('0.7."pointer"); .S ('0.28."matrix_mul_matrix_bitextract")); (.arg (.TEnv ('0.3."i32"); l43); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i32")); l44); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i16")); l45); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i16")); l46)));
+                                .rd  l47 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l48 (.T ('0.7."pointer"; .TEnv ('0.3."i32")); .addr  (.T ('0.7."pointer"); .S ('0.2."l2")));
+                                                                .rd b1l49 (.T ('0.2."i8"); taclipval);
+                                .rd b2l49 (.T ('0.2."i8"); .add (.T ('0.3."i32"); taclipval; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l49 (.T ('0.3."i32");  b1l49; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l49 (.T ('0.3."i32"); shb1l49; b2l49);
+                                .addr  cl50 (.TEnv ('0.7."pointer"); .S ('0.3."l50"; .T ('0.3."LOC"; .TEnv ('0.3."i16"))));
+                                .call (.TEnv ('0.3."i16"); cl50; .addr  (.T ('0.7."pointer"); .S ('0.10."matrix_sum")); (.arg (.TEnv ('0.3."i32"); l47); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i32")); l48); .arg (.TEnv ('0.3."i16"); l49)));
+                                .rd l50 (.TEnv ('0.3."i16"); cl50);
+                                                                .rd b1l51 (.T ('0.2."i8"); tacrc);
+                                .rd b2l51 (.T ('0.2."i8"); .add (.T ('0.3."i32"); tacrc; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l51 (.T ('0.3."i32");  b1l51; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l51 (.T ('0.3."i32"); shb1l51; b2l51);
+                                .addr  cl52 (.TEnv ('0.7."pointer"); .S ('0.3."l52"; .T ('0.3."LOC"; .TEnv ('0.3."i16"))));
+                                .call (.TEnv ('0.3."i16"); cl52; .addr  (.T ('0.7."pointer"); .S ('0.5."crc16")); (.arg (.TEnv ('0.3."i16"); l50); .arg (.TEnv ('0.3."i16"); l51)));
+                                .rd l52 (.TEnv ('0.3."i16"); cl52);
+                                .wr (.TEnv ('0.3."i16"); .addr  (.T ('0.7."pointer"); .S ('0.3."crc")); .rd  (.TEnv ('0.3."i16"); .addr (.T ('0.7."pointer"); .S ('0.5."SP.RV"))) );
+                                .rd  l53 (.TEnv ('0.3."i32"); .addr  (.T ('0.7."pointer"); .S ('0.2."l1")));
+                                .rd  l54 (.T ('0.7."pointer"; .TEnv ('0.3."i16")); .addr  (.T ('0.7."pointer"); .S ('0.2."l3")));
+                                                                .rd b1l55 (.T ('0.2."i8"); tal5);
+                                .rd b2l55 (.T ('0.2."i8"); .add (.T ('0.3."i32"); tal5; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l55 (.T ('0.3."i32");  b1l55; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l55 (.T ('0.3."i32"); shb1l55; b2l55);
+                                .cvt l56 (.TEnv ('0.3."i32"); .TEnv ('0.3."i16");  l55 );
+                                .sub l57 (.TEnv ('0.3."i32"); .const (.TEnv ('0.3."i32"); '0.1."0"); l56);
+                                .cvt l58 (.TEnv ('0.3."i16"); .TEnv ('0.3."i32");  l57 );
+                                .call (.addr  (.T ('0.7."pointer"); .S ('0.16."matrix_add_const")); (.arg (.TEnv ('0.3."i32"); l53); .arg (.T ('0.7."pointer"; .TEnv ('0.3."i16")); l54); .arg (.TEnv ('0.3."i16"); l58)));
+                                                                .rd b1l59 (.T ('0.2."i8"); tacrc);
+                                .rd b2l59 (.T ('0.2."i8"); .add (.T ('0.3."i32"); tacrc; .const (.T ('0.3."i32");'0.1."1")));
+                                .shl shb1l59 (.T ('0.3."i32");  b1l59; .const (.T ('0.3."i32"); '0.1."8"));
+                                .or l59 (.T ('0.3."i32"); shb1l59; b2l59);
+                                .wr (.TEnv ('0.3."i16"); .addr  (.T ('0.7."pointer"); .S ('0.5."SP.RV")); l59);
+                                .ret ()
+                        );
+                        .Label ('0.2."l0"; l0)
+                ) // End ENV LB
+                ) // End ENV
+        ) // end proc
+)

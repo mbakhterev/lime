@@ -3,11 +3,16 @@
 
 #include <assert.h>
 
+#define DBGS 1
+
+#define DBGFLAGS (DBGS)
+
 // В основном, списано из typeeval. S ведут себя похожим на TEnv образом
 
 typedef struct
 {
 	Array *const U;
+	Array *const symbols;
 	Array *const symmarks;
 
 	const Array *const escape;
@@ -37,7 +42,8 @@ static const char *const verbs[] =
 	NULL
 };
 
-static const Binding *getexisting(
+// static const Binding *getexisting(
+static Ref getexisting(
 	const Array *const env, Array *const U, const Ref key)
 {
 	List *const l
@@ -46,34 +52,71 @@ static const Binding *getexisting(
 			readpack(U, strpack(0, "ENV")),
 			readpack(U, strpack(0, "parent")));
 	
-	const Ref K = decorate(dynamark(key), U, ATOM);
+	const Ref K = decorate(dynamark(key), U, DSYM);
 	const Binding *const b = pathlookup(l, K, NULL);
 
 	freeref(K);
 	freelist(l);
 
-	return b;
+// 	return b;
+
+	if(b && b->ref.code == NUMBER)
+	{
+		return b->ref;
+	}
+
+	return reffree();
 }
 
-static const Binding *setnew(
-	Array *const env, Array *const U, const Ref key, const Ref typeref)
+// static const Binding *setnew(
+
+static Ref setnew(
+	Array *const env, Array *const U, Array *const symbols,
+	const Ref key, const Ref typeref)
 {
 	if(typeref.code != TYPE)
 	{
-		return NULL;
+		return reffree();
 	}
 
-	const Ref K = decorate(forkref(key, NULL), U, ATOM);
+// 	const Ref K = decorate(forkref(key, NULL), U, ATOM);
+// 	Binding *const b = mapreadin(env, K);
+
+	const Ref name = forkref(key, NULL);
+	const Ref id = reflist(RL(markext(refkeymap(env)), name));
+
+	Binding *const symb = mapreadin(symbols, id);
+
+	if(!symb)
+	{
+		// name будет освобождена автоматически
+		freeref(id);
+
+		return reffree();
+	}
+
+	symb->ref = typeref;
+
+	const unsigned symnum = symb - (Binding *)symbols->u.data;
+	assert(symnum + 1 == symbols->count);
+
+	const Ref K = decorate(dynamark(name), U, DSYM);
 	Binding *const b = mapreadin(env, K);
 
 	if(!b)
 	{
+		// id и name освобождать не надо. Они сохренены в symbols.
+		// Вместе с ней и будут освобождены
+
 		freeref(K);
+		return reffree();
 	}
 
-	b->ref = typeref;
+// 	b->ref = typeref;
+// 	return b;
 
-	return b;
+	b->ref = refnum(symnum);
+	return b->ref;
 }
 
 static void snode(const Ref N, EState *const E)
@@ -128,12 +171,33 @@ static void snode(const Ref N, EState *const E)
 		return;
 	}
 
-	const Binding *const b
+// 	const Binding *const b
+
+	const Ref id
 		= (len == 1) ? getexisting(env, E->U, R[0])
-		: (len == 2) ? setnew(env, E->U, R[0], typeref)
-		: NULL;
+		: (len == 2) ? setnew(env, E->U, E->symbols, R[0], typeref)
+		: reffree();
+
+// 		: NULL;
 	
-	if(!b)
+	if(DBGS & DBGFLAGS)
+	{
+		char *const name = strref(E->U, NULL, R[0]);
+
+// 		DBG(DBGS, "(len: %u) (name: %s) (env: %p) (binding: %p)",
+// 			len, name, (void *)env, (void *)b);
+
+		DBG(DBGS, "(len: %u) (name: %s) (env: %p) (id: %u %u)",
+			len, name, (void *)env, id.code, id.u.number);
+
+
+		free(name);
+	}
+
+	
+// 	if(!b)
+
+	if(id.code == FREE)
 	{
 		char *const strkey = strref(E->U, NULL, R[0]);
 		
@@ -147,16 +211,13 @@ static void snode(const Ref N, EState *const E)
 		return;
 	}
 
-	tuneptrmap(E->symmarks, N, (Binding *)b);
+// 	tuneptrmap(E->symmarks, N, (Binding *)b);
+
+	tunerefmap(E->symmarks, N, id);
 }
 
 static void evalnode(const Ref N, EState *const E)
 {
-// 	if(N.external)
-// 	{
-// 		return;
-// 	}
-
 	switch(nodeverb(N, E->verbs))
 	{
 	case SNODE:
@@ -204,6 +265,7 @@ static void eval(const Ref N, EState *const E)
 
 void symeval(
 	Array *const U,
+	Array *const symbols,
 	Array *const symmarks,
 	const Ref dag, const Array *const escape,
 	const Array *const envmarks, const Array *typemarks)
@@ -211,6 +273,7 @@ void symeval(
 	EState E =
 	{
 		.U = U,
+		.symbols = symbols,
 		.symmarks = symmarks,
 
 		.typemarks = typemarks,
@@ -223,4 +286,38 @@ void symeval(
 	eval(dag, &E);
 
 	freekeymap((Array *)E.verbs);
+}
+
+Ref symid(const Array *const symmarks, const Ref N)
+{
+	const Ref id = refmap(symmarks, N);
+	assert(id.code == NUMBER);
+	return id;
+}
+
+Ref symname(const Array *const symbols, const Ref id)
+{
+	assert(symbols);
+	assert(id.code == NUMBER && id.u.number < symbols->count);
+
+	const Binding *const b = (Binding *)symbols->u.data + id.u.number;
+	assert(b->key.code == LIST && b->ref.code == TYPE);
+
+	const unsigned len = listlen(b->key.u.list);
+	const Ref R[len];
+	assert(len == 2
+		&& writerefs(b->key.u.list, (Ref *)R, len) == len
+		&& R[0].code == MAP);
+
+	return markext(R[1]);
+}
+
+Ref symtype(const Array *const symbols, const Ref id)
+{
+	assert(symbols);
+	assert(id.code == NUMBER && id.u.number < symbols->count);
+
+	const Binding *const b = (Binding *)symbols->u.data + id.u.number;
+	assert(b->ref.code == TYPE);
+	return b->ref;
 }
