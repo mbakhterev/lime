@@ -652,7 +652,7 @@ extern Ref ntheval(
 // имеет смысл сделать дополнительный интерфейс, так как он становится
 // актуальным только при попадании формы в область вывода.
 
-extern Ref newform(const Ref keys, const Ref dag);
+extern Ref newform(const Ref dag, const Ref keys);
 extern Ref forkform(const Ref form);
 extern void freeform(const Ref form);
 
@@ -729,23 +729,25 @@ extern void progress(
 	const SyntaxNode cmd);
 
 // Процедура вбрасывания в реактор R области area новой формы. Форма задаётся
-// как единое целое. Напоминание: форма - это список из графа, сигнатуры
-// (formkeys). Должен быть ещё счётчик и его должна добавить intakeform.
-// Поэтому, забирать внутрь area форму она будет при помощи:
+// парой ссылок на граф и на сигнатуру (keys). Превращать их в целую форму со
+// счётчиком будет intakeform. Забирать внутрь area форму она будет при помощи:
 // 
-// 	newform(formdag(form), formkeys(form));
+// 	newform(dag, keys);
 // 
-// Это всё согласовано с вызывающими intakeform. При обработке .FPut, всё равно,
-// надо будет создавать новую форму, чтобы общим способом обрабатывать форму из
-// .FEnv и непосредственно из графа. Ну и в этом месте обработчик .FPut может
-// отрегулировать external-флаги для компонент целевой формы.
+// Это неплохо согласовано с вызывающими intakeform. При обработке .FPut можно
+// отрегулировать external-флаги для компонент целевой формы
 
 extern void intakeform(
-	Array *const U, Array *const area, const unsigned R, const Ref form);
+	Array *const U, Array *const area, const unsigned R,
+	const Ref dag, const Ref keys);
 
-extern void intakeout(
-	const Array *const U,
-//	Context *const, const unsigned level, const List *const outs);
-	Array *const area, const unsigned level, const List *const outs);
+// Двойственная к intakeform процедура. Список outs должен состоять из пар (ключ
+// значение). Обе компоненты будут скопированы в реактор при помощи forkref, так
+// как источником для них служит форма, которая будет меняться. intakeout может
+// завершиться неудачно (об удаче говорит 0)
+
+extern unsigned intakeout(
+	Array *const U,
+	Array *const area, const unsigned rid, const List *const outs);
 
 #endif

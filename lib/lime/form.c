@@ -18,7 +18,7 @@ static unsigned isformrefs(const Ref R[], const unsigned len)
 
 // Заряжаем счётчик сразу. Иначе придётся усложнять интерфейс. А не хочется
 
-Ref newform(const Ref keys, const Ref dag)
+Ref newform(const Ref dag, const Ref keys)
 {
 	return refform(RL(
 		forkdag(dag),
@@ -38,7 +38,7 @@ Ref forkform(const Ref f)
 {
 	if(!f.external)
 	{
-		return newform(formkeys(f), formdag(f));
+		return newform(formdag(f), formkeys(f));
 	}
 
 	return f;

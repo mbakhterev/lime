@@ -13,6 +13,7 @@ typedef struct
 	Array *const U;
 	Array *const reactor;
 	const Ref form;
+	Ref *const reactorforms;
 } RState;
 
 static int registerone(List *const l, void *const ptr)
@@ -42,6 +43,11 @@ static int registerone(List *const l, void *const ptr)
 	DL(inkey, RS(decoatom(st->U, DIN), markext(l->ref)));
 	Binding *const in = bindkey(st->reactor, inkey);
 
+	if(in->ref.code == FREE)
+	{
+		in->ref = reflist(NULL);
+	}
+
 	// Ну всё, сохраняем ссылку на форму, убедившись, что всё пока верно
 
 	assert(areforms(in->ref));
@@ -53,28 +59,28 @@ static int registerone(List *const l, void *const ptr)
 // Реализовано в соответствии с txt/log-2014.txt:2014-02-05 13:03:53
 
 extern void intakeform(
-	Array *const U, Array *const area, const unsigned rid, const Ref form)
+	Array *const U, Array *const area, const unsigned rid,
+	const Ref dag, const Ref keys)
 {
 	// Здесь должен быть список форм
 
-	Ref *const F = reactorforms(U, area, rid);
-	assert(areforms(*F));
+	Ref *const RF = reactorforms(U, area, rid);
+// 	assert(areforms(*RF));
 
 	// Дальше нам надо создать форму со своим счётчиком, которая будет
-	// добавлена во всевозможные списки. Для этого нужно скопировать граф и
-	// ключи из исходной формы. newform копирует выражения, переданные через
+	// добавлена во всевозможные списки. Для этого нужно скопировать
+	// исходные граф и ключи. newform копирует выражения, переданные через
 	// параметры. Клиент intakeform может регулировать объём копирования
 	// через external-биты
 
-	const Ref keys = formkeys(form);
-	assert(keys.code == LIST);
-	const Ref f = newform(keys, formdag(form));
+	assert(dag.code == LIST && keys.code == LIST);
+	const Ref f = newform(dag, keys);
 
 	// Форму надо засунуть в список реактора. Корректность F проверяется в
 	// самой reactorforms. Но для надёжности
 
-	assert(areforms(*F));
-	F->u.list = append(F->u.list, RL(f));
+	assert(areforms(*RF));
+	RF->u.list = append(RF->u.list, RL(f));
 
 	// Теперь надо расставить ссылки на форму
 
@@ -82,10 +88,110 @@ extern void intakeform(
 	{
 		.U = U,
 		.reactor = areareactor(U, area, rid),
-		.form = f
+		.form = f,
+		.reactorforms = NULL
 	};
 
 	forlist(keys.u.list, registerone, &st, 0);
 
 	// Кажется, всё
+}
+
+static void splitpair(const Ref p, Ref R[])
+{
+	assert(p.code == LIST);
+	const unsigned len = listlen(p.u.list);
+	assert(len == 2 && writerefs(p.u.list, R, len) == len);
+}
+
+enum { KEY = 0, VALUE };
+
+static int checkone(List *const l, void *const ptr)
+{
+	assert(l);
+	const Ref R[2];
+	splitpair(l->ref, (Ref *)R);
+
+	assert(ptr);
+	RState *const st = ptr;
+
+	DL(key, RS(decoatom(st->U, DOUT), R[KEY]));
+	const Binding *const b = maplookup(st->reactor, key);
+
+	// Если (b == NULL), то всё хорошо, и надо вернуть 0. Поэтому
+	return b != NULL;
+}
+
+static int countdownone(List *const l, void *const ptr)
+{
+	assert(l);
+	countdown(&l->ref);
+	return 0;
+}
+
+static int outone(List *const l, void *const ptr)
+{
+	assert(l);
+	const Ref R[2];
+	splitpair(l->ref, (Ref *)R);
+
+	assert(ptr);
+	RState *const st = ptr;
+
+	// В любом случае надо зарегистрировать выход. Ключ будет сохранён
+
+	{
+		Binding *const b
+			= mapreadin(st->reactor,
+				decorate(forkref(R[KEY], NULL), st->U, DOUT));
+
+		assert(b);
+		b->ref = forkref(R[VALUE], NULL);
+	}
+
+	// Теперь надо уменьшить счётчики у тех форм, которым нужен этот вход
+
+	DL(key, RS(decoatom(st->U, DIN), R[KEY]));
+	Binding *const b = (Binding *)maplookup(st->reactor, key);
+	if(!b)
+	{
+		// Ничего не было найдено, продолжаем
+		return 0;
+	}
+
+	// Если есть ожидающие формы, надо приблизить их активацию, после чего
+	// сбросить в NULL этот список
+
+	assert(areforms(b->ref));
+	forlist(b->ref.u.list, countdownone, NULL, 0);
+
+	freeref(b->ref);
+	b->ref = reflist(NULL);
+
+	return 0;
+}
+
+unsigned intakeouts(
+	Array *const U,
+	Array *const area, const unsigned rid, const List *const outs)
+{
+	// Сперва надо проверить, не конфликтуют ли сигнатуры
+
+	RState st = 
+	{
+		.U = U,
+		.reactor = areareactor(U, area, rid),
+		.form = reffree(),
+		.reactorforms = reactorforms(U, area, rid)
+	};
+
+	if(forlist((List *)outs, checkone, &st, 0))
+	{
+		return !0;
+	}
+
+	// Если всё хорошо, то надо регистрировать выходы
+
+	forlist((List *)outs, outone, &st, 0);
+	return 0;
 }
