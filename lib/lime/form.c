@@ -20,10 +20,17 @@ static unsigned isformrefs(const Ref R[], const unsigned len)
 
 Ref newform(const Ref dag, const Ref keys)
 {
-	return refform(RL(
-		forkdag(dag),
-		forkref(keys, NULL),
-		refnum(listlen(keys.u.list))));
+// 	return refform(RL(
+// 		forkdag(dag),
+// 		forkref(keys, NULL),
+// 		refnum(listlen(keys.u.list))));
+
+	// Небольшая проверка структуры
+	assert(dag.code == LIST && keys.code == LIST);
+
+	// Видимо, логичнее не делать здесь fork-ов, чтобы дать возможность
+	// регулировать состав формы внешнему коду
+	return refform(RL(dag, keys, refnum(listlen(keys.u.list)));
 }
 
 void freeform(const Ref f)
@@ -38,7 +45,7 @@ Ref forkform(const Ref f)
 {
 	if(!f.external)
 	{
-		return newform(formdag(f), formkeys(f));
+		return newform(forkdag(formdag(f)), forkref(formkeys(f), NULL));
 	}
 
 	return f;

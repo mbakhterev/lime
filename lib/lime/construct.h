@@ -679,6 +679,28 @@ extern Ref *reactorforms(
 
 extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
+// Процедура вбрасывания в реактор R области area новой формы. Форма задаётся
+// парой ссылок на граф и на сигнатуру (keys). Превращать их в целую форму со
+// счётчиком будет intakeform. Забирать внутрь area форму она будет при помощи:
+// 
+// 	newform(dag, keys);
+// 
+// Это неплохо согласовано с вызывающими intakeform. При обработке .FPut можно
+// отрегулировать external-флаги для компонент целевой формы
+
+extern void intakeform(
+	Array *const U, Array *const area, const unsigned R,
+	const Ref dag, const Ref keys);
+
+// Двойственная к intakeform процедура. Список outs должен состоять из пар (ключ
+// значение). Обе компоненты будут скопированы в реактор при помощи forkref, так
+// как источником для них служит форма, которая будет меняться. intakeout может
+// завершиться неудачно (об удаче говорит 0)
+
+extern unsigned intakeout(
+	Array *const U,
+	Array *const area, const unsigned rid, const List *const outs);
+
 // Обработка связанных с формами конструкций: F, FPut, FEnv, FOut. В процессе
 // обработки может поменяться состояние текущего окружения и некоторых
 // областей вывода (area), с которыми текущая область вывода связана. Окурежение
@@ -727,27 +749,5 @@ extern void progress(
 	Array *const universe,
 	const List **const penv, const List **const ctx,
 	const SyntaxNode cmd);
-
-// Процедура вбрасывания в реактор R области area новой формы. Форма задаётся
-// парой ссылок на граф и на сигнатуру (keys). Превращать их в целую форму со
-// счётчиком будет intakeform. Забирать внутрь area форму она будет при помощи:
-// 
-// 	newform(dag, keys);
-// 
-// Это неплохо согласовано с вызывающими intakeform. При обработке .FPut можно
-// отрегулировать external-флаги для компонент целевой формы
-
-extern void intakeform(
-	Array *const U, Array *const area, const unsigned R,
-	const Ref dag, const Ref keys);
-
-// Двойственная к intakeform процедура. Список outs должен состоять из пар (ключ
-// значение). Обе компоненты будут скопированы в реактор при помощи forkref, так
-// как источником для них служит форма, которая будет меняться. intakeout может
-// завершиться неудачно (об удаче говорит 0)
-
-extern unsigned intakeout(
-	Array *const U,
-	Array *const area, const unsigned rid, const List *const outs);
 
 #endif

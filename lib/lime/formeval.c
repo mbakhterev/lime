@@ -40,7 +40,9 @@ static int registerone(List *const l, void *const ptr)
 	// где-то во внешнем контексте (в списке форм реактора, например).
 	// НАПОМИНАНИЕ: bindkey копирует ключ при необходимости
 
-	DL(inkey, RS(decoatom(st->U, DIN), markext(l->ref)));
+// 	DL(inkey, RS(decoatom(st->U, DIN), markext(l->ref)));
+
+	DL(inkey, RS(decoatom(st->U, DIN), dynamark(l->ref)));
 	Binding *const in = bindkey(st->reactor, inkey);
 
 	if(in->ref.code == FREE)
@@ -171,7 +173,7 @@ static int outone(List *const l, void *const ptr)
 	return 0;
 }
 
-unsigned intakeouts(
+unsigned intakeout(
 	Array *const U,
 	Array *const area, const unsigned rid, const List *const outs)
 {
@@ -194,4 +196,254 @@ unsigned intakeouts(
 
 	forlist((List *)outs, outone, &st, 0);
 	return 0;
+}
+
+#define FNODE 0
+#define FPUT 1
+#define FENV 2
+#define FOUT 3
+
+static const char *const verbs[] =
+{
+	[FNODE] = "F",
+	[FPUT] = "FPut",
+	[FENV] = "FEnv",
+	[FOUT] = "FOut",
+	NULL
+};
+
+typedef struct
+{
+	Array *const U;
+	Array *const area;
+
+	const Array *const escape;
+
+	const Array *const typemarks;
+	const Array *const envmarks;
+
+	const Array *const verbs;
+	const Array *const typeverbs;
+
+	Array *const valmap;
+} FEState;
+
+static void eval(const Ref r, FEState *const st);
+
+static int evalone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	eval(l->ref, ptr);
+	return 0;
+}
+
+static const char *nodename(const Array *const U, const Ref N)
+{
+	return atombytes(atomat(U, nodeverb(N, NULL)));
+}
+
+static Ref readtoken(Array *const U, const char *const str)
+{
+	return readpack(U, strpack(0, str));
+}
+
+static Ref getexisting(const Array *const env, Array *const U, const Ref key)
+{
+	List *const l
+		= tracepath(env, U,
+			readtoken(U, "ENV"), readtoken(U, "parent"));
+	
+	// markext для перестраховки
+
+	DL(K, RS(decoatom(U, DFORM), markext(key)));
+	const Binding *const b = pathlookup(l, K, NULL);
+
+	freelist(l);
+
+	if(b)
+	{
+		assert(b->ref.code == FORM);
+
+		// Здесь нам нужна только ссылка на форму, которая уже сохранена
+		// неким образом в окружении. Поэтому markext
+
+		return markext(b->ref);
+	}
+
+	return reffree();
+}
+
+static Ref setnew(
+	Array *const env, Array *const U, const Ref key, const Ref form)
+{
+	if(form.code != FORM)
+	{
+		return reffree();
+	}
+
+	const Ref K = decorate(forkref(key, NULL), U, DFORM);
+	Binding *const b = mapreadin(env, K);
+	if(!b)
+	{
+		freeref(K);
+		return reffree();
+	}
+
+	assert(b->ref.code == FREE);
+
+	// Рассчитываем на то, что форма уже сформирована нужным образом. Но
+	// вернуть в любом случае нужно ссылку
+
+	b->ref = form;
+	return markext(b->ref);
+}
+
+static void fenv(const Ref N, FEState *const E)
+{
+	const Ref r = nodeattribute(r);
+	if(r.code != LIST)
+	{
+		item = nodeline(r);
+		ERR("node \"%s\": expecting attribute list",
+			nodename(E->U, N));
+
+		return;
+	}
+
+	const unsigned len = listlen(r.u.list);
+	if(len < 1 || 2 < len)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting 1 or 2 attributes",
+			nodename(E->U, N));
+
+		return;
+	}
+
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+
+	// В ключе могут быть ссылки на типы. Для форм мы это разрешаем. Поэтому
+	// надо преобразовать выражение
+
+	const Ref key = exprewrite(R[0], st->typemarks, st->typeverbs);
+
+	if(!issignaturekey(key))
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting 1st attribute to be basic key",
+			nodename(E->U, N));
+
+		return;
+	}
+	
+	// В любом случае надо узнать, к какому окружению относится этот .FEnv
+
+	Array *const env = envmap(E->envmarks, N);
+	if(!env)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": no environment definition for node",
+			nodename(E->U, N));
+
+		return;
+	}
+
+	// Теперь надо понять, с какой формой мы имеем дело. Если у нас один
+	// параметр, то мы должны поискать форму в окружении. Если два, то это
+	// запрос на регистрацию формы. Форму надо при этом извлечь из второго
+	// параметра
+
+	const Ref form
+		= (len == 1) ? getexisting(env, E->U, key)
+		: (len == 2) ? setnew(env, E->U, key, extractform(R[1], E))
+		: reffree();
+	if(form.code == FREE)
+	{
+		char *const strkey = strref(E->U, NULL, key);
+		freeref(key);
+
+		item = nodeline(N);
+		ERR("node \"%s\": can't %s type for key: %s",
+			nodename(N), len == 1 ? "locate" : "allocate", strkey);
+
+		free(strkey);
+		return;
+	}
+	freeref(key);
+
+	// Назначаем значение узлу. В form должен быть установлен external-бит
+
+	assert(form.code == FORM && form.external);
+	tunerefmap(E->valmap, N, form);
+}
+
+static void eval(const Ref r, FEState *const st)
+{
+	switch(r.code)
+	{
+	case ATOM:
+	case NUMBER:
+	case TYPE:
+		return;
+
+	case LIST:
+		forlist(r.u.list, evalone, st, 0);
+		return;
+
+	case NODE:
+		if(!r.external)
+		{
+			// Интересуемся только определениями
+			return;
+		}
+
+		switch(nodeverb(r, st->verbs))
+		{
+		case FENV:
+			fenv(r, st);
+			return;
+
+		case FPUT:
+		case FOUT:
+			return;
+
+		default:
+			if(!knownverb(r, st->escape))
+			{
+				// Если не запрещено пройти внутрь узла
+				eval(nodeattribute(r), st);
+			}
+
+			return;
+		}
+
+	default:
+		assert(0);
+	}
+}
+
+void formeval(
+	Array *const U,
+	Array *const area,
+	const Ref dag, const Array *const escape,
+	const Array *const typemarks, const Array *const envmarks)
+{
+	FEState st =
+	{
+		.U = U,
+		.area = area,
+		.escape = escape,
+		.verbs = newverbmap(U, 0, verbs),
+		.typeverbs = newverbmap(U, 0, ES("T", "TEnv")),
+		.valmap = newkeymap(),
+		.typemarks = typemarks,
+		.envmarks = envmarks
+	};
+
+	eval(dag, &st);
+
+	freekeymap(st.valmap);
+	freekeymap((Array *)st.verbs);
 }

@@ -191,7 +191,7 @@ static void tenv(const Ref r, EState *const E)
 	// R, кстати, от rands - операнды по-модному
 
 	Ref R[len];
-	writerefs(attr.u.list, R, len);
+	assert(writerefs(attr.u.list, R, len) == len);
 	
 	if(!isbasickey(R[0]))
 	{
