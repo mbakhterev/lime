@@ -30,11 +30,13 @@ Ref newform(const Ref dag, const Ref keys)
 
 	// Видимо, логичнее не делать здесь fork-ов, чтобы дать возможность
 	// регулировать состав формы внешнему коду
-	return refform(RL(dag, keys, refnum(listlen(keys.u.list)));
+	return refform(RL(dag, keys, refnum(listlen(keys.u.list))));
 }
 
 void freeform(const Ref f)
 {
+	assert(f.code == FORM);
+
 	if(!f.external)
 	{
 		freelist(f.u.list);

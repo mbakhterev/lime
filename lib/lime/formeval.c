@@ -58,16 +58,35 @@ static int registerone(List *const l, void *const ptr)
 	return 0;
 }
 
-// Реализовано в соответствии с txt/log-2014.txt:2014-02-05 13:03:53
+// Реализовано в соответствии с txt/log-2014.txt:2014-02-05 13:03:53. С
+// поправкой на управление памятью по мотивам 2014-02-13 14:40:18
+
+static Ref reform(const Ref f)
+{
+	if(f.external)
+	{
+		// Имеем дело со ссылкой на форму. Для корректной работы надо
+		// создать новую форму со своим счётчиком. Но сигнатуру и граф
+		// можно использовать внешние
+
+		return newform(markext(formdag(f)), markext(formkeys(f)));
+	}
+
+	// Здесь мы имеем дело с определением формы. Пока логика такая, что это
+	// некая форма уже скопированная из графа. Поэтому, её можно
+	// использовать (см. extractform)
+
+	assert(isform(f));
+	return f;
+}
 
 extern void intakeform(
-	Array *const U, Array *const area, const unsigned rid,
-	const Ref dag, const Ref keys)
+	Array *const U, Array *const area, const unsigned rid, const Ref form)
+//	const Ref dag, const Ref keys)
 {
 	// Здесь должен быть список форм
 
 	Ref *const RF = reactorforms(U, area, rid);
-// 	assert(areforms(*RF));
 
 	// Дальше нам надо создать форму со своим счётчиком, которая будет
 	// добавлена во всевозможные списки. Для этого нужно скопировать
@@ -75,10 +94,15 @@ extern void intakeform(
 	// параметры. Клиент intakeform может регулировать объём копирования
 	// через external-биты
 
-	assert(dag.code == LIST && keys.code == LIST);
-	const Ref f = newform(dag, keys);
+// 	assert(dag.code == LIST && keys.code == LIST);
 
-	// Форму надо засунуть в список реактора. Корректность F проверяется в
+// На очередной итерации борьбы со ссылками считаем, что в процедуру передаётся
+// уже верно сформированная форма
+// 	const Ref f = newform(dag, keys);
+
+	const Ref f = reform(form);
+
+	// Форму надо засунуть в список реактора. Корректность RF проверяется в
 	// самой reactorforms. Но для надёжности
 
 	assert(areforms(*RF));
@@ -94,16 +118,30 @@ extern void intakeform(
 		.reactorforms = NULL
 	};
 
-	forlist(keys.u.list, registerone, &st, 0);
+// 	forlist(keys.u.list, registerone, &st, 0);
+	forlist(formkeys(f).u.list, registerone, &st, 0);
 
 	// Кажется, всё
 }
 
-static void splitpair(const Ref p, Ref R[])
+static unsigned splitpair(const Ref p, Ref R[])
 {
-	assert(p.code == LIST);
+// 	assert(p.code == LIST);
+	if(p.code != LIST)
+	{
+		return 0;
+	}
+
 	const unsigned len = listlen(p.u.list);
-	assert(len == 2 && writerefs(p.u.list, R, len) == len);
+
+	if(len != 2)
+	{
+		return 0;
+	}
+
+// 	assert(len == 2 && writerefs(p.u.list, R, len) == len);
+
+	return writerefs(p.u.list, R, len) == len;
 }
 
 enum { KEY = 0, VALUE };
@@ -112,7 +150,7 @@ static int checkone(List *const l, void *const ptr)
 {
 	assert(l);
 	const Ref R[2];
-	splitpair(l->ref, (Ref *)R);
+	assert(splitpair(l->ref, (Ref *)R));
 
 	assert(ptr);
 	RState *const st = ptr;
@@ -135,7 +173,7 @@ static int outone(List *const l, void *const ptr)
 {
 	assert(l);
 	const Ref R[2];
-	splitpair(l->ref, (Ref *)R);
+	assert(splitpair(l->ref, (Ref *)R));
 
 	assert(ptr);
 	RState *const st = ptr;
@@ -238,7 +276,7 @@ static int evalone(List *const l, void *const ptr)
 	return 0;
 }
 
-static const char *nodename(const Array *const U, const Ref N)
+static const unsigned char *nodename(const Array *const U, const Ref N)
 {
 	return atombytes(atomat(U, nodeverb(N, NULL)));
 }
@@ -250,6 +288,8 @@ static Ref readtoken(Array *const U, const char *const str)
 
 static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 {
+	// WARNING: освобождаем переданный key локально
+
 	List *const l
 		= tracepath(env, U,
 			readtoken(U, "ENV"), readtoken(U, "parent"));
@@ -260,6 +300,7 @@ static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 	const Binding *const b = pathlookup(l, K, NULL);
 
 	freelist(l);
+	freeref(key);
 
 	if(b)
 	{
@@ -274,18 +315,59 @@ static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 	return reffree();
 }
 
+// typedef struct
+// {
+// 	const Ref dag;
+// 	const Ref keys;
+// 	const Ref form;
+// 	const unsigned correct;
+// } Extract;
+// 
+// static Extract fxvoid(void)
+// {
+// 	return (Extract)
+// 	{
+// 		.dag = reffree(),
+// 		.keys = reffree(),
+// 		.form = reffree(),
+// 		.correct = 1
+// 	};
+// }
+
+// static Ref fxforenv(const Extract fx)
+// {
+// 	assert(fx.dag.code == LIST && fx.keys.code == LIST);
+// 
+// 	if(fx.form.code == FREE)
+// 	{
+// 		// Источником формы служит граф. Надо поэтому собрать dag и keys
+// 		// в целую форму
+// 
+// 		return newform(forkdag(dag), forkref(keys, NULL));
+// 	}
+// 
+// 	// Иначе возвращаем найденную ссылку на форму, убедившись в её
+// 	// корректности
+// 
+// 	assert(fx.form.code == FORM && fx.form.external);
+// 	return fx.form;
+// }
+
 static Ref setnew(
 	Array *const env, Array *const U, const Ref key, const Ref form)
 {
-	if(form.code != FORM)
-	{
-		return reffree();
-	}
+// 	const Ref form = fxforenv(fx);
 
-	const Ref K = decorate(forkref(key, NULL), U, DFORM);
+	// WARNING: освобождаем в случае неудачи переданные ресурсы здесь,
+	// локально. Чтобы избежать дополнительных копирований
+
+// 	const Ref K = decorate(forkref(key, NULL), U, DFORM);
+
+	const Ref K = decorate(key, U, DFORM);
 	Binding *const b = mapreadin(env, K);
 	if(!b)
 	{
+		freeform(form);
 		freeref(K);
 		return reffree();
 	}
@@ -297,6 +379,57 @@ static Ref setnew(
 
 	b->ref = form;
 	return markext(b->ref);
+}
+
+static Ref extractform(const Ref A, FEState *const E)
+{
+	if(A.code == NODE)
+	{
+		// Имеем дело с узлом. Пока это может быть только FEnv. Который
+		// оценивается в форму из окружения. Её и возвращаем в виде
+		// ссылки
+
+		switch(nodeverb(A, E->verbs))
+		{
+		case FENV:
+			return markext(refmap(E->valmap, A));
+
+		default:
+			return reffree();
+		}
+	}
+
+	// В противном случае мы имеем дело с парой (ключи (тело формы)). Надо
+	// её реконструировать
+
+	const Ref R[2];
+	if(!splitpair(A, (Ref *)R))
+	{
+		return reffree();
+	}
+
+	// Проверяем, что пара имеет вид (ключи; .F (...))
+
+	if(!isnode(R[1]) || nodeverb(R[1], E->verbs) != FNODE)
+	{
+		return reffree();
+	}
+
+	// Проверяем, что ключи подходят под определение списка сигнатур формы.
+	// Но сначала в них надо пересчитать типы
+
+	const Ref key = exprewrite(R[0], E->typemarks, E->typeverbs);
+
+	if(key.code != LIST || !issignaturekey(key))
+	{
+		freeref(key);
+		return reffree();
+	}
+
+	// Если всё хорошо, создаём новую форму. Граф при этом копируем. Ключ и
+	// без того уже является преобразованной копией
+
+	return newform(forkdag(nodeattribute(R[1])), key);
 }
 
 static void fenv(const Ref N, FEState *const E)
@@ -327,7 +460,7 @@ static void fenv(const Ref N, FEState *const E)
 	// В ключе могут быть ссылки на типы. Для форм мы это разрешаем. Поэтому
 	// надо преобразовать выражение
 
-	const Ref key = exprewrite(R[0], st->typemarks, st->typeverbs);
+	const Ref key = exprewrite(R[0], E->typemarks, E->typeverbs);
 
 	if(!issignaturekey(key))
 	{
@@ -350,33 +483,52 @@ static void fenv(const Ref N, FEState *const E)
 		return;
 	}
 
-	// Теперь надо понять, с какой формой мы имеем дело. Если у нас один
-	// параметр, то мы должны поискать форму в окружении. Если два, то это
-	// запрос на регистрацию формы. Форму надо при этом извлечь из второго
-	// параметра
+// 	const Exctract fx
+// 		= len == 2 ? extractform(R[1], E->verbs, E->valmap) : fxvoid();
+// 	
+// 	if(!fx.correct)
+// 	{
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": can't get form from 2nd attribute",
+// 			nodename(E->U, N));
+// 	}
 
-	const Ref form
+	const Ref form = extractform(R[1], E);
+
+	// Теперь надо понять, с каким видом .FEnv мы имеем дело мы имеем дело.
+	// Если у нас один параметр, то мы должны поискать форму в окружении.
+	// Если два, то это запрос на регистрацию формы. Форму надо при этом
+	// извлечь из второго параметра
+
+	const Ref fref
 		= (len == 1) ? getexisting(env, E->U, key)
-		: (len == 2) ? setnew(env, E->U, key, extractform(R[1], E))
+		: (len == 2) ? setnew(env, E->U, key, form)
 		: reffree();
-	if(form.code == FREE)
+	
+	// WARNING: key и form будут освобождены в getexisting или setnew по
+	// необходимости
+
+	if(fref.code == FREE)
 	{
-		char *const strkey = strref(E->U, NULL, key);
-		freeref(key);
+		const Ref tk = exprewrite(R[0], E->typemarks, E->typeverbs);
+		char *const strkey = strref(E->U, NULL, tk);
+		freeref(tk);
 
 		item = nodeline(N);
 		ERR("node \"%s\": can't %s type for key: %s",
-			nodename(N), len == 1 ? "locate" : "allocate", strkey);
+			nodename(E->U, N), len == 1 ? "locate" : "allocate",
+			strkey);
 
 		free(strkey);
 		return;
 	}
-	freeref(key);
+
+//	freeref(key);
 
 	// Назначаем значение узлу. В form должен быть установлен external-бит
 
-	assert(form.code == FORM && form.external);
-	tunerefmap(E->valmap, N, form);
+	assert(isform(fref) && fref.external);
+	tunerefmap(E->valmap, N, fref);
 }
 
 static void eval(const Ref r, FEState *const st)
@@ -428,7 +580,7 @@ void formeval(
 	Array *const U,
 	Array *const area,
 	const Ref dag, const Array *const escape,
-	const Array *const typemarks, const Array *const envmarks)
+	const Array *const envmarks, const Array *const typemarks)
 {
 	FEState st =
 	{

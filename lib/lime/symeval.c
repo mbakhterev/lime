@@ -5,7 +5,9 @@
 
 #define DBGS 1
 
-#define DBGFLAGS (DBGS)
+// #define DBGFLAGS (DBGS)
+
+#define DBGFLAGS (0)
 
 // В основном, списано из typeeval. S ведут себя похожим на TEnv образом
 

@@ -340,7 +340,7 @@ extern Binding *bindkey(Array *const map, const Ref key);
 // если code ей поддерживается: (deco-atom key). Бит external в Ref-е установлен
 // не будет. В противном случае вылетит с assert-ом
 
-enum { DSYM = ATOM, DTYPE = TYPE, DMAP = MAP, DIN, DOUT, DREACTOR };
+enum { DSYM = ATOM, DTYPE = TYPE, DMAP = MAP, DFORM, DIN, DOUT, DREACTOR };
 
 extern Ref decorate(const Ref key, Array *const U, const unsigned code);
 
@@ -689,8 +689,8 @@ extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 // отрегулировать external-флаги для компонент целевой формы
 
 extern void intakeform(
-	Array *const U, Array *const area, const unsigned R,
-	const Ref dag, const Ref keys);
+	Array *const U, Array *const area, const unsigned R, const Ref form);
+// 	const Ref dag, const Ref keys);
 
 // Двойственная к intakeform процедура. Список outs должен состоять из пар (ключ
 // значение). Обе компоненты будут скопированы в реактор при помощи forkref, так
@@ -709,8 +709,9 @@ extern unsigned intakeout(
 
 extern void formeval(
 	Array *const U,
-	Array *const env, Array *const area,
-	const Ref dag, const Array *const escape);
+	Array *const area,
+	const Ref dag, const Array *const escape,
+	const Array *const envmarks, const Array *const typemarks);
 
 // Синтаксические команды. Тут и дальше получается некий свободный поток
 // примитивов, не сгруппированный и не упорядоченный

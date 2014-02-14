@@ -192,6 +192,9 @@ static const char *codetostr(const unsigned code)
 	case DSYM:
 		return "$";
 	
+	case DFORM:
+		return "#";
+	
 	case DIN:
 		return "-";
 	
