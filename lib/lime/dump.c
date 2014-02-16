@@ -103,12 +103,6 @@ void dumpref(
 		break;
 
 	case FORM:
-// 		assert(r.u.form);
-// 		assert(fprintf(f, "F:%p (D:%p S:%p)",
-// 			(void *)r.u.form,
-// 			(void *)r.u.form->u.dag.u.list,
-// 			(void *)r.u.form->signature) > 0);
-
 		assert(isformlist(r.u.list));
 		assert(fprintf(f, "F:%p (D:%p S:%p)",
 			(void *)r.u.list,
@@ -393,6 +387,29 @@ static int dumpkeymapone(List *const l, void *const ptr)
 	return 0;
 }
 
+static int dumpformone(List *const l, void *const ptr)
+{
+	assert(l && isform(l->ref));
+	assert(ptr);
+	const DState *const st = ptr;
+
+	const Ref keys = formkeys(l->ref);
+	assert(fprintf(
+		st->f, "\n%s\tform-sig(%u) %p:\t", st->tabstr,
+		keys.external, (void *)keys.u.list) > 0);
+	dumpref(st->f, st->U, NULL, keys);
+
+	const Ref dag = formdag(l->ref);
+	assert(fprintf(
+		st->f, "\n%s\tform-dag(%u) %p:\n", st->tabstr,
+		dag.external, (void *)dag.u.list) > 0);
+	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, dag, NULL);
+
+	assert(fputc('\n', st->f) == '\n');
+
+	return 0;
+}
+
 void dumpkeymap(
 	const unsigned debug,
 	FILE *const f, const unsigned tabs, const Array *const U,
@@ -412,12 +429,23 @@ void dumpkeymap(
 		.dbg = debug
 	};
 
-	assert(fprintf(f, "\n%smap: %p", st.tabstr, (void *)map) > 0);
+	assert(fprintf(f, "%smap: %p", st.tabstr, (void *)map) > 0);
 
 	if(map->count)
 	{
 		walkbindings((Array *)map, dumpbindingone, &st);
-		forlist(st.L, dumpkeymapone, &st, 0);
+
+		if(st.F)
+		{
+			assert(fputc('\n', f) == '\n');
+			forlist(st.F, dumpformone, &st, 0);
+		}
+
+		if(st.L)
+		{
+			assert(fputc('\n', f) == '\n');
+			forlist(st.L, dumpkeymapone, &st, 0);
+		}
 	}
 	else
 	{
@@ -429,7 +457,7 @@ void dumpkeymap(
 	freelist(st.F);
 }
 
-void dumptypes(
+void dumptable(
 	FILE *const f, const unsigned tabs, const Array *const U,
 	const Array *const types)
 {
@@ -437,7 +465,9 @@ void dumptypes(
 	assert(U);
 	assert(types);
 
-	assert(printf("\ntypes:") > 0);
+	const char *const pad = tabstr(tabs);
+
+	assert(fprintf(f, "%stable: %p", pad, (void *)types) > 0);
 
 	if(!types->count)
 	{
@@ -445,13 +475,12 @@ void dumptypes(
 		return;
 	}
 
-	const char *const pad = tabstr(tabs);
 	const Binding *const B = types->u.data;
 
 	for(unsigned i = 0; i < types->count; i += 1)
 	{
 		assert(fprintf(f,
-			"\n%s\t%u.\tkey(%u): ", pad, i, B[i].key.external) > 0);
+			"\n%s\t%u:\tkey(%u): ", pad, i, B[i].key.external) > 0);
 		dumpref(f, U, NULL, B[i].key);
 
 		assert(fprintf(f,

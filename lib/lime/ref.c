@@ -139,6 +139,7 @@ Ref dynamark(const Ref r)
 	case MAP:
 	case NODE:
 	case LIST:
+	case FORM:
 		return markext(r);
 	}
 

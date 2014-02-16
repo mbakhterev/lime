@@ -216,6 +216,7 @@ Ref decoatom(Array *const U, const unsigned code)
 	case DMAP:
 	case DTYPE:
 	case DSYM:
+	case DFORM:
 	case DIN:
 	case DOUT:
 	case DREACTOR:

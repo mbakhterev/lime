@@ -50,12 +50,12 @@ int main(int argc, char *argv[])
 	dumpkeymap(1, stdout, 0, U, root);
 	dumpkeymap(1, stdout, 0, U, envmarks);
 
-	dumptypes(stdout, 0, U, types);
+	dumptable(stdout, 0, U, types);
 
 	dumpkeymap(1, stdout, 0, U, typemarks);
 	dumpkeymap(1, stdout, 0, U, symmarks);
 
-	dumptypes(stdout, 0, U, symbols);
+	dumptable(stdout, 0, U, symbols);
 
 	freekeymap(escape);
 	freekeymap(node);

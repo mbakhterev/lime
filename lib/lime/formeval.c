@@ -3,6 +3,10 @@
 
 #include <assert.h>
 
+#define DBGFENV 1
+
+#define DBGFLAGS (DBGFENV)
+
 static unsigned areforms(const Ref r)
 {
 	return r.code == LIST && (r.u.list == NULL || isform(r.u.list->ref));
@@ -434,7 +438,9 @@ static Ref extractform(const Ref A, FEState *const E)
 
 static void fenv(const Ref N, FEState *const E)
 {
-	const Ref r = nodeattribute(r);
+	DBG(DBGFENV, "%s", "entry");
+
+	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
 	{
 		item = nodeline(r);
@@ -545,7 +551,7 @@ static void eval(const Ref r, FEState *const st)
 		return;
 
 	case NODE:
-		if(!r.external)
+		if(r.external)
 		{
 			// Интересуемся только определениями
 			return;

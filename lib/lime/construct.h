@@ -614,7 +614,7 @@ extern void typeeval(
 
 extern const Binding *typeat(const Array *const, const unsigned);
 
-extern void dumptypes(
+extern void dumptable(
 	FILE *const, const unsigned tabs, const Array *const U,
 	const Array *const types);
 
