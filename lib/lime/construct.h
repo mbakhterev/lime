@@ -614,6 +614,11 @@ extern void typeeval(
 
 extern const Binding *typeat(const Array *const, const unsigned);
 
+// FIXME:
+#ifndef dumptypes
+#define dumptypes dumptable
+#endif
+
 extern void dumptable(
 	FILE *const, const unsigned tabs, const Array *const U,
 	const Array *const types);
@@ -723,7 +728,7 @@ extern void formeval(
 #define BOP 4
 #define EOP 5
 
-// О Position заметка txt/worklog.txt Position 2013-08-27 18:24:10
+// О Position заметка txt/log-2013.txt Position 2013-08-27 18:24:10
 
 typedef struct
 {
@@ -740,11 +745,12 @@ typedef struct
 	const Position pos;
 } SyntaxNode;
 
-// Самая главная функция. Новые атомы могут появится в ходе вывода графа
-// программы (например, атомы меток), поэтому universe не константа. Стеки
-// окружений или контекстов тоже могут быть расширены или удалены, поэтому
-// передаются ссылки на значения их описывающие (а такими значениями являются
-// списки, которые указываются указателем).
+// Ядерная функциональность.
+
+typedef struct
+{
+	Array *const root;
+} Core;
 
 extern void progress(
 	Array *const universe,
