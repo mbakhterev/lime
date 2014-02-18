@@ -316,12 +316,6 @@ static void tdef(const Ref N, EState *const E)
 
 static void nominatenode(const Ref r, EState *const st)
 {
-// 	if(r.external)
-// 	{
-// 		// Ссылками не интересуемся. Нам важны только определения.
-// 		return 1;
-// 	}
-
 	switch(nodeverb(r, st->verbs))
 	{
 	case TNODE:

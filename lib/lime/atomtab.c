@@ -228,6 +228,11 @@ Ref readpack(Array *const t, const AtomPack ap)
 	return refatom(grabpack(t, &a));
 }
 
+Ref readtoken(Array *const t, const char *const str)
+{
+	return readpack(t, strpack(0, str));
+}
+
 Ref loadtoken(
 	Array *const t, FILE *const f,
 	const unsigned char hint, const char *const format)

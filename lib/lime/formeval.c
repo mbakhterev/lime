@@ -285,10 +285,10 @@ static const unsigned char *nodename(const Array *const U, const Ref N)
 	return atombytes(atomat(U, nodeverb(N, NULL)));
 }
 
-static Ref readtoken(Array *const U, const char *const str)
-{
-	return readpack(U, strpack(0, str));
-}
+// static Ref readtoken(Array *const U, const char *const str)
+// {
+// 	return readpack(U, strpack(0, str));
+// }
 
 static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 {
@@ -319,53 +319,12 @@ static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 	return reffree();
 }
 
-// typedef struct
-// {
-// 	const Ref dag;
-// 	const Ref keys;
-// 	const Ref form;
-// 	const unsigned correct;
-// } Extract;
-// 
-// static Extract fxvoid(void)
-// {
-// 	return (Extract)
-// 	{
-// 		.dag = reffree(),
-// 		.keys = reffree(),
-// 		.form = reffree(),
-// 		.correct = 1
-// 	};
-// }
-
-// static Ref fxforenv(const Extract fx)
-// {
-// 	assert(fx.dag.code == LIST && fx.keys.code == LIST);
-// 
-// 	if(fx.form.code == FREE)
-// 	{
-// 		// Источником формы служит граф. Надо поэтому собрать dag и keys
-// 		// в целую форму
-// 
-// 		return newform(forkdag(dag), forkref(keys, NULL));
-// 	}
-// 
-// 	// Иначе возвращаем найденную ссылку на форму, убедившись в её
-// 	// корректности
-// 
-// 	assert(fx.form.code == FORM && fx.form.external);
-// 	return fx.form;
-// }
-
 static Ref setnew(
 	Array *const env, Array *const U, const Ref key, const Ref form)
 {
-// 	const Ref form = fxforenv(fx);
 
 	// WARNING: освобождаем в случае неудачи переданные ресурсы здесь,
 	// локально. Чтобы избежать дополнительных копирований
-
-// 	const Ref K = decorate(forkref(key, NULL), U, DFORM);
 
 	const Ref K = decorate(key, U, DFORM);
 	Binding *const b = mapreadin(env, K);
@@ -489,17 +448,14 @@ static void fenv(const Ref N, FEState *const E)
 		return;
 	}
 
-// 	const Exctract fx
-// 		= len == 2 ? extractform(R[1], E->verbs, E->valmap) : fxvoid();
-// 	
-// 	if(!fx.correct)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": can't get form from 2nd attribute",
-// 			nodename(E->U, N));
-// 	}
-
 	const Ref form = extractform(R[1], E);
+
+	if(form.code == FREE)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't read form from 2nd attribute structure",
+			nodename(E->U, N));
+	}
 
 	// Теперь надо понять, с каким видом .FEnv мы имеем дело мы имеем дело.
 	// Если у нас один параметр, то мы должны поискать форму в окружении.
@@ -528,8 +484,6 @@ static void fenv(const Ref N, FEState *const E)
 		free(strkey);
 		return;
 	}
-
-//	freeref(key);
 
 	// Назначаем значение узлу. В form должен быть установлен external-бит
 

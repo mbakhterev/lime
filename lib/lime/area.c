@@ -3,12 +3,17 @@
 
 #include <assert.h>
 
-static Ref readtoken(Array *const U, const char *const str)
-{
-	return readpack(U, strpack(0, str));
-}
+// static Ref readtoken(Array *const U, const char *const str)
+// {
+// 	return readpack(U, strpack(0, str));
+// }
 
 // FIXME: не нравится мне код для initreactor
+
+unsigned isarea(const Ref r)
+{
+	return r.code == AREA && r.u.array && r.u.array->code == MAP;
+}
 
 static void initreactor(Array *const U, const unsigned id, Array *const area)
 {

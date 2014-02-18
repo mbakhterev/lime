@@ -104,10 +104,11 @@ void dumpref(
 
 	case FORM:
 		assert(isformlist(r.u.list));
-		assert(fprintf(f, "F:%p (D:%p S:%p)",
+		assert(fprintf(f, "F:%p (D:%p S:%p C:%u)",
 			(void *)r.u.list,
 			(void *)formdag(r).u.list,
-			(void *)formkeys(r).u.list) > 0);
+			(void *)formkeys(r).u.list,
+			formcounter(r)) > 0);
 		break;
 
 	case MAP:
@@ -393,6 +394,10 @@ static int dumpformone(List *const l, void *const ptr)
 	assert(ptr);
 	const DState *const st = ptr;
 
+// 	assert(fprintf(
+// 		st->f, "\n%s\tform-cnt:\t\t%u", st->tabstr,
+// 		formcounter(l->ref)) > 0);
+
 	const Ref keys = formkeys(l->ref);
 	assert(fprintf(
 		st->f, "\n%s\tform-sig(%u) %p:\t", st->tabstr,
@@ -435,7 +440,8 @@ void dumpkeymap(
 	{
 		walkbindings((Array *)map, dumpbindingone, &st);
 
-		if(st.F)
+		// FIXME: тут нужен более разумный подход
+		if(st.F && U)
 		{
 			assert(fputc('\n', f) == '\n');
 			forlist(st.F, dumpformone, &st, 0);

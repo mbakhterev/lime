@@ -13,6 +13,7 @@
 #define DBGTYPES 8
 
 #define DBGFLAGS (DBGMAIN | DBGMAINEX | DBGINIT)
+// #define DBGFLAGS (DBGMAIN | DBGMAINEX)
 
 unsigned item = 1;
 const char *unitname = "stdin";
@@ -74,6 +75,12 @@ static void initforms(
 
 			typeeval(U, types, typemarks, dag, escape, envmarks);
 			formeval(U, NULL, dag, escape, envmarks, typemarks);
+
+			if(DBGFLAGS & DBGINIT)
+			{
+				dumptable(stderr, 0, U, types);
+				assert(fputc('\n', stderr) == '\n');
+			}
 
 			freekeymap(escape);
 			freekeymap(typemarks);
@@ -218,17 +225,17 @@ static SyntaxNode readone(FILE *const f, Array *const U)
 
 // Тут read в форме past perfect
 
-static void progressread(
-	FILE *const f,
-	Array *const U, const List **const env, const List **const ctx)
+static void progressread(FILE *const f, Core *const C)
+// 	Array *const U, const List **const env, const List **const ctx)
 {
 	while(1)
 	{
-		const SyntaxNode sntx = readone(f, U);
+		const SyntaxNode sntx = readone(f, C->U);
 
 		if(sntx.op != EOF)
 		{
 //			progress(U, env, ctx, sntx);
+			progress(C, sntx);
 		}
 		else
 		{
@@ -256,23 +263,24 @@ static Array *const inittypes(Array *const U)
 {
 	Array *const T = newkeymap();
 
-	for(unsigned i = 0; i < 0x10; i += 1)
-	{
-		const Ref key = reflist(RL(readpack(U, strpack(i << 4, ""))));
-
-		if(DBGFLAGS & DBGTYPES)
-		{
-			DBG(DBGTYPES, "%u", i);
-			dumpkeymap(1, stderr, 0, U, T);
-
-			char *const kstr = strref(U, NULL, key);
-			DBG(DBGTYPES, "%s -> %p",
-				kstr, (void *)maplookup(T, key));
-			free(kstr);
-		}
-
-		assert(mapreadin(T, key));
-	}
+// FIXME: эта инициализация произойдёт "естественным" образом
+// 	for(unsigned i = 0; i < 0x10; i += 1)
+// 	{
+// 		const Ref key = reflist(RL(readpack(U, strpack(i << 4, ""))));
+// 
+// 		if(DBGFLAGS & DBGTYPES)
+// 		{
+// 			DBG(DBGTYPES, "%u", i);
+// 			dumpkeymap(1, stderr, 0, U, T);
+// 
+// 			char *const kstr = strref(U, NULL, key);
+// 			DBG(DBGTYPES, "%s -> %p",
+// 				kstr, (void *)maplookup(T, key));
+// 			free(kstr);
+// 		}
+// 
+// 		assert(mapreadin(T, key));
+// 	}
 
 	return T;
 }
@@ -312,13 +320,15 @@ int main(int argc, char *const argv[])
 
 	if(CKPT() == 0)
 	{
-		item = 1;
-		unitname = "stdin";
-
 		initforms(argc, argv, C.U, C.env, C.types);
 		DBG(DBGMAIN, "%s", "forms loaded");
 
-		progressread(stdin, U, NULL, NULL);
+		item = 1;
+		unitname = "stdin";
+
+// 		progressread(stdin, U, NULL, NULL);
+		
+		progressread(stdin, &C);
 		checkout(0);
 	}
 	else

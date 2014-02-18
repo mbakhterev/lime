@@ -8,14 +8,15 @@
 #define DBGKM 2
 #define DBGPLU 4
 #define DBGDM 8
+#define DBGCK 16
 
 // #define DBGFLAGS (DBGFREE)
 // #define DBGFLAGS (DBGKM)
 // #define DBGFLAGS (DBGPLU)
 
-#define DBGFLAGS (DBGDM)
+// #define DBGFLAGS (DBGDM | DBGCK | DBGPLU)
 
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -69,6 +70,8 @@ static int cmplists(const List *const, const List *const);
 
 static int cmpkeys(const Ref k, const Ref l)
 {
+	DBG(DBGCK, "k.code l.kode = %u %u", k.code, l.code);
+
 	assert(k.code <= LIST);
 	assert(l.code <= LIST);
 

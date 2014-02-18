@@ -172,6 +172,8 @@ extern Array *newatomtab(void);
 extern void freeatomtab(Array *const);
 
 extern Ref readpack(Array *const, const AtomPack);
+extern Ref readtoken(Array *const, const char *const str);
+
 extern Ref loadatom(Array *const, FILE *const);
 
 extern Ref loadtoken(
@@ -613,6 +615,7 @@ extern void typeeval(
 	const Ref dag, const Array *const escape, const Array *const envmarks);
 
 extern const Binding *typeat(const Array *const, const unsigned);
+extern unsigned typelookup(const Array *const, const Ref key);
 
 // FIXME:
 #ifndef dumptypes
@@ -672,6 +675,8 @@ extern unsigned isform(const Ref);
 
 // Области вывода. Они являются keymap-ами особой структуры. Потому что надо
 // связывать их в цепочки
+
+extern unsigned isarea(const Ref);
 
 extern Array *newarea(Array *const U);
 extern Ref areadag(Array *const U, const Array *const area);

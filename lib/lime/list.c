@@ -68,7 +68,7 @@ static List *newlist(const Ref r)
 	case LIST:
 	case FORM:
 	case MAP:
-//	case CTX:
+	case AREA:
 	case FREE:
 		break;
 	
