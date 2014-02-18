@@ -90,7 +90,7 @@ extern Ref refform(List *const);
 
 extern Ref refkeymap(Array *const);
 
-// extern Ref refctx(Context *const);
+extern Ref refarea(Array *const);
 
 extern Ref markext(const Ref);
 extern Ref cleanext(const Ref);
@@ -718,6 +718,8 @@ extern void formeval(
 	const Ref dag, const Array *const escape,
 	const Array *const envmarks, const Array *const typemarks);
 
+// Ядерная функциональность
+
 // Синтаксические команды. Тут и дальше получается некий свободный поток
 // примитивов, не сгруппированный и не упорядоченный
 
@@ -745,16 +747,24 @@ typedef struct
 	const Position pos;
 } SyntaxNode;
 
-// Ядерная функциональность.
-
 typedef struct
 {
+	Array *const U;
+	Array *const types;
+	Array *const symbols;
+
 	Array *const root;
+	Array *env;
+
+	List *areastack;
+	List *activities;
 } Core;
 
-extern void progress(
-	Array *const universe,
-	const List **const penv, const List **const ctx,
-	const SyntaxNode cmd);
+// extern void progress(
+// 	Array *const universe,
+// 	const List **const penv, const List **const ctx,
+// 	const SyntaxNode cmd);
+
+extern void progress(Core *const, const SyntaxNode);
 
 #endif

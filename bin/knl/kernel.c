@@ -237,10 +237,10 @@ static void progressread(
 	}
 }
 
-int main(int argc, char *const argv[])
+static Array *const inituniverse(void)
 {
 	Array *const U = newatomtab();
-	
+
 	// Прогружаем таблицу атомов начальными значениями. Они системные,
 	// поэтому hint = 0
 
@@ -249,30 +249,62 @@ int main(int argc, char *const argv[])
 		assert(readpack(U, strpack(0, syntaxops[i])).u.number == i);
 	}
 
-	Array *const env = newkeymap();
-	Array *const types = newkeymap();
+	return U;
+}
 
-	// Инициализация примитивных типов
+static Array *const inittypes(Array *const U)
+{
+	Array *const T = newkeymap();
 
 	for(unsigned i = 0; i < 0x10; i += 1)
 	{
-// 		DL(key, RS(readpack(U, strpack(i << 4, ""))));
 		const Ref key = reflist(RL(readpack(U, strpack(i << 4, ""))));
 
 		if(DBGFLAGS & DBGTYPES)
 		{
 			DBG(DBGTYPES, "%u", i);
-			dumpkeymap(1, stderr, 0, U, types);
+			dumpkeymap(1, stderr, 0, U, T);
 
 			char *const kstr = strref(U, NULL, key);
 			DBG(DBGTYPES, "%s -> %p",
-				kstr, (void *)maplookup(types, key));
+				kstr, (void *)maplookup(T, key));
 			free(kstr);
 		}
 
-// 		const Ref key = readpack(U, strpack(i << 4, ""));
-		assert(mapreadin(types, key));
+		assert(mapreadin(T, key));
 	}
+
+	return T;
+}
+
+static Array *const initroot(Array *const U)
+{
+	Array *const R = newkeymap();
+
+	DL(names, RS(readpack(U, strpack(0, "this"))));
+	makepath(
+		R, U, 
+		readpack(U, strpack(0, "ENV")), names.u.list,
+		markext(refkeymap(R)));
+
+	return R;
+}
+
+int main(int argc, char *const argv[])
+{
+	Array *const U = inituniverse();
+	Array *const R = initroot(U);
+
+	Core C =
+	{
+		.U = U,
+		.types = inittypes(U),
+		.symbols = newkeymap(),
+		.root = R,
+		.env = R,
+		.areastack = RL(refarea(newarea(U))),
+		.activities = NULL
+	};
 
 	// Основной цикл вывода графа программы. Чтение с stdin. Если вывод не
 	// удался, то, всё равно, выдаём накопленный в "придонном" контексте
@@ -283,7 +315,7 @@ int main(int argc, char *const argv[])
 		item = 1;
 		unitname = "stdin";
 
-		initforms(argc, argv, U, env, types);
+		initforms(argc, argv, C.U, C.env, C.types);
 		DBG(DBGMAIN, "%s", "forms loaded");
 
 		progressread(stdin, U, NULL, NULL);
@@ -296,17 +328,22 @@ int main(int argc, char *const argv[])
 
 	if(DBGFLAGS & DBGMAINEX)
 	{
-		DBG(DBGMAINEX, "env: count = %u", env->count);
-		dumpkeymap(0, stderr, 0, U, env);
+		DBG(DBGMAINEX, "env: count = %u", C.env->count);
+		dumpkeymap(0, stderr, 0, U, C.env);
 
 		DBG(DBGMAINEX, "%s", "types:");
-		dumptable(stderr, 0, U, types);
+		dumptable(stderr, 0, U, C.types);
 	}
 
 	// FIXME:
-	dumpdag(0, stdout, 0, U,
-		reflist(NULL), newverbmap(U, 0, ES("F", "LB")));
+	dumpdag(0, stdout, 0, C.U,
+		reflist(NULL), newverbmap(C.U, 0, ES("F", "LB")));
 	assert(fputc('\n', stdout) == '\n');
+
+	freekeymap(C.symbols);
+	freekeymap(C.types);
+	freekeymap(R);
+	freeatomtab(U);
 
 	return 0;
 }

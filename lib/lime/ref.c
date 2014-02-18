@@ -78,10 +78,11 @@ Ref refkeymap(Array *const a)
 	return (Ref) { .code = MAP, .u.array = a, .external = 0 };
 }
 
-// Ref refctx(Context *const c)
-// {
-// 	return (Ref) { .code = CTX, .u.context = c, .external = 0 };
-// }
+Ref refarea(Array *const a)
+{
+	assert(a && a->code == MAP);
+	return (Ref) { .code = AREA, .u.array = a, .external = 0 };
+}
 
 static Ref setbit(const Ref r, const unsigned bit)
 {
@@ -97,6 +98,7 @@ static Ref setbit(const Ref r, const unsigned bit)
 	case LIST:
 	case FORM:
 	case MAP:
+	case AREA:
 		break;
 	
 	default:
@@ -140,6 +142,7 @@ Ref dynamark(const Ref r)
 	case NODE:
 	case LIST:
 	case FORM:
+	case AREA:
 		return markext(r);
 	}
 
@@ -168,22 +171,6 @@ Ref forkref(const Ref r, Array *const nodemap)
 	case LIST:
 	{
 		Array *const M = nodemap;
-
-// 		// Тут есть тонкости. Если (M != NULL), то список надо
-// 		// транслировать (то есть, копировать узлы), поэтому должно быть
-// 		// (!r.external). В случае (M == NULL) ничего не транслируется,
-// 		// и можно ориентироваться на (r.external)
-// 
-// 		if(M)
-// 		{
-// 			assert(!r.external);
-// 			return reflist(transforklist(r.u.list, M));
-// 		}
-// 
-// 		if(!r.external)
-// 		{
-// 			return reflist(forklist(r.u.list));
-// 		}
 
 		// Тонкости тут, действительно есть. Если (M != NULL), то список
 		// надо в любом случае копировать. Потому что мы заранее не

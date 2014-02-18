@@ -22,11 +22,8 @@ lmsrc = \
 	ntheval.c	\
 	area.c		\
 	formeval.c	\
+	progress.c	\
 
-# 	context.c	\
-# 	evalforms.c	\
-# 	progress.c	\
-	
 lminc = \
 	$(I)/lime/construct.h	\
 	$(I)/lime/util.h	\
