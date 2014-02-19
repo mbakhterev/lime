@@ -679,7 +679,7 @@ extern unsigned isform(const Ref);
 extern unsigned isarea(const Ref);
 
 extern Array *newarea(Array *const U);
-extern Ref areadag(Array *const U, const Array *const area);
+extern Ref *areadag(Array *const U, const Array *const area);
 
 extern Array *areareactor(
 	Array *const U, const Array *const area, const unsigned id);

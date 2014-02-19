@@ -51,7 +51,7 @@ static void initdag(Array *const U, Array *const area)
 {
 	Binding *const b = mapreadin(area, readtoken(U, "DAG"));
 	assert(b);
-	b->ref = cleanext(refkeymap(newkeymap()));
+	b->ref = cleanext(reflist(NULL));
 }
 
 Array *newarea(Array *const U)
@@ -82,12 +82,14 @@ Array *areareactor(Array *const U, const Array *const area, const unsigned id)
 	return b->ref.u.array;
 }
 
-Ref areadag(Array *const U, const Array *const area)
+Ref *areadag(Array *const U, const Array *const area)
 {
-	const Binding *const b = maplookup(area, readtoken(U, "DAG"));
+// 	const
+	Binding *const b = (Binding *)maplookup(area, readtoken(U, "DAG"));
 	assert(b);
 	assert(b->ref.code == LIST);
-	return b->ref;
+// 	return b->ref;
+	return &b->ref;
 }
 
 Ref *reactorforms(Array *const U, const Array *const area, const unsigned id)

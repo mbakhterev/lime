@@ -17,7 +17,7 @@ typedef struct
 	Array *const U;
 	Array *const reactor;
 	const Ref form;
-	Ref *const reactorforms;
+// 	Ref *const reactorforms;
 } RState;
 
 static int registerone(List *const l, void *const ptr)
@@ -88,9 +88,6 @@ extern void intakeform(
 	Array *const U, Array *const area, const unsigned rid, const Ref form)
 //	const Ref dag, const Ref keys)
 {
-	// Здесь должен быть список форм
-
-	Ref *const RF = reactorforms(U, area, rid);
 
 	// Дальше нам надо создать форму со своим счётчиком, которая будет
 	// добавлена во всевозможные списки. Для этого нужно скопировать
@@ -107,10 +104,14 @@ extern void intakeform(
 	const Ref f = reform(form);
 
 	// Форму надо засунуть в список реактора. Корректность RF проверяется в
-	// самой reactorforms. Но для надёжности
+	// самой reactorforms. Забываем о RF сразу после использования, чтобы
+	// соответствующая ячейка в памяти от нас не утекла при перестроении
+	// таблиц
 
-	assert(areforms(*RF));
-	RF->u.list = append(RF->u.list, RL(f));
+	{
+		Ref *const RF = reactorforms(U, area, rid);
+		RF->u.list = append(RF->u.list, RL(f));
+	}
 
 	// Теперь надо расставить ссылки на форму
 
@@ -118,8 +119,8 @@ extern void intakeform(
 	{
 		.U = U,
 		.reactor = areareactor(U, area, rid),
-		.form = f,
-		.reactorforms = NULL
+		.form = f
+// 		.reactorforms = NULL
 	};
 
 // 	forlist(keys.u.list, registerone, &st, 0);
@@ -225,8 +226,8 @@ unsigned intakeout(
 	{
 		.U = U,
 		.reactor = areareactor(U, area, rid),
-		.form = reffree(),
-		.reactorforms = reactorforms(U, area, rid)
+		.form = reffree()
+// 		.reactorforms = reactorforms(U, area, rid)
 	};
 
 	if(forlist((List *)outs, checkone, &st, 0))

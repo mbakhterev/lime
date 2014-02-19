@@ -5,10 +5,11 @@
 
 #define DBGPRGS 1
 #define DBGGF 2
+#define DBGSYNTH 4
 
 // #define DBGFLAGS (DBGPRGS | DBGGF)
 
-#define DBGFLAGS (DBGPRGS)
+#define DBGFLAGS (DBGPRGS | DBGSYNTH)
 
 static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 {
@@ -103,6 +104,74 @@ static Ref getform(
 	return reffree();
 }
 
+// static Ref activate(Array *const U, Array *const T, Array *const S, const Ref f)
+// {
+// 	return reffree();
+// }
+
+typedef struct
+{
+	List *inactive;
+	Core *const C;
+	Array *const R;
+} SState;
+
+static int synthone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	SState *const st = ptr;
+
+	// Превращаем звено списка в список из одного элемента
+	l->next = l;
+
+	// FIXME
+	if(formcounter(l->ref))
+	{
+		// Эту форму рано ещё активировать, перекладываем её в
+		// inactive-список
+
+		st->inactive = append(st->inactive, l);
+		return 0;
+	}
+
+	freelist(l);
+
+	return 0;
+}
+
+static unsigned areforms(const Ref r)
+{
+	return r.code == LIST && (r.u.list == NULL ||  isform(r.u.list->ref));
+}
+
+static void synthesize(Core *const C, Array *const A, const unsigned rid)
+{
+	SState st =
+	{
+		.inactive = NULL,
+		.C = C,
+		.R = areareactor(C->U, A, rid),
+	};
+
+// 	{
+// 		Ref *const RF = reactorforms(C->U, A, rid);
+// 		forlist(RF->u.list, synthone, &st, 0);
+// 	}
+
+	if(DBGFLAGS & DBGSYNTH)
+	{
+		dumpkeymap(0, stderr, 0, C->U, A);
+	}
+	forlist(reactorforms(C->U, A, rid)->u.list, synthone, &st, 0);
+
+	// Нам в дальнейшем интересны только неиспользованные формы, поэтому
+	// заменяем текущий список форм
+
+	assert(areforms(reflist(st.inactive)));
+	*reactorforms(C->U, A, rid) = reflist(st.inactive);
+}
+
 void progress(Core *const C, const SyntaxNode op)
 {
 	const Ref key;
@@ -151,9 +220,10 @@ void progress(Core *const C, const SyntaxNode op)
 
 	intakeform(C->U, A.u.array, 0, form);
 
-	// Синтезируем на её основе продолжение графа
+	// Информация принята в реактор, синтезируем на её основе продолжение
+	// графа
 
-	synthesize();
+	synthesize(C, A.u.array, 0);
 
 	if(DBGFLAGS & DBGPRGS)
 	{
