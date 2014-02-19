@@ -342,17 +342,30 @@ static int dumpbindingone(Binding *const b, void *const ptr)
 
 	if(st->dbg)
 	{
-		sprintf(addr, "%p: ", (void *)b);
+		sprintf(addr, "%p:\t", (void *)b);
 	}
 
+// 	assert(
+// 		fprintf(f, "\n%s\t%skey(%u): ",
+// 			st->tabstr, addr, b->key.external) > 0);
+
 	assert(
-		fprintf(f, "\n%s\t%skey(%u): ",
+		fprintf(f, "\n\t%s%skey(%u): ",
 			st->tabstr, addr, b->key.external) > 0);
 	dumpref(st->f, st->U, NULL, b->key);
 
+	if(st->dbg)
+	{
+		sprintf(addr, "\t\t");
+	}
+
+// 	assert(
+// 		fprintf(f, "\n%s\t%sval(%u): ",
+// 			st->tabstr, addr, b->ref.external) > 0);
+
 	assert(
-		fprintf(f, "\n%s\t%sval(%u): ",
-			st->tabstr, addr, b->ref.external) > 0);
+		fprintf(f, "\n\t%s%sval(%u): ",
+			st->tabstr, addr, b->key.external) > 0);
 	dumpref(st->f, st->U, NULL, b->ref);
 
 	assert(fputc('\n', st->f) == '\n');
@@ -383,6 +396,7 @@ static int dumpkeymapone(List *const l, void *const ptr)
 	assert(ptr);
 	const DState *const st = ptr;
 
+	assert(fputc('\n', st->f) == '\n');
 	dumpkeymap(st->dbg, st->f, st->tabs + 1, st->U, l->ref.u.array);
 
 	return 0;
@@ -443,13 +457,13 @@ void dumpkeymap(
 		// FIXME: тут нужен более разумный подход
 		if(st.F && U)
 		{
-			assert(fputc('\n', f) == '\n');
+// 			assert(fputc('\n', f) == '\n');
 			forlist(st.F, dumpformone, &st, 0);
 		}
 
 		if(st.L)
 		{
-			assert(fputc('\n', f) == '\n');
+// 			assert(fputc('\n', f) == '\n');
 			forlist(st.L, dumpkeymapone, &st, 0);
 		}
 	}

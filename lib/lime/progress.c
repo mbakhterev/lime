@@ -6,10 +6,11 @@
 #define DBGPRGS 1
 #define DBGGF 2
 #define DBGSYNTH 4
+#define DBGCLLT 8
 
 // #define DBGFLAGS (DBGPRGS | DBGGF)
 
-#define DBGFLAGS (DBGPRGS | DBGSYNTH)
+#define DBGFLAGS (DBGPRGS | DBGSYNTH | DBGCLLT)
 
 static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 {
@@ -104,16 +105,105 @@ static Ref getform(
 	return reffree();
 }
 
-// static Ref activate(Array *const U, Array *const T, Array *const S, const Ref f)
-// {
-// 	return reffree();
-// }
+typedef struct
+{
+	List *ins;
+	Array *const U;
+	const Array *const R;
+} AState;
+
+static int collectone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	AState *const st = ptr;
+
+	DL(key, RS(decoatom(st->U, DOUT), markext(l->ref)));
+	const Binding *const b = maplookup(st->R, l->ref);
+
+	if(DBGFLAGS & DBGCLLT)
+	{
+		char *const kstr = strref(st->U, NULL, key);
+		DBG(DBGCLLT, "looked for ref: %s", kstr);
+		free(kstr);
+
+		dumpkeymap(1, stderr, 0, st->U, st->R);
+	}
+
+	DBG(DBGCLLT, "b: %p", (void *)b);
+
+	assert(b);
+
+	// Как ключи, так и значения могут быть подставлены в тело формы и могут
+	// пережить реактор, в котором они созданы. Поэтому и ключ, и значение
+	// имеет смысл скопировать. И взять их лучше именно из реактора
+
+	const Ref *R[2];
+
+	{
+		DL(pattern, RS(decoatom(st->U, DOUT), reffree()));
+		unsigned nok = 0;
+		assert(keymatch(pattern, &b->key, R, 2, &nok) && nok == 2);
+	}
+
+	st->ins
+		= append(st->ins,
+			RL(reflist(RL(
+				forkref(*R[1], NULL), forkref(b->ref, NULL)))));
+
+	return 0;
+}
+
+static void activate(
+	const Ref form, const Array *const reactor,
+	Array *const area, Core *const C)
+{
+	// Сначала надо составить список входов для формы
+
+	AState st =
+	{
+		.ins = NULL,
+		.U = C->U,
+		.R = reactor
+	};
+
+	const Ref keys = formkeys(form);
+	assert(keys.code == LIST);
+	forlist(keys.u.list, collectone, &st, 0);
+
+	// Теперь нужно выполнить процедуры оценки
+
+	const Array *const escape = newverbmap(C->U, 0, ES("F"));
+	const Array *const nonroots = newverbmap(C->U, 0, ES("FIn", "Nth"));
+
+	const Ref body
+		= ntheval(
+			C->U, formdag(form), escape,
+			C->symmarks, C->typemarks, C->types, st.ins);
+
+	// FIXME: ещё несколько стадий
+
+	// Убираем использованные синтаксические команды
+
+	gcnodes((Ref *)&body, escape, nonroots, NULL);
+
+	freekeymap((Array *)nonroots);
+	freekeymap((Array *)escape);
+	freelist(st.ins);
+
+	// Наращиваем тело графа:
+
+	Ref *const AD = areadag(C->U, area);
+	assert(body.code == LIST && AD->code == LIST);
+	AD->u.list = append(AD->u.list, body.u.list);
+}
 
 typedef struct
 {
 	List *inactive;
-	Core *const C;
-	Array *const R;
+	Core *const core;
+	Array *const area;
+	Array *const reactor;
 } SState;
 
 static int synthone(List *const l, void *const ptr)
@@ -125,7 +215,6 @@ static int synthone(List *const l, void *const ptr)
 	// Превращаем звено списка в список из одного элемента
 	l->next = l;
 
-	// FIXME
 	if(formcounter(l->ref))
 	{
 		// Эту форму рано ещё активировать, перекладываем её в
@@ -134,6 +223,11 @@ static int synthone(List *const l, void *const ptr)
 		st->inactive = append(st->inactive, l);
 		return 0;
 	}
+
+	activate(l->ref, st->reactor, st->area, st->core);
+
+	// В activate форма будет аккуратно разобрана на запчасти, поэтому
+	// звено списка вместе с ней можно просто удалить
 
 	freelist(l);
 
@@ -150,8 +244,9 @@ static void synthesize(Core *const C, Array *const A, const unsigned rid)
 	SState st =
 	{
 		.inactive = NULL,
-		.C = C,
-		.R = areareactor(C->U, A, rid),
+		.core = C,
+		.area = A,
+		.reactor = areareactor(C->U, A, rid),
 	};
 
 // 	{
@@ -163,12 +258,22 @@ static void synthesize(Core *const C, Array *const A, const unsigned rid)
 	{
 		dumpkeymap(0, stderr, 0, C->U, A);
 	}
-	forlist(reactorforms(C->U, A, rid)->u.list, synthone, &st, 0);
+	
+	DBG(DBGSYNTH, "%s", "RF 1");
+// 	forlist(reactorforms(C->U, A, rid)->u.list, synthone, &st, 0);
+	{
+		Ref *const RF = reactorforms(C->U, A, rid);
+		List *const l = RF->u.list;
+		*RF = reflist(NULL);
+		forlist(l, synthone, &st, 0);
+	}
+
 
 	// Нам в дальнейшем интересны только неиспользованные формы, поэтому
 	// заменяем текущий список форм
 
 	assert(areforms(reflist(st.inactive)));
+	DBG(DBGSYNTH, "%s", "RF 2");
 	*reactorforms(C->U, A, rid) = reflist(st.inactive);
 }
 
@@ -227,6 +332,6 @@ void progress(Core *const C, const SyntaxNode op)
 
 	if(DBGFLAGS & DBGPRGS)
 	{
-		dumpkeymap(0, stderr, 0, C->U, A.u.array);
+		dumpkeymap(1, stderr, 0, C->U, A.u.array);
 	}
 }

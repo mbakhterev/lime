@@ -755,8 +755,12 @@ typedef struct
 typedef struct
 {
 	Array *const U;
+
 	Array *const types;
+	Array *const typemarks;
+
 	Array *const symbols;
+	Array *const symmarks;
 
 	Array *const root;
 	Array *env;

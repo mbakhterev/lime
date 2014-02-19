@@ -307,7 +307,9 @@ int main(int argc, char *const argv[])
 	{
 		.U = U,
 		.types = inittypes(U),
+		.typemarks = newkeymap(),
 		.symbols = newkeymap(),
+		.symmarks = newkeymap(),
 		.root = R,
 		.env = R,
 		.areastack = RL(refarea(newarea(U))),
@@ -339,7 +341,7 @@ int main(int argc, char *const argv[])
 	if(DBGFLAGS & DBGMAINEX)
 	{
 		DBG(DBGMAINEX, "env: count = %u", C.env->count);
-		dumpkeymap(0, stderr, 0, U, C.env);
+		dumpkeymap(1, stderr, 0, U, C.env);
 
 		DBG(DBGMAINEX, "%s", "types:");
 		dumptable(stderr, 0, U, C.types);
@@ -350,7 +352,9 @@ int main(int argc, char *const argv[])
 		reflist(NULL), newverbmap(C.U, 0, ES("F", "LB")));
 	assert(fputc('\n', stdout) == '\n');
 
+	freekeymap(C.symmarks);
 	freekeymap(C.symbols);
+	freekeymap(C.typemarks);
 	freekeymap(C.types);
 	freekeymap(R);
 	freeatomtab(U);
