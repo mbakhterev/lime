@@ -347,11 +347,20 @@ int main(int argc, char *const argv[])
 		dumptable(stderr, 0, U, C.types);
 	}
 
-	// FIXME:
-	dumpdag(0, stdout, 0, C.U,
-		reflist(NULL), newverbmap(C.U, 0, ES("F", "LB")));
+	const Array *const map = newverbmap(C.U, 0, stdmap);
+	
+	// Нам нужен граф на дне стека
+	const Ref A = C.areastack->ref;
+	assert(isarea(A));
+	const Ref dag = *areadag(C.U, A.u.array);
+
+// 	dumpdag(0, stdout, 0, C.U,
+// 		reflist(NULL), newverbmap(C.U, 0, ES("F", "LB")));
+
+	dumpdag(0, stdout, 0, C.U, dag, map);
 	assert(fputc('\n', stdout) == '\n');
 
+	freekeymap((Array *)map);
 	freekeymap(C.symmarks);
 	freekeymap(C.symbols);
 	freekeymap(C.typemarks);

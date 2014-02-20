@@ -7,6 +7,7 @@
 #define DBGGF 2
 #define DBGSYNTH 4
 #define DBGCLLT 8
+#define DBGACT 16
 
 // #define DBGFLAGS (DBGPRGS | DBGGF)
 
@@ -107,7 +108,8 @@ static Ref getform(
 
 typedef struct
 {
-	List *ins;
+	List *inkeys;
+	List *invals;
 	Array *const U;
 	const Array *const R;
 } AState;
@@ -119,12 +121,14 @@ static int collectone(List *const l, void *const ptr)
 	AState *const st = ptr;
 
 	DL(key, RS(decoatom(st->U, DOUT), markext(l->ref)));
-	const Binding *const b = maplookup(st->R, l->ref);
+// Руки мне надо оторвать за такую невнимательность
+//	const Binding *const b = maplookup(st->R, l->ref);
+	const Binding *const b = maplookup(st->R, key);
 
 	if(DBGFLAGS & DBGCLLT)
 	{
 		char *const kstr = strref(st->U, NULL, key);
-		DBG(DBGCLLT, "looked for ref: %s", kstr);
+		DBG(DBGCLLT, "key: %s", kstr);
 		free(kstr);
 
 		dumpkeymap(1, stderr, 0, st->U, st->R);
@@ -138,18 +142,21 @@ static int collectone(List *const l, void *const ptr)
 	// пережить реактор, в котором они созданы. Поэтому и ключ, и значение
 	// имеет смысл скопировать. И взять их лучше именно из реактора
 
-	const Ref *R[2];
+	const Ref *R[1];
 
 	{
 		DL(pattern, RS(decoatom(st->U, DOUT), reffree()));
 		unsigned nok = 0;
-		assert(keymatch(pattern, &b->key, R, 2, &nok) && nok == 2);
+		assert(keymatch(pattern, &b->key, R, 2, &nok) && nok == 1);
 	}
 
-	st->ins
-		= append(st->ins,
-			RL(reflist(RL(
-				forkref(*R[1], NULL), forkref(b->ref, NULL)))));
+// 	st->ins
+// 		= append(st->ins,
+// 			RL(reflist(RL(
+// 				forkref(*R[0], NULL), forkref(b->ref, NULL)))));
+
+	st->inkeys = append(st->inkeys, RL(forkref(*R[0], NULL)));
+	st->invals = append(st->invals, RL(forkref(b->ref, NULL)));
 
 	return 0;
 }
@@ -162,7 +169,9 @@ static void activate(
 
 	AState st =
 	{
-		.ins = NULL,
+// 		.ins = NULL,
+		.inkeys = NULL,
+		.invals = NULL,
 		.U = C->U,
 		.R = reactor
 	};
@@ -170,6 +179,8 @@ static void activate(
 	const Ref keys = formkeys(form);
 	assert(keys.code == LIST);
 	forlist(keys.u.list, collectone, &st, 0);
+
+	const List *const inlist = RL(reflist(st.inkeys), reflist(st.invals));
 
 	// Теперь нужно выполнить процедуры оценки
 
@@ -179,7 +190,15 @@ static void activate(
 	const Ref body
 		= ntheval(
 			C->U, formdag(form), escape,
-			C->symmarks, C->typemarks, C->types, st.ins);
+			C->symmarks, C->typemarks, C->types,
+// 			st.ins);
+			inlist);
+
+	if(DBGFLAGS & DBGACT)
+	{
+		DBG(DBGACT, "%s", "ntheval");
+		dumpdag(0, stderr, 0, C->U, body, NULL);
+	}
 
 	// FIXME: ещё несколько стадий
 
@@ -189,7 +208,10 @@ static void activate(
 
 	freekeymap((Array *)nonroots);
 	freekeymap((Array *)escape);
-	freelist(st.ins);
+//	freelist(st.ins);
+
+	// Будут удалены все части списка:
+	freelist((List *)inlist);
 
 	// Наращиваем тело графа:
 

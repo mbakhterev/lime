@@ -13,8 +13,8 @@
 // #define DBGFLAGS (DBGFREE)
 // #define DBGFLAGS (DBGKM)
 // #define DBGFLAGS (DBGPLU)
-
 // #define DBGFLAGS (DBGDM | DBGCK | DBGPLU)
+// #define DBGFLAGS (DBGCK)
 
 #define DBGFLAGS 0
 
@@ -70,7 +70,16 @@ static int cmplists(const List *const, const List *const);
 
 static int cmpkeys(const Ref k, const Ref l)
 {
-	DBG(DBGCK, "k.code l.kode = %u %u", k.code, l.code);
+	if(DBGFLAGS & DBGCK)
+	{
+		char *const kstr = strref(NULL, NULL, k);
+		char *const lstr = strref(NULL, NULL, l);
+		DBG(DBGCK, "(k.code l.kode = %u %u) (k = %s) (l = %s)",
+			k.code, l.code, kstr, lstr);
+		
+		free(lstr);
+		free(kstr);
+	}
 
 	assert(k.code <= LIST);
 	assert(l.code <= LIST);
@@ -145,6 +154,7 @@ static int cmplists(const List *const k, const List *const l)
 
 static int kcmp(const void *const D, const unsigned i, const void *const key)
 {
+	DBG(DBGCK, "i = %u", i);
 	return cmpkeys(((const Binding *)D)[i].key, *(const Ref *)key);
 }
 

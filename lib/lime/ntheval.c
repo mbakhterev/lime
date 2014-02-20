@@ -6,9 +6,9 @@
 #define DBGNTH 1
 #define DBGIDX 2
 
-// #define DBGFLAGS (DBGNTH | DBGIDX)
+#define DBGFLAGS (DBGNTH | DBGIDX)
 
-#define DBGFLAGS 0
+// #define DBGFLAGS 0
 
 #define FIN 0U
 #define NTH 1U
@@ -400,6 +400,13 @@ Ref ntheval(
 	const Array *const typemarks, const Array *const types,
 	const List *const inlist)
 {
+	if(DBGFLAGS & DBGNTH)
+	{
+		char *const istr = strlist(U, inlist);
+		DBG(DBGNTH, "inlist: %s", istr);
+		free(istr);
+	}
+
 	NState st =
 	{
 		.U = U,
