@@ -12,8 +12,10 @@
 #define DBGINIT 4
 #define DBGTYPES 8
 
-#define DBGFLAGS (DBGMAIN | DBGMAINEX | DBGINIT)
+// #define DBGFLAGS (DBGMAIN | DBGMAINEX | DBGINIT)
 // #define DBGFLAGS (DBGMAIN | DBGMAINEX)
+
+#define DBGFLAGS 0
 
 unsigned item = 1;
 const char *unitname = "stdin";

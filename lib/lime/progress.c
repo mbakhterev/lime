@@ -10,8 +10,11 @@
 #define DBGACT 16
 
 // #define DBGFLAGS (DBGPRGS | DBGGF)
+// #define DBGFLAGS (DBGPRGS | DBGSYNTH | DBGCLLT)
 
-#define DBGFLAGS (DBGPRGS | DBGSYNTH | DBGCLLT)
+#define DBGFLAGS (DBGSYNTH)
+
+// #define DBGFLAGS 0
 
 static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 {
@@ -120,7 +123,7 @@ static int collectone(List *const l, void *const ptr)
 	assert(ptr);
 	AState *const st = ptr;
 
-	DL(key, RS(decoatom(st->U, DOUT), markext(l->ref)));
+	DL(key, RS(decoatom(st->U, DOUT), dynamark(l->ref)));
 // Руки мне надо оторвать за такую невнимательность
 //	const Binding *const b = maplookup(st->R, l->ref);
 	const Binding *const b = maplookup(st->R, key);
@@ -185,7 +188,9 @@ static void activate(
 	// Теперь нужно выполнить процедуры оценки
 
 	const Array *const escape = newverbmap(C->U, 0, ES("F"));
-	const Array *const nonroots = newverbmap(C->U, 0, ES("FIn", "Nth"));
+
+	const Array *const nonroots
+		= newverbmap(C->U, 0, ES("FIn", "Nth", "FOut"));
 
 	const Ref body
 		= ntheval(
@@ -199,6 +204,17 @@ static void activate(
 		DBG(DBGACT, "%s", "ntheval");
 		dumpdag(0, stderr, 0, C->U, body, NULL);
 	}
+
+	Array *const envmarks = newkeymap();
+	const Array *const tomark = newverbmap(C->U, 0, ES("FEnv", "TEnv"));
+
+	enveval(C->U, C->env, envmarks, body, escape, tomark);
+	freekeymap((Array *)tomark);
+
+	typeeval(C->U, C->types, C->typemarks, body, escape, envmarks);
+	formeval(C->U, area, body, escape, envmarks, C->typemarks);
+
+	freekeymap(envmarks);
 
 	// FIXME: ещё несколько стадий
 
@@ -226,6 +242,7 @@ typedef struct
 	Core *const core;
 	Array *const area;
 	Array *const reactor;
+	unsigned alive;
 } SState;
 
 static int synthone(List *const l, void *const ptr)
@@ -246,6 +263,7 @@ static int synthone(List *const l, void *const ptr)
 		return 0;
 	}
 
+	st->alive = 1;
 	activate(l->ref, st->reactor, st->area, st->core);
 
 	// В activate форма будет аккуратно разобрана на запчасти, поэтому
@@ -261,7 +279,7 @@ static unsigned areforms(const Ref r)
 	return r.code == LIST && (r.u.list == NULL ||  isform(r.u.list->ref));
 }
 
-static void synthesize(Core *const C, Array *const A, const unsigned rid)
+static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 {
 	SState st =
 	{
@@ -269,6 +287,7 @@ static void synthesize(Core *const C, Array *const A, const unsigned rid)
 		.core = C,
 		.area = A,
 		.reactor = areareactor(C->U, A, rid),
+		.alive = 0
 	};
 
 // 	{
@@ -297,6 +316,8 @@ static void synthesize(Core *const C, Array *const A, const unsigned rid)
 	assert(areforms(reflist(st.inactive)));
 	DBG(DBGSYNTH, "%s", "RF 2");
 	*reactorforms(C->U, A, rid) = reflist(st.inactive);
+
+	return st.alive;
 }
 
 void progress(Core *const C, const SyntaxNode op)
@@ -350,7 +371,9 @@ void progress(Core *const C, const SyntaxNode op)
 	// Информация принята в реактор, синтезируем на её основе продолжение
 	// графа
 
-	synthesize(C, A.u.array, 0);
+	while(synthesize(C, A.u.array, 0))
+	{
+	}
 
 	if(DBGFLAGS & DBGPRGS)
 	{
