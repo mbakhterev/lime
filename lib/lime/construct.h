@@ -73,23 +73,16 @@ typedef struct
 // Конструкторы для Ref
 
 extern Ref reffree(void);
-
 extern Ref refnat(const unsigned code, const unsigned);
-
 extern Ref refnum(const unsigned);
 extern Ref refatom(const unsigned);
 extern Ref reftype(const unsigned);
-
 extern Ref refptr(void *const);
-
 // Особенность refnode в том, что она УСТАНАВЛИВАЕТ external-бит
 extern Ref refnode(List *const);
-
 extern Ref reflist(List *const);
 extern Ref refform(List *const);
-
 extern Ref refkeymap(Array *const);
-
 extern Ref refarea(Array *const);
 
 extern Ref markext(const Ref);
@@ -238,6 +231,11 @@ extern Ref listnth(const List *const, const unsigned N);
 extern List *append(List *const, List *const);
 extern List *tipoff(List **const);
 extern unsigned listlen(const List *const);
+
+extern unsigned splitlist(
+	const List *const, const Ref *parts[], const unsigned len);
+
+extern unsigned splitpair(const Ref p, Ref R[]);
 
 // Различные варианты копирования списков
 
@@ -511,6 +509,9 @@ extern Ref newnode(
 
 extern unsigned isnode(const Ref);
 extern unsigned isnodelist(const List *const);
+
+enum { VERB = 0, ATTR, LINE, NODELEN };
+extern unsigned splitnode(const Ref N, const Ref *parts[]);
 
 // Процедура для копирования выражений (узлов). Для воспроизведения ссылок на
 // узлы (подвыражения), ей нужно отображение прежних узлов на новые

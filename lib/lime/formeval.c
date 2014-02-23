@@ -117,22 +117,22 @@ extern void intakeform(
 	// Кажется, всё
 }
 
-static unsigned splitpair(const Ref p, Ref R[])
-{
-	if(p.code != LIST)
-	{
-		return 0;
-	}
-
-	const unsigned len = listlen(p.u.list);
-
-	if(len != 2)
-	{
-		return 0;
-	}
-
-	return writerefs(p.u.list, R, len) == len;
-}
+// static unsigned splitpair(const Ref p, Ref R[])
+// {
+// 	if(p.code != LIST)
+// 	{
+// 		return 0;
+// 	}
+// 
+// 	const unsigned len = listlen(p.u.list);
+// 
+// 	if(len != 2)
+// 	{
+// 		return 0;
+// 	}
+// 
+// 	return writerefs(p.u.list, R, len) == len;
+// }
 
 enum { KEY = 0, VALUE };
 

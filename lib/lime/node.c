@@ -2,23 +2,34 @@
 
 #include <assert.h>
 
-enum { NODELEN = 3, VERB = 0, LINE = 2, ATTR = 1 };
+// enum { NODELEN = 3, VERB = 0, LINE = 2, ATTR = 1 };
+// enum { VERB = 0, ATTR, LINE, NODELEN };
 
-static unsigned splitnode(const List *const l, const Ref *parts[])
+// static unsigned splitnode(const List *const l, const Ref *parts[])
+// {
+// 	unsigned nmatch = 0;
+// 	const Ref F = reffree();
+// 	const Ref n = reflist((List *)l);
+// 
+// 	DL(pattern, RS(F, F, F));
+// 
+// 	if(keymatch(pattern, &n, parts, NODELEN, &nmatch))
+// 	{
+// 		assert(nmatch == NODELEN);
+// 		return !0;
+// 	}
+// 
+// 	return 0;
+// }
+
+unsigned splitnode(const Ref N, const Ref *parts[])
 {
-	unsigned nmatch = 0;
-	const Ref F = reffree();
-	const Ref n = reflist((List *)l);
-
-	DL(pattern, RS(F, F, F));
-
-	if(keymatch(pattern, &n, parts, NODELEN, &nmatch))
+	if(N.code != NODE)
 	{
-		assert(nmatch == NODELEN);
-		return !0;
+		return 0;
 	}
 
-	return 0;
+	return splitlist(N.u.list, parts, NODELEN);
 }
 
 static unsigned verbandline(const Ref *const n[])
@@ -29,7 +40,7 @@ static unsigned verbandline(const Ref *const n[])
 unsigned isnodelist(const List *const l)
 {
 	const Ref *R[NODELEN];
-	return splitnode(l, R) && verbandline(R);
+	return splitlist(l, R, NODELEN) && verbandline(R);
 }
 
 unsigned isnode(const Ref node)
@@ -39,23 +50,23 @@ unsigned isnode(const Ref node)
 
 unsigned nodeverb(const Ref n, const Array *const map)
 {
-	assert(n.code == NODE);
+// 	assert(n.code == NODE);
 
 	const Ref *R[NODELEN];
-	splitnode(n.u.list, R);
+// 	splitnode(n.u.list, R);
 
-	assert(verbandline(R));
+	assert(splitnode(n, R) && verbandline(R));
 
 	return map ? verbmap(map, R[VERB]->u.number) : R[VERB]->u.number;
 }
 
 const Ref *nodeattributecell(const Ref n)
 {
-	assert(n.code == NODE);
+// 	assert(n.code == NODE);
 	const Ref *R[NODELEN];
-	splitnode(n.u.list, R);
+// 	splitnode(n.u.list, R);
 
-	assert(verbandline(R));
+	assert(splitnode(n, R) && verbandline(R));
 
 	return (Ref *)R[ATTR];
 }
@@ -72,11 +83,11 @@ Ref newnode(const unsigned verb, const Ref attribute, const unsigned line)
 
 unsigned nodeline(const Ref n)
 {
-	assert(n.code == NODE);
+// 	assert(n.code == NODE);
 	const Ref *R[NODELEN];
-	splitnode(n.u.list, R);
+// 	splitnode(n.u.list, R);
 
-	assert(verbandline(R));
+	assert(splitnode(n, R) && verbandline(R));
 
 	return R[LINE]->u.number;
 }

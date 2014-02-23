@@ -424,6 +424,7 @@ static int skipone(List *const l, void *const ptr)
 	if(st->n < st->N)
 	{
 		// Ещё не дошли до цели. Пропускаем
+		st->n += 1;
 		return 0;
 	}
 
@@ -450,4 +451,67 @@ Ref listnth(const List *const l, const unsigned N)
 	assert(forlist((List *)l, skipone, &st, 0) != 0 || R.code == FREE);
 
 	return R;
+}
+
+unsigned splitpair(const Ref p, Ref R[])
+{
+	if(p.code != LIST)
+	{
+		return 0;
+	}
+
+	const unsigned len = listlen(p.u.list);
+	if(len != 2)
+	{
+		return 0;
+	}
+
+	return writerefs(p.u.list, R, len) == len;
+}
+
+typedef struct
+{
+	const Ref **const R;
+	unsigned n;
+	const unsigned N;
+} SState;
+
+static int splitone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	SState *const st = ptr;
+	
+	if(st->n < st->N)
+	{
+		st->R[st->n] = &l->ref;
+		st->n += 1;
+
+		return 0;
+	}
+
+	return 1;
+}
+
+unsigned splitlist(const List *const l, const Ref *R[], const unsigned len)
+{
+	SState st =
+	{
+		.R = R,
+		.N = len,
+		.n = 0
+	};
+
+	if(forlist((List *)l, splitone, &st, 0))
+	{
+		// Значит, вышли раньше, чем дошли до конца списка, пройдя len
+		// элементов
+
+		return 0;
+	}
+
+	// Если вышли в конце списка, то совпадение определяется количеством
+	// пройденных звеньев
+
+	return st.N == st.n;
 }
