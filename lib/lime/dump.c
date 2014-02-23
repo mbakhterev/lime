@@ -345,10 +345,6 @@ static int dumpbindingone(Binding *const b, void *const ptr)
 		sprintf(addr, "%p:\t", (void *)b);
 	}
 
-// 	assert(
-// 		fprintf(f, "\n%s\t%skey(%u): ",
-// 			st->tabstr, addr, b->key.external) > 0);
-
 	assert(
 		fprintf(f, "\n\t%s%skey(%u): ",
 			st->tabstr, addr, b->key.external) > 0);
@@ -358,10 +354,6 @@ static int dumpbindingone(Binding *const b, void *const ptr)
 	{
 		sprintf(addr, "\t\t");
 	}
-
-// 	assert(
-// 		fprintf(f, "\n%s\t%sval(%u): ",
-// 			st->tabstr, addr, b->ref.external) > 0);
 
 	assert(
 		fprintf(f, "\n\t%s%sval(%u): ",
@@ -408,10 +400,6 @@ static int dumpformone(List *const l, void *const ptr)
 	assert(ptr);
 	const DState *const st = ptr;
 
-// 	assert(fprintf(
-// 		st->f, "\n%s\tform-cnt:\t\t%u", st->tabstr,
-// 		formcounter(l->ref)) > 0);
-
 	const Ref keys = formkeys(l->ref);
 	assert(fprintf(
 		st->f, "\n%s\tform-sig(%u) %p:\t", st->tabstr,
@@ -457,13 +445,11 @@ void dumpkeymap(
 		// FIXME: тут нужен более разумный подход
 		if(st.F && U)
 		{
-// 			assert(fputc('\n', f) == '\n');
 			forlist(st.F, dumpformone, &st, 0);
 		}
 
 		if(st.L)
 		{
-// 			assert(fputc('\n', f) == '\n');
 			forlist(st.L, dumpkeymapone, &st, 0);
 		}
 	}

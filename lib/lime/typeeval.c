@@ -150,12 +150,9 @@ static unsigned setnew(
 		return -1;
 	}
 
-//	Binding *const b = keymap(env, key);
-
 	const Ref K = decorate(forkref(key, NULL), U, TYPE);
 	Binding *const b = mapreadin(env, K);
 
-// 	if(!b || b->ref.code != FREE)
 	if(!b)
 	{
 		freeref(K);
@@ -203,10 +200,6 @@ static void tenv(const Ref r, EState *const E)
 	// По входным выясняем, на что отображён второй аргумент, если он есть.
 	// Он должен задавать какой-нибудь тип, это будет проверено в setnew
 
-// FIXME: надо кое-кому руки починить. При len < 2 R[1] даже не существует
-// 
-// 	const Ref typeref = refmap(len == 2 ? E->typemarks : NULL, R[1]);
-
 	const Ref typeref = len == 2 ? refmap(E->typemarks, R[1]) : reffree();
 
 	// Наконец, по входным данным выясняем, в каком окружении встретился
@@ -224,28 +217,12 @@ static void tenv(const Ref r, EState *const E)
 			atombytes(atomat(E->U, nodeverb(r, NULL))));
 	}
 
-// Теперь мы можем сделать это более аккуратно
-// 
-// 	// Уточняем, что работаем с ключом для типа. FIXME: необходимость явно
-// 	// делать forkref, оправдана ли?
-// 
-// 	const Ref key = decorate(forkref(R[0], NULL), E->U, TYPE);
-// 
-// 	DBG(DBGTENV, "%s", "decorated");
-// 
-// 	const unsigned typeid
-// 		= (len == 1) ? getexisting(env, E->U, key)
-// 		: (len == 2) ? setnew(env, E->U, key, typeref)
-// 		: -1;
-
 	const unsigned typeid
 		= (len == 1) ? getexisting(env, E->U, R[0])
 		: (len == 2) ? setnew(env, E->U, R[0], typeref)
 		: -1;
 
 	DBG(DBGTENV, "typeid = %u", typeid);
-	
-// 	freeref(key);
 	
 	if(typeid == -1)
 	{
@@ -367,7 +344,6 @@ static void nominate(const Ref r, EState *const E)
 			return;
 		}
 
-		
 		// Если это определение просто некоторого узла, надо разбирать
 		// его атрибуты в поисках значимого 
 

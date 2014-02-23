@@ -17,7 +17,6 @@
 
 // #define DBGFLAGS (DBGRDA | DBGALEN | DBGGRAB | DBGLOOK)
 // #define DBGFLAGS DBGLDT
-
 // #define DBGFLAGS (DBGRDA | DBGGRAB | DBGLOOK | DBGGT)
 
 #define DBGFLAGS 0
@@ -233,6 +232,22 @@ Ref readtoken(Array *const t, const char *const str)
 	return readpack(t, strpack(0, str));
 }
 
+AtomPack strpack(const unsigned hint, const char *const str)
+{
+	assert(hint < MAXHINT);
+	assert(str);
+
+	size_t len = strlen(str);
+	assert(len < MAXLEN);
+
+	return (AtomPack)
+	{
+		.length = len,
+		.bytes = (const unsigned char *)str,
+		.hint = hint
+	};
+}
+
 Ref loadtoken(
 	Array *const t, FILE *const f,
 	const unsigned char hint, const char *const format)
@@ -294,20 +309,4 @@ Atom atomat(const Array *const A, const unsigned id)
 	assert(id < A->count);
 
 	return ((const Atom *const)A->u.data)[id];
-}
-
-AtomPack strpack(const unsigned hint, const char *const str)
-{
-	assert(hint < MAXHINT);
-	assert(str);
-
-	size_t len = strlen(str);
-	assert(len < MAXLEN);
-
-	return (AtomPack)
-	{
-		.length = len,
-		.bytes = (const unsigned char *)str,
-		.hint = hint
-	};
 }

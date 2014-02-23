@@ -6,7 +6,8 @@
 enum { DAG = 0, KEYS, COUNT };
 
 // Было бы круто это писать так:
-//	(return (len > COUNT && (R (DAG KEYS COUNT)).code == LIST LIST NUMBER))
+// 	(val isformref (val R array (val Ref)) (val len uint) =
+// 		(len > COUNT && (R (DAG KEYS COUNT).code == LIST LIST NUMBER))
 
 static unsigned isformrefs(const Ref R[], const unsigned len)
 {
@@ -20,11 +21,6 @@ static unsigned isformrefs(const Ref R[], const unsigned len)
 
 Ref newform(const Ref dag, const Ref keys)
 {
-// 	return refform(RL(
-// 		forkdag(dag),
-// 		forkref(keys, NULL),
-// 		refnum(listlen(keys.u.list))));
-
 	// Небольшая проверка структуры
 	assert(dag.code == LIST && keys.code == LIST);
 

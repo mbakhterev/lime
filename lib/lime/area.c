@@ -3,13 +3,6 @@
 
 #include <assert.h>
 
-// static Ref readtoken(Array *const U, const char *const str)
-// {
-// 	return readpack(U, strpack(0, str));
-// }
-
-// FIXME: не нравится мне код для initreactor
-
 unsigned isarea(const Ref r)
 {
 	return r.code == AREA && r.u.array && r.u.array->code == MAP;
@@ -82,24 +75,25 @@ Array *areareactor(Array *const U, const Array *const area, const unsigned id)
 	return b->ref.u.array;
 }
 
+unsigned areforms(const Ref r)
+{
+	return r.code == LIST && (r.u.list == NULL || isform(r.u.list->ref));
+}
+
 Ref *areadag(Array *const U, const Array *const area)
 {
-// 	const
 	Binding *const b = (Binding *)maplookup(area, readtoken(U, "DAG"));
 	assert(b);
 	assert(b->ref.code == LIST);
-// 	return b->ref;
 	return &b->ref;
 }
 
-Ref *reactorforms(Array *const U, const Array *const area, const unsigned id)
+Ref *reactorforms(Array *const U, const Array *const reactor)
 {
-	const Binding *const b
-		= maplookup(areareactor(U, area, id), readtoken(U, "FORMS"));
-	
+	const Binding *const b = maplookup(reactor, readtoken(U, "FORMS"));
 	assert(b);
-	assert(b->ref.code == LIST
-		&& (b->ref.u.list == NULL || isform(b->ref.u.list->ref)));
+
+	assert(areforms(b->ref));
 	
 	return (Ref *)&b->ref;
 }

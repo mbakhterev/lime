@@ -153,8 +153,6 @@ int forlist(List *const k, Oneach fn, void *const ptr, const int key)
 	return r;
 }
 
-
-
 // FState - fork/free state
 
 typedef struct 
@@ -398,7 +396,6 @@ void formlist(List L[], const Ref R[], const unsigned N)
 {
 	assert(L && R);
 	assert(N < MAXNUM);
-// 	assert(R[N].code == FREE);
 
 	if(N > 0)
 	{

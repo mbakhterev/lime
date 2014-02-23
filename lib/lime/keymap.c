@@ -95,7 +95,6 @@ static int cmpkeys(const Ref k, const Ref l)
 		return cmpui(k.u.number, l.u.number);
 	}
 
-//	if(k.code <= MAP)
 	if(k.code < LIST)
 	{
 		// Ограничения на структуру ключа с указателями для
@@ -267,7 +266,6 @@ static Binding *allocate(Array *const map, const Ref key)
 
 	const Binding b =
 	{
-//		.key = forkref(key, NULL),
 		.key = key,
 		.ref = { .code = FREE, .u.pointer = NULL }
 	};
@@ -535,9 +533,6 @@ const Binding *pathlookup(
 
 static Binding *maptofree(Array *const map, const Ref key)
 {
-// 	Binding *const b = keymap(map, key);
-// 	assert(b->ref.code == FREE);
-
 	Binding *const b = mapreadin(map, key);
 	assert(b);
 	return b;
@@ -670,31 +665,6 @@ unsigned verbmap(const Array *const map, const unsigned verb)
 	return -1;
 }
 
-// unsigned enummap(Array *const map, const Ref key)
-// {
-// 	assert(map);
-// 	const unsigned n = map->count;
-// 
-// 	const Ref r = refmap(map, key);
-// 	switch(r.code)
-// 	{
-// 	case NUMBER:
-// 		return r.u.number;
-// 
-// 	case FREE:
-// 	{
-// 		tunerefmap(map, key, refnum(n));
-// 		assert(n + 1 == map->count);
-// 		return n;
-// 	}
-// 
-// 	default:
-// 		assert(0);
-// 	}
-// 
-// 	return -1;
-// }
-
 unsigned enummap(Array *const map, const Ref key)
 {
 	assert(map);
@@ -716,7 +686,6 @@ unsigned typeenummap(Array *const map, const Ref key)
 	assert(map);
 	assert(istypekey(key));
 
-// 	const Binding *const b = keymap(map, key);
 	const Binding *const b = bindkey(map, key);
 
 	const unsigned n = b - (Binding *)map->u.data;
@@ -774,7 +743,6 @@ static unsigned keymatchone(KMState *const st, const Ref k, const Ref *const l)
 		break;
 	
 	case PTR:
-// 	case NODE:
 		match = k.u.pointer == l->u.pointer;
 		break;
 	

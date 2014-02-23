@@ -60,8 +60,6 @@ static Ref getexisting(
 	freeref(K);
 	freelist(l);
 
-// 	return b;
-
 	if(b && b->ref.code == NUMBER)
 	{
 		return b->ref;
@@ -69,8 +67,6 @@ static Ref getexisting(
 
 	return reffree();
 }
-
-// static const Binding *setnew(
 
 static Ref setnew(
 	Array *const env, Array *const U, Array *const symbols,
@@ -80,9 +76,6 @@ static Ref setnew(
 	{
 		return reffree();
 	}
-
-// 	const Ref K = decorate(forkref(key, NULL), U, ATOM);
-// 	Binding *const b = mapreadin(env, K);
 
 	const Ref name = forkref(key, NULL);
 	const Ref id = reflist(RL(markext(refkeymap(env)), name));
@@ -113,9 +106,6 @@ static Ref setnew(
 		freeref(K);
 		return reffree();
 	}
-
-// 	b->ref = typeref;
-// 	return b;
 
 	b->ref = refnum(symnum);
 	return b->ref;
@@ -173,21 +163,14 @@ static void snode(const Ref N, EState *const E)
 		return;
 	}
 
-// 	const Binding *const b
-
 	const Ref id
 		= (len == 1) ? getexisting(env, E->U, R[0])
 		: (len == 2) ? setnew(env, E->U, E->symbols, R[0], typeref)
 		: reffree();
 
-// 		: NULL;
-	
 	if(DBGS & DBGFLAGS)
 	{
 		char *const name = strref(E->U, NULL, R[0]);
-
-// 		DBG(DBGS, "(len: %u) (name: %s) (env: %p) (binding: %p)",
-// 			len, name, (void *)env, (void *)b);
 
 		DBG(DBGS, "(len: %u) (name: %s) (env: %p) (id: %u %u)",
 			len, name, (void *)env, id.code, id.u.number);
@@ -195,9 +178,6 @@ static void snode(const Ref N, EState *const E)
 
 		free(name);
 	}
-
-	
-// 	if(!b)
 
 	if(id.code == FREE)
 	{
@@ -212,8 +192,6 @@ static void snode(const Ref N, EState *const E)
 		free(strkey);
 		return;
 	}
-
-// 	tuneptrmap(E->symmarks, N, (Binding *)b);
 
 	tunerefmap(E->symmarks, N, id);
 }

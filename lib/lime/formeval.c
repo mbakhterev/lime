@@ -4,20 +4,18 @@
 #include <assert.h>
 
 #define DBGFENV 1
+#define DBGFOUT 2
 
-#define DBGFLAGS (DBGFENV)
+// #define DBGFLAGS (DBGFENV)
+#define DBGFLAGS (DBGFOUT)
 
-static unsigned areforms(const Ref r)
-{
-	return r.code == LIST && (r.u.list == NULL || isform(r.u.list->ref));
-}
+// #define DBGFLAGS 0
 
 typedef struct
 {
 	Array *const U;
 	Array *const reactor;
 	const Ref form;
-// 	Ref *const reactorforms;
 } RState;
 
 static int registerone(List *const l, void *const ptr)
@@ -43,8 +41,6 @@ static int registerone(List *const l, void *const ptr)
 	// очередь форм. Ключ нужно сделать external-ом, потому что он хранится
 	// где-то во внешнем контексте (в списке форм реактора, например).
 	// НАПОМИНАНИЕ: bindkey копирует ключ при необходимости
-
-// 	DL(inkey, RS(decoatom(st->U, DIN), markext(l->ref)));
 
 	DL(inkey, RS(decoatom(st->U, DIN), dynamark(l->ref)));
 	Binding *const in = bindkey(st->reactor, inkey);
@@ -86,7 +82,6 @@ static Ref reform(const Ref f)
 
 extern void intakeform(
 	Array *const U, Array *const area, const unsigned rid, const Ref form)
-//	const Ref dag, const Ref keys)
 {
 
 	// Дальше нам надо создать форму со своим счётчиком, которая будет
@@ -95,13 +90,8 @@ extern void intakeform(
 	// параметры. Клиент intakeform может регулировать объём копирования
 	// через external-биты
 
-// 	assert(dag.code == LIST && keys.code == LIST);
-
-// На очередной итерации борьбы со ссылками считаем, что в процедуру передаётся
-// уже верно сформированная форма
-// 	const Ref f = newform(dag, keys);
-
 	const Ref f = reform(form);
+	Array *const R = areareactor(U, area, rid);
 
 	// Форму надо засунуть в список реактора. Корректность RF проверяется в
 	// самой reactorforms. Забываем о RF сразу после использования, чтобы
@@ -109,7 +99,7 @@ extern void intakeform(
 	// таблиц
 
 	{
-		Ref *const RF = reactorforms(U, area, rid);
+		Ref *const RF = reactorforms(U, R);
 		RF->u.list = append(RF->u.list, RL(f));
 	}
 
@@ -118,12 +108,10 @@ extern void intakeform(
 	RState st = 
 	{
 		.U = U,
-		.reactor = areareactor(U, area, rid),
+		.reactor = R,
 		.form = f
-// 		.reactorforms = NULL
 	};
 
-// 	forlist(keys.u.list, registerone, &st, 0);
 	forlist(formkeys(f).u.list, registerone, &st, 0);
 
 	// Кажется, всё
@@ -131,7 +119,6 @@ extern void intakeform(
 
 static unsigned splitpair(const Ref p, Ref R[])
 {
-// 	assert(p.code == LIST);
 	if(p.code != LIST)
 	{
 		return 0;
@@ -143,8 +130,6 @@ static unsigned splitpair(const Ref p, Ref R[])
 	{
 		return 0;
 	}
-
-// 	assert(len == 2 && writerefs(p.u.list, R, len) == len);
 
 	return writerefs(p.u.list, R, len) == len;
 }
@@ -227,7 +212,6 @@ unsigned intakeout(
 		.U = U,
 		.reactor = areareactor(U, area, rid),
 		.form = reffree()
-// 		.reactorforms = reactorforms(U, area, rid)
 	};
 
 	if(forlist((List *)outs, checkone, &st, 0))
@@ -268,6 +252,8 @@ typedef struct
 	const Array *const verbs;
 	const Array *const typeverbs;
 
+	const Array *const sysverbs;
+
 	Array *const valmap;
 } FEState;
 
@@ -285,11 +271,6 @@ static const unsigned char *nodename(const Array *const U, const Ref N)
 {
 	return atombytes(atomat(U, nodeverb(N, NULL)));
 }
-
-// static Ref readtoken(Array *const U, const char *const str)
-// {
-// 	return readpack(U, strpack(0, str));
-// }
 
 static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 {
@@ -403,7 +384,7 @@ static void fenv(const Ref N, FEState *const E)
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
 	{
-		item = nodeline(r);
+		item = nodeline(N);
 		ERR("node \"%s\": expecting attribute list",
 			nodename(E->U, N));
 
@@ -492,6 +473,167 @@ static void fenv(const Ref N, FEState *const E)
 	tunerefmap(E->valmap, N, fref);
 }
 
+typedef struct
+{
+	List *out;
+	const Array *const typemarks;
+	const Array *const typeverbs;
+	const Array *const sysverbs;
+} TState;
+
+static unsigned isvalidlink(const Ref, const Array *const);
+
+static int isvalidone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	return isvalidlink(l->ref, ptr);
+}
+
+static unsigned isvalidlink(const Ref r, const Array *const forbidden)
+{
+	switch(r.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+		// Допустимые Ref-ы
+		return !0;
+	
+	case NODE:
+		if(!r.external)
+		{
+			// В описании связи между кусочками графов не может быть
+			// определения узла
+
+			return 0;
+		}
+
+		if(knownverb(r, forbidden))
+		{
+			// Ссылаться на эти узлы нельзя. Основная причина - они
+			// системные и будут удалены из текущего кусочка графа
+			// ходе его трансформаций
+
+			return 0;
+		}
+
+		// Анализируем ссылки на узлы, поэтому атрибуты их нам не
+		// интересны. Поэтому, остальное допустимо
+
+		return !0;
+	
+	case LIST:
+		return forlist(r.u.list, isvalidone, (Array *)forbidden, !0);
+	
+	default:
+		// Всё остальное недопустимо
+		return 0;
+	}
+}
+
+static int translateone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	TState *const st = ptr;
+
+	const Ref R[2];
+	if(!splitpair(l->ref, (Ref *)R))
+	{
+		return !0;
+	}
+
+	const Ref key = exprewrite(R[0], st->typemarks, st->typeverbs);
+	if(!issignaturekey(key))
+	{
+		freeref(key);
+		return !0;
+	}
+
+	if(!isvalidlink(R[0], st->sysverbs))
+	{
+		freeref(key);
+		return !0;
+	}
+
+	st->out = append(st->out, RL(reflist(RL(key, forkref(R[1], NULL)))));
+
+	return 0;
+}
+
+static void fout(const Ref N, FEState *const E)
+{
+	const Ref r = nodeattribute(N);
+	if(r.code != LIST)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting attribute list", nodename(E->U, N));
+		return;
+	}
+
+	const unsigned len = listlen(r.u.list);
+	if(len != 2)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting 2 attributes", nodename(E->U, N));
+		return;
+	}
+
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+	if(R[0].code != NUMBER || R[0].u.number > 1 || R[1].code != LIST)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure",
+			nodename(E->U, N));
+		return;
+	}
+
+	const unsigned rid = R[0].u.number;
+
+	// Теперь нужно превратить исходный список пар в новый список пар с
+	// преобразованными с учётом типов и проверенными на корректность
+	// ключами. Эта операция может не завершиться успехом. Учитываем это
+
+	TState st =
+	{
+		.out = NULL,
+		.typeverbs = E->typeverbs,
+		.typemarks = E->typemarks,
+		.sysverbs = E->sysverbs
+	};
+
+	if(forlist(R[1].u.list, translateone, &st, 0))
+	{
+		freelist(st.out);
+
+		item = nodeline(N);
+		ERR("node \"%s\": wrong output list structure",
+			nodename(E->U, N));
+		return;
+	}
+
+	if(DBGFLAGS & DBGFOUT)
+	{
+		char *const ostr = strlist(E->U, st.out);
+		DBG(DBGFOUT, "intaking: %s", ostr);
+		free(ostr);
+	}
+
+	if(intakeout(E->U, E->area, rid, st.out))
+	{
+		freelist(st.out);
+
+		item = nodeline(N);
+		ERR("node \"%s\": can't intake output list",
+			nodename(E->U, N));
+		return;
+	}
+
+	freelist(st.out);
+}
+
 static void eval(const Ref r, FEState *const st)
 {
 	switch(r.code)
@@ -519,7 +661,10 @@ static void eval(const Ref r, FEState *const st)
 			return;
 
 		case FPUT:
+			return;
+
 		case FOUT:
+			fout(r, st);
 			return;
 
 		default:
@@ -537,6 +682,14 @@ static void eval(const Ref r, FEState *const st)
 	}
 }
 
+static const char *const sysverbs[] =
+{
+	"FIn", "Nth",
+	"F", "FEnv", "FOut",
+	"R", "Rip",
+	NULL
+};
+
 void formeval(
 	Array *const U,
 	Array *const area,
@@ -552,11 +705,14 @@ void formeval(
 		.typeverbs = newverbmap(U, 0, ES("T", "TEnv")),
 		.valmap = newkeymap(),
 		.typemarks = typemarks,
-		.envmarks = envmarks
+		.envmarks = envmarks,
+		.sysverbs = newverbmap(U, 0, sysverbs)
 	};
 
 	eval(dag, &st);
 
+	freekeymap((Array *)st.sysverbs);
 	freekeymap(st.valmap);
+	freekeymap((Array *)st.typeverbs);
 	freekeymap((Array *)st.verbs);
 }

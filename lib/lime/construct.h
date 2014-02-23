@@ -677,6 +677,7 @@ extern unsigned isform(const Ref);
 // связывать их в цепочки
 
 extern unsigned isarea(const Ref);
+extern unsigned areforms(const Ref);
 
 extern Array *newarea(Array *const U);
 extern Ref *areadag(Array *const U, const Array *const area);
@@ -684,10 +685,12 @@ extern Ref *areadag(Array *const U, const Array *const area);
 extern Array *areareactor(
 	Array *const U, const Array *const area, const unsigned id);
 
-extern Ref *reactorforms(
-	Array *const U, const Array *const area, const unsigned id);
+// extern Ref *reactorforms(
+// 	Array *const U, const Array *const area, const unsigned id);
 
-extern void dumparea(FILE *const, const Array *const, const List *const ctx);
+extern Ref *reactorforms(Array *const U, const Array *const reactor);
+
+// extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
 // Процедура вбрасывания в реактор R области area новой формы. Форма задаётся
 // парой ссылок на граф и на сигнатуру (keys). Превращать их в целую форму со

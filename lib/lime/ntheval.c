@@ -6,9 +6,9 @@
 #define DBGNTH 1
 #define DBGIDX 2
 
-#define DBGFLAGS (DBGNTH | DBGIDX)
+// #define DBGFLAGS (DBGNTH | DBGIDX)
 
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 #define FIN 0U
 #define NTH 1U

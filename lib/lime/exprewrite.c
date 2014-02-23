@@ -32,14 +32,6 @@ static int rewriteone(List *const l, void *const ptr)
 
 	DBG(DBGRONE, "%s", "rewriting");
 
-// 	if(r.code == FREE)
-// 	{
-// 		// Ничего не добавляем в этом случае. Предусмотрено для
-// 		// ситуации, когда мы должны пропустить узел исходного графа
-// 
-// 		return 0;
-// 	}
-
 	if(r.code != LIST || l->ref.code == LIST)
 	{
 		// Если получился не список, или если изначально переписывался
@@ -52,23 +44,6 @@ static int rewriteone(List *const l, void *const ptr)
 	st->result = append(st->result, r.u.list);
 	return 0;
 }
-
-// static Ref noderemap(const Ref N, const Array *const nodemap)
-// {
-// 	const Ref n = refmap(nodemap, N);
-// 	if(n.code == FREE)
-// 	{
-// 		// Ссылка ведёт во вне. Её и возвращаем тогда - не наша
-// 		// ответственность
-// 
-// 		return N;
-// 	}
-// 
-// 	// В противном случае это должен быть узел
-// 
-// 	assert(isnode(n));
-// 	return markext(n);
-// }
 
 static Ref reref(
 	const Ref N, const Array *const verbs,

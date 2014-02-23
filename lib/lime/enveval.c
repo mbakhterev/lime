@@ -215,17 +215,6 @@ static int makeassignone(List *const l, void *const ptr)
 	case ENV:
 		assignenv(st->U, r, st->recode, st->defs, st->envdefs);
 		break;
-
-// 	default:
-// 		// Здесь мы имеем дело с неким другим узлом. Для некоторых из
-// 		// них мы запоминаем окружение
-// 
-// 		if(knownverb(r, st->markit))
-// 		{
-// 			tuneenvmap(st->envmarks, r, st->env);
-// 		}
-// 
-// 		break;
 	}
 
 	return 0;
