@@ -41,9 +41,10 @@ enum
 	NUMBER, ATOM, TYPE, MAP, NODE, PTR, LIST,
 	
 	// FORM говорит об указателе на форму - кусочек DAG-а программы,
-	// открытый для подстановки в него некоторых значений
+	// открытый для подстановки в него некоторых значений. DAG - это
+	// замкнутый подграф
 
-	FORM,
+	DAG, FORM,
 
 	// Отсылка к области вывода
 	AREA,
@@ -80,6 +81,7 @@ extern Ref reftype(const unsigned);
 extern Ref refptr(void *const);
 // Особенность refnode в том, что она УСТАНАВЛИВАЕТ external-бит
 extern Ref refnode(List *const);
+extern Ref refdag(List *const);
 extern Ref reflist(List *const);
 extern Ref refform(List *const);
 extern Ref refkeymap(Array *const);
@@ -531,13 +533,17 @@ extern Ref forknode(const Ref, Array *const nodemap);
 extern Ref loaddag(
 	FILE *const, Array *const U, const Array *const map);
 
+extern unsigned isdaglist(const List *const);
+extern unsigned isdag(const Ref N);
+
 // Выгрузка dag-а. tabs - для красивой печати с отступами. dbg - выдавать ли
 // указатели на узлы (для закрепления: на списки особого формата) в выводе
 // графов (это нужно для отладки). Особые узлы трактуются так же, как в loaddag
 
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
-	const Array *const U, const Ref dag, const Array *const map);
+	const Array *const U, const Ref dag);
+// 	const Array *const map);
 
 extern Ref forkdag(const Ref dag);
 
@@ -669,10 +675,14 @@ extern Ref formdag(const Ref form);
 extern Ref formkeys(const Ref form);
 
 extern unsigned formcounter(const Ref form);
-extern unsigned countdown(const Ref *const form);
+// extern unsigned countdown(const Ref *const form);
+extern void countdown(const Ref form);
 
 extern unsigned isformlist(const List *const);
 extern unsigned isform(const Ref);
+
+enum { BODY = 0, KEYS, COUNT, FORMLEN };
+extern unsigned splitform(const Ref form, const Ref *R[]);
 
 // Области вывода. Они являются keymap-ами особой структуры. Потому что надо
 // связывать их в цепочки

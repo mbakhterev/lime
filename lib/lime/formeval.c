@@ -33,7 +33,8 @@ static int registerone(List *const l, void *const ptr)
 		// Если существует, то надо уменьшить счётчик активации у формы
 		// и больше ничего не делать
 
-		countdown(&st->form);
+// 		countdown(&st->form);
+		countdown(st->form);
 		return 0;
 	}
 
@@ -155,7 +156,8 @@ static int checkone(List *const l, void *const ptr)
 static int countdownone(List *const l, void *const ptr)
 {
 	assert(l);
-	countdown(&l->ref);
+// 	countdown(&l->ref);
+	countdown(l->ref);
 	return 0;
 }
 
@@ -254,7 +256,7 @@ typedef struct
 
 	const Array *const sysverbs;
 
-	Array *const valmap;
+	Array *const formmarks;
 } FEState;
 
 static void eval(const Ref r, FEState *const st);
@@ -302,7 +304,9 @@ static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 }
 
 static Ref setnew(
-	Array *const env, Array *const U, const Ref key, const Ref form)
+// 	Array *const env, Array *const U, const Ref key, const Ref form)
+	Array *const env, Array *const U, const Ref key, const Ref body)
+
 {
 
 	// WARNING: освобождаем в случае неудачи переданные ресурсы здесь,
@@ -312,7 +316,8 @@ static Ref setnew(
 	Binding *const b = mapreadin(env, K);
 	if(!b)
 	{
-		freeform(form);
+// 		freeform(form);
+		freeref(body);
 		freeref(K);
 		return reffree();
 	}
@@ -322,59 +327,88 @@ static Ref setnew(
 	// Рассчитываем на то, что форма уже сформирована нужным образом. Но
 	// вернуть в любом случае нужно ссылку
 
-	b->ref = form;
+// 	b->ref = form;
+	b->ref = body;
 	return markext(b->ref);
 }
 
-static Ref extractform(const Ref A, FEState *const E)
+// static Ref extractform(const Ref A, FEState *const E)
+// {
+// 	if(A.code == NODE)
+// 	{
+// 		// Имеем дело с узлом. Пока это может быть только FEnv. Который
+// 		// оценивается в форму из окружения. Её и возвращаем в виде
+// 		// ссылки
+// 
+// 		switch(nodeverb(A, E->verbs))
+// 		{
+// 		case FENV:
+// 			return markext(refmap(E->formmarks, A));
+// 
+// 		default:
+// 			return reffree();
+// 		}
+// 	}
+// 
+// 	// В противном случае мы имеем дело с парой (ключи (тело формы)). Надо
+// 	// её реконструировать
+// 
+// 	const Ref R[2];
+// 	if(!splitpair(A, (Ref *)R))
+// 	{
+// 		return reffree();
+// 	}
+// 
+// 	// Проверяем, что пара имеет вид (ключи; .F (...))
+// 
+// 	if(!isnode(R[1]) || nodeverb(R[1], E->verbs) != FNODE)
+// 	{
+// 		return reffree();
+// 	}
+// 
+// 	// Проверяем, что ключи подходят под определение списка сигнатур формы.
+// 	// Но сначала в них надо пересчитать типы
+// 
+// 	const Ref key = exprewrite(R[0], E->typemarks, E->typeverbs);
+// 
+// 	if(key.code != LIST || !issignaturekey(key))
+// 	{
+// 		freeref(key);
+// 		return reffree();
+// 	}
+// 
+// 	// Если всё хорошо, создаём новую форму. Граф при этом копируем. Ключ и
+// 	// без того уже является преобразованной копией
+// 
+// 	return newform(forkdag(nodeattribute(R[1])), key);
+// }
+
+static Ref extractbody(const Ref A, FEState *const E)
 {
 	if(A.code == NODE)
 	{
 		// Имеем дело с узлом. Пока это может быть только FEnv. Который
-		// оценивается в форму из окружения. Её и возвращаем в виде
+		// оценивается в тело формы из окружения. Её и возвращаем в виде
 		// ссылки
 
 		switch(nodeverb(A, E->verbs))
 		{
 		case FENV:
-			return markext(refmap(E->valmap, A));
+			return markext(refmap(E->formmarks, A));
 
 		default:
 			return reffree();
 		}
 	}
 
-	// В противном случае мы имеем дело с парой (ключи (тело формы)). Надо
-	// её реконструировать
+	// В противном случае имеем дело с формой, заданной F-выражением
 
-	const Ref R[2];
-	if(!splitpair(A, (Ref *)R))
+	if(!isnode(A) || nodeverb(A, E->verbs) != FNODE)
 	{
 		return reffree();
 	}
 
-	// Проверяем, что пара имеет вид (ключи; .F (...))
-
-	if(!isnode(R[1]) || nodeverb(R[1], E->verbs) != FNODE)
-	{
-		return reffree();
-	}
-
-	// Проверяем, что ключи подходят под определение списка сигнатур формы.
-	// Но сначала в них надо пересчитать типы
-
-	const Ref key = exprewrite(R[0], E->typemarks, E->typeverbs);
-
-	if(key.code != LIST || !issignaturekey(key))
-	{
-		freeref(key);
-		return reffree();
-	}
-
-	// Если всё хорошо, создаём новую форму. Граф при этом копируем. Ключ и
-	// без того уже является преобразованной копией
-
-	return newform(forkdag(nodeattribute(R[1])), key);
+	return forkdag(nodeattribute(A));
 }
 
 static void fenv(const Ref N, FEState *const E)
@@ -430,9 +464,12 @@ static void fenv(const Ref N, FEState *const E)
 		return;
 	}
 
-	const Ref form = extractform(R[1], E);
+// Здесь нужно только тело формы
+// 	const Ref form = extractform(R[1], E);
 
-	if(form.code == FREE)
+	const Ref body = len == 2 ? extractbody(R[1], E) : reffree();
+
+	if(len == 2 && body.code == FREE)
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": can't read form from 2nd attribute structure",
@@ -444,15 +481,17 @@ static void fenv(const Ref N, FEState *const E)
 	// Если два, то это запрос на регистрацию формы. Форму надо при этом
 	// извлечь из второго параметра
 
-	const Ref fref
+// 	const Ref fref
+	const Ref bref
 		= (len == 1) ? getexisting(env, E->U, key)
-		: (len == 2) ? setnew(env, E->U, key, form)
+// 		: (len == 2) ? setnew(env, E->U, key, form)
+		: (len == 2) ? setnew(env, E->U, key, body)
 		: reffree();
 	
 	// WARNING: key и form будут освобождены в getexisting или setnew по
 	// необходимости
 
-	if(fref.code == FREE)
+	if(bref.code == FREE)
 	{
 		const Ref tk = exprewrite(R[0], E->typemarks, E->typeverbs);
 		char *const strkey = strref(E->U, NULL, tk);
@@ -469,8 +508,11 @@ static void fenv(const Ref N, FEState *const E)
 
 	// Назначаем значение узлу. В form должен быть установлен external-бит
 
-	assert(isform(fref) && fref.external);
-	tunerefmap(E->valmap, N, fref);
+// 	assert(isform(fref) && fref.external);
+// 	tunerefmap(E->formmarks, N, fref);
+
+	assert(isdag(bref) && bref.external);
+	tunerefmap(E->formmarks, N, bref);
 }
 
 typedef struct
@@ -703,7 +745,7 @@ void formeval(
 		.escape = escape,
 		.verbs = newverbmap(U, 0, verbs),
 		.typeverbs = newverbmap(U, 0, ES("T", "TEnv")),
-		.valmap = newkeymap(),
+		.formmarks = newkeymap(),
 		.typemarks = typemarks,
 		.envmarks = envmarks,
 		.sysverbs = newverbmap(U, 0, sysverbs)
@@ -712,7 +754,7 @@ void formeval(
 	eval(dag, &st);
 
 	freekeymap((Array *)st.sysverbs);
-	freekeymap(st.valmap);
+	freekeymap(st.formmarks);
 	freekeymap((Array *)st.typeverbs);
 	freekeymap((Array *)st.verbs);
 }

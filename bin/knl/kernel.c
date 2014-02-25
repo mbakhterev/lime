@@ -52,7 +52,8 @@ static void initforms(
 			
 			if(DBGFLAGS & DBGINIT)
 			{
-				dumpdag(1, stderr, 0, U, dag, subdags);
+				dumpdag(1, stderr, 0, U, dag);
+// 				, subdags);
 				assert(fputc('\n', stderr) == '\n');
 			}
 
@@ -359,7 +360,8 @@ int main(int argc, char *const argv[])
 // 	dumpdag(0, stdout, 0, C.U,
 // 		reflist(NULL), newverbmap(C.U, 0, ES("F", "LB")));
 
-	dumpdag(0, stdout, 0, C.U, dag, map);
+	dumpdag(0, stdout, 0, C.U, dag);
+// 	, map);
 	assert(fputc('\n', stdout) == '\n');
 
 	freekeymap((Array *)map);

@@ -29,7 +29,8 @@ int main(int argc, char *argv[])
 	const Ref l = loaddag(stdin, U, map);
 
 	printf("original:\n");
-	dumpdag(1, stdout, 0, U, l, map);
+	dumpdag(1, stdout, 0, U, l);
+// 	, map);
 	printf("\n");
 
 	const Array *const symmarks = newkeymap();
@@ -44,13 +45,15 @@ int main(int argc, char *argv[])
 	freelist((List *)L);
 
 	printf("\nevaluated:\n");
-	dumpdag(1, stdout, 0, U, el, map);
+	dumpdag(1, stdout, 0, U, el);
+// 	, map);
 	printf("\n");
 
 	gcnodes(&el, escape, nonroots, NULL);
 
 	printf("\ncleaned:\n");
-	dumpdag(1, stdout, 0, U, el, map);
+	dumpdag(1, stdout, 0, U, el);
+// 	, map);
 	printf("\n");
 
 	freeref(el);

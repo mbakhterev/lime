@@ -66,6 +66,7 @@ static List *newlist(const Ref r)
 	case NODE:
 	case PTR:
 	case LIST:
+	case DAG:
 	case FORM:
 	case MAP:
 	case AREA:

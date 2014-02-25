@@ -15,7 +15,8 @@ int main(int argc, char *argv[])
 	Ref l = loaddag(stdin, U, map);
 
 	printf("len(l): %u\n", listlen(l.u.list));
-	dumpdag(1, stdout, 0, U, l, map);
+	dumpdag(1, stdout, 0, U, l);
+// 	, map);
 	fputc('\n', stdout);
 
  	Array *const nonroots = newverbmap(U, 0, ES("X", "Y"));
@@ -29,7 +30,8 @@ int main(int argc, char *argv[])
 	size_t sz = 0;
 	char *d = NULL;
 	FILE *const f = newmemstream(&d, &sz);
-	dumpdag(1, f, 0, U, k, map);
+	dumpdag(1, f, 0, U, k);
+//	, map);
 	fclose(f);
 
 	printf("dag(k):%s\n", d);

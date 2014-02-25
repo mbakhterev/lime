@@ -341,7 +341,8 @@ static LoadCurrent loadsubdag(
 	// узла
 
 	const Ref r = loaddag(f, U, ctx->dagmap);
-	assert(r.code == LIST);
+// 	assert(r.code == LIST);
+	assert(r.code == DAG);
 
 	return LC(nodes, r.u.list);
 }
@@ -428,7 +429,7 @@ static LoadCurrent node(
 		free(ns);
 	}
 
-	const Ref n = newnode(verb, reflist(lc.refs), here);
+	const Ref n = newnode(verb, (isdag ? refdag : reflist)(lc.refs), here);
 	List *const l = RL(markext(n));
 
 	// Узел создан, и если под него зарезервирована метка в окружении, надо
@@ -482,5 +483,6 @@ Ref loaddag(
 	// FIXME: Список в виде списка ссылок не нужен
 	freelist(lc.refs);
 
-	return reflist(lc.nodes);
+// 	return reflist(lc.nodes);
+	return refdag(lc.nodes);
 }

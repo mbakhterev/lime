@@ -3,7 +3,17 @@
 
 #include <assert.h>
 
-enum { DAG = 0, KEYS, COUNT };
+// enum { DAG = 0, KEYS, COUNT, FORMLEN };
+
+unsigned splitform(const Ref F, const Ref *R[])
+{
+	if(F.code != FORM)
+	{
+		return 0;
+	}
+
+	return splitlist(F.u.list, R, FORMLEN);
+}
 
 // Было бы круто это писать так:
 // 	(val isformref (val R array (val Ref)) (val len uint) =
@@ -12,7 +22,7 @@ enum { DAG = 0, KEYS, COUNT };
 static unsigned isformrefs(const Ref R[], const unsigned len)
 {
 	return len > COUNT
-		&& R[DAG].code == LIST
+		&& R[BODY].code == LIST
 		&& R[KEYS].code == LIST
 		&& R[COUNT].code == NUMBER;
 }
@@ -71,7 +81,7 @@ Ref formdag(const Ref r)
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len && isformrefs(R, len));
 
-	return R[DAG];
+	return R[BODY];
 }
 
 Ref formkeys(const Ref r)
@@ -96,21 +106,31 @@ unsigned formcounter(const Ref r)
 	return R[COUNT].u.number;
 }
 
-unsigned countdown(const Ref *const r)
+// unsigned countdown(const Ref *const r)
+// {
+// 	assert(isform(*r));
+// 
+// 	const Ref *R[3];
+// 
+// 	{
+// 		DL(list, RS(reffree(), reffree(), reffree()));
+// 		const Ref pattern = { .code = FORM, .u.list = list.u.list };
+// 		unsigned matches = 0;
+// 		assert(keymatch(pattern, r, R, 3, &matches) && matches == 3);
+// 	}
+// 
+// 	Ref *const N = (Ref *)R[COUNT];
+// 	assert(N->code == NUMBER && N->u.number > 0);
+// 
+// 	return !(N->u.number -= 1);
+// }
+
+void countdown(const Ref r)
 {
-	assert(isform(*r));
+	const Ref *R[FORMLEN];
+	assert(isform(r) && splitform(r, R));
 
-	const Ref *R[3];
-
-	{
-		DL(list, RS(reffree(), reffree(), reffree()));
-		const Ref pattern = { .code = FORM, .u.list = list.u.list };
-		unsigned matches = 0;
-		assert(keymatch(pattern, r, R, 3, &matches) && matches == 3);
-	}
-
-	Ref *const N = (Ref *)R[COUNT];
-	assert(N->code == NUMBER && N->u.number > 0);
-
-	return !(N->u.number -= 1);
+	Ref *cnt = (Ref *)R[COUNT];
+	assert(cnt->code == NUMBER && cnt->u.number > 0);
+	cnt->u.number -= 1;
 }

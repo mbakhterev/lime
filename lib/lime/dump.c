@@ -245,7 +245,8 @@ static void dumpsubdag(const DState *const st, const Ref dag)
 	assert(f);
 
 	assert(fputc('\n', f) == '\n');
-	dumpdag(st->dbg, f, st->tabs + 1, st->U, dag, st->map);
+	dumpdag(st->dbg, f, st->tabs + 1, st->U, dag);
+// 	, st->map);
 }
 
 static int dumpone(List *const l, void *const ptr)
@@ -262,7 +263,7 @@ static int dumpone(List *const l, void *const ptr)
 	assert(f);
 	assert(U);
 
-	const Array *const map = st->map;
+// 	const Array *const map = st->map;
 
 	const Ref i = refmap(st->nodes, n);
 
@@ -280,11 +281,14 @@ static int dumpone(List *const l, void *const ptr)
 			atombytes(atomat(U, nodeverb(n, NULL))), i.u.number));
 	}
 
-	const unsigned k = knownverb(n, map);
+// 	const unsigned k = knownverb(n, map);
+// 
+// 	DBG(DBGDAG, "map = %p; k = %u", (void *)map, k);
+// 
+// 	(!k ?  dumpattr : dumpsubdag)(st, nodeattribute(n));
 
-	DBG(DBGDAG, "map = %p; k = %u", (void *)map, k);
-
-	(!k ?  dumpattr : dumpsubdag)(st, nodeattribute(n));
+	const Ref attr = nodeattribute(n);
+	(attr.code != DAG ? dumpattr : dumpsubdag)(st, attr);
 
 	if(l != st->L)
 	{
@@ -296,12 +300,13 @@ static int dumpone(List *const l, void *const ptr)
 
 void dumpdag(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
-	const Array *const U, const Ref dag, const Array *const map)
+	const Array *const U, const Ref dag)
+// 	, const Array *const map)
 {
 	assert(f);
-
 	// FIXME: требовать ли Universe для работы dumpdag?
 	assert(U);
+	assert(isdag(dag));
 
 	DBG(DBGDAG, "f: %p", (void *)f);
 
@@ -312,7 +317,8 @@ void dumpdag(
 	{
 		.f = f,
 		.U = U,
-		.map = map,
+//		.map = map,
+		.map = NULL,
 		.dbg = dbg,
 		.nodes = nodes,
 		.tabs = tabs,
@@ -410,7 +416,8 @@ static int dumpformone(List *const l, void *const ptr)
 	assert(fprintf(
 		st->f, "\n%s\tform-dag(%u) %p:\n", st->tabstr,
 		dag.external, (void *)dag.u.list) > 0);
-	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, dag, NULL);
+	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, dag);
+// 	, NULL);
 
 	assert(fputc('\n', st->f) == '\n');
 

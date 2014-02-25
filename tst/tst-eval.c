@@ -13,7 +13,8 @@ int main(int argc, char *argv[])
 	const Ref D = loaddag(stdin, U, lb);
 	printf("loaded\n");
 
-	dumpdag(1, stdout, 0, U, D, lb);
+	dumpdag(1, stdout, 0, U, D);
+// 	, lb);
 	fputc('\n', stdout);
 	fflush(stdout);
 

@@ -60,6 +60,12 @@ Ref refnode(List *const exp)
 	return (Ref) { .code = NODE, .u.list = exp, .external = 1 };
 }
 
+Ref refdag(List *const exp)
+{
+	assert(isdaglist(exp));
+	return (Ref) { .code = DAG, .u.list = exp, .external = 0 };
+}
+
 Ref reflist(List *const l)
 {
 	return (Ref) { .code = LIST, .u.list = l, .external = 0 };
@@ -141,6 +147,7 @@ Ref dynamark(const Ref r)
 	case MAP:
 	case NODE:
 	case LIST:
+	case DAG:
 	case FORM:
 	case AREA:
 		return markext(r);
@@ -190,6 +197,9 @@ Ref forkref(const Ref r, Array *const nodemap)
 		return r;
 	}
 
+	case DAG:
+		return forkdag(r);
+
 	case FORM:
 		return forkform(r);	
 
@@ -213,6 +223,7 @@ void freeref(const Ref r)
 
 	case LIST:
 	case NODE:
+	case DAG:
 	case FORM:
 		if(!r.external)
 		{

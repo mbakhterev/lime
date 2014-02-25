@@ -183,7 +183,8 @@ static void activate(
 	if(DBGFLAGS & DBGACT)
 	{
 		DBG(DBGACT, "%s", "ntheval");
-		dumpdag(0, stderr, 0, C->U, body, NULL);
+		dumpdag(0, stderr, 0, C->U, body);
+// 		, NULL);
 	}
 
 	Array *const envmarks = newkeymap();

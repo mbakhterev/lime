@@ -13,8 +13,20 @@
 
 #define DBGFLAGS 0
 
+unsigned isdaglist(const List *const l)
+{
+	return l == NULL || (l->ref.code == NODE && !l->ref.external);
+}
+
+unsigned isdag(const Ref dag)
+{
+	return dag.code == DAG && isdaglist(dag.u.list);
+}
+
 Ref forkdag(const Ref dag)
 {
+	assert(isdag(dag));
+
 	Array *const M = newkeymap();
 	const Ref r = forkref(dag, M);
 	freekeymap(M);
