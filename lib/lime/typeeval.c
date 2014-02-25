@@ -318,7 +318,10 @@ static void nominate(const Ref r, EState *const E)
 		// В этом нет никакой информации о типах
 		return;
 
+	// Текущие алгоритмы таковы, что они не различают DAG и LIST
+
 	case LIST:
+	case DAG:
 		// В списке могут встретится определения узлов .T и .TEnv
 		// проходим его
 

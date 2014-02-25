@@ -358,7 +358,10 @@ static void eval(const Ref N, NState *const S)
 	case ATOM:
 		return;
 
+	// Пока алгоритмы таковы, что не делаем здесь различий
+
 	case LIST:
+	case DAG:
 		forlist(N.u.list, evalone, S, 0);
 		return;
 	

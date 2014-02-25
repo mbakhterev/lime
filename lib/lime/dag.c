@@ -23,12 +23,22 @@ unsigned isdag(const Ref dag)
 	return dag.code == DAG && isdaglist(dag.u.list);
 }
 
-Ref forkdag(const Ref dag)
+Ref forkdag(const Ref D)
 {
-	assert(isdag(dag));
+	assert(isdag(D));
+
+	if(D.external)
+	{
+		return D;
+	}
 
 	Array *const M = newkeymap();
-	const Ref r = forkref(dag, M);
+
+// 	const Ref r = forkref(dag, M);
+// 	const Ref r = forkref(reflist
+// 	freekeymap(M);
+
+	const Ref r = refdag(transforklist(D.u.list, M));
 	freekeymap(M);
 
 	return r;
@@ -109,7 +119,11 @@ static void mark(const Ref r, GCState *const st)
 	case TYPE:
 		break;
 	
+	// У нас все текущие алгоритмы построены так, что им без разницы DAG или
+	// LIST
+
 	case LIST:
+	case DAG:
 	{
 		forlist(r.u.list, markone, st, 0);
 		break;
@@ -232,6 +246,7 @@ static void rebuild(Ref *const r, GCState *const st)
 		return;
 	
 	case LIST:
+	case DAG:
 		// Продолжим ниже
 		break;
 	
@@ -292,6 +307,8 @@ void gcnodes(
 	Ref *const dag, const Array *const map,
 	const Array *const nonroots, Array *const marks)
 {
+	assert(isdag(*dag));
+
 	GCState st =
 	{
 		.map = map,

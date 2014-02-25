@@ -17,12 +17,13 @@ unsigned splitform(const Ref F, const Ref *R[])
 
 // Было бы круто это писать так:
 // 	(val isformref (val R array (val Ref)) (val len uint) =
-// 		(len > COUNT && (R (DAG KEYS COUNT).code == LIST LIST NUMBER))
+// 		(len > COUNT && (R (BODY KEYS COUNT).code == DAG LIST NUMBER))
 
 static unsigned isformrefs(const Ref R[], const unsigned len)
 {
 	return len > COUNT
-		&& R[BODY].code == LIST
+// 		&& R[BODY].code == LIST
+		&& R[BODY].code == DAG
 		&& R[KEYS].code == LIST
 		&& R[COUNT].code == NUMBER;
 }
@@ -32,7 +33,9 @@ static unsigned isformrefs(const Ref R[], const unsigned len)
 Ref newform(const Ref dag, const Ref keys)
 {
 	// Небольшая проверка структуры
-	assert(dag.code == LIST && keys.code == LIST);
+// 	assert(dag.code == LIST && keys.code == LIST);
+
+	assert(isdag(dag) && keys.code == LIST);
 
 	// Видимо, логичнее не делать здесь fork-ов, чтобы дать возможность
 	// регулировать состав формы внешнему коду

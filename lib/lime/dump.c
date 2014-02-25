@@ -101,6 +101,11 @@ void dumpref(
 	case PTR:
 		assert(fprintf(f, "P:%p", (void *)r.u.pointer) > 0);
 		break;
+	
+	case DAG:
+		assert(isdaglist(r.u.list));
+		assert(fprintf(f, "D: %p", (void *)r.u.list));
+		break;
 
 	case FORM:
 		assert(isformlist(r.u.list));

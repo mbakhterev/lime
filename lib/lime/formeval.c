@@ -62,37 +62,49 @@ static int registerone(List *const l, void *const ptr)
 // Реализовано в соответствии с txt/log-2014.txt:2014-02-05 13:03:53. С
 // поправкой на управление памятью по мотивам 2014-02-13 14:40:18
 
-static Ref reform(const Ref f)
+// static Ref reform(const Ref f)
+// {
+// 	if(f.external)
+// 	{
+// 		// Имеем дело со ссылкой на форму. Для корректной работы надо
+// 		// создать новую форму со своим счётчиком. Но сигнатуру и граф
+// 		// можно использовать внешние
+// 
+// 		return newform(markext(formdag(f)), markext(formkeys(f)));
+// 	}
+// 
+// 	// Здесь мы имеем дело с определением формы. Пока логика такая, что это
+// 	// некая форма уже скопированная из графа. Поэтому, её можно
+// 	// использовать (см. extractform)
+// 
+// 	assert(isform(f));
+// 	return f;
+// }
+
+static Ref reform(const Ref keys, const Ref body)
 {
-	if(f.external)
-	{
-		// Имеем дело со ссылкой на форму. Для корректной работы надо
-		// создать новую форму со своим счётчиком. Но сигнатуру и граф
-		// можно использовать внешние
+	// Считаем, что ключи сформированы в decorate или exprewrite. И мы
+	// забираем ключи без fork. Само тело формы может быть из окружения или
+	// из текущего графа. В обоих случаях ожидаем, что всё уже сформировано
+	// (см. extractbody)
 
-		return newform(markext(formdag(f)), markext(formkeys(f)));
-	}
-
-	// Здесь мы имеем дело с определением формы. Пока логика такая, что это
-	// некая форма уже скопированная из графа. Поэтому, её можно
-	// использовать (см. extractform)
-
-	assert(isform(f));
-	return f;
+	assert(!keys.external);
+	return newform(body, keys);
 }
 
 extern void intakeform(
-	Array *const U, Array *const area, const unsigned rid, const Ref form)
+	Array *const U, Array *const R, const Ref keys, const Ref body)
+// 	Array *const U, Array *const area, const unsigned rid, const Ref form)
 {
-
 	// Дальше нам надо создать форму со своим счётчиком, которая будет
 	// добавлена во всевозможные списки. Для этого нужно скопировать
 	// исходные граф и ключи. newform копирует выражения, переданные через
 	// параметры. Клиент intakeform может регулировать объём копирования
 	// через external-биты
 
-	const Ref f = reform(form);
-	Array *const R = areareactor(U, area, rid);
+// 	const Ref f = reform(form);
+	const Ref f = reform(keys, body);
+// 	Array *const R = areareactor(U, area, rid);
 
 	// Форму надо засунуть в список реактора. Корректность RF проверяется в
 	// самой reactorforms. Забываем о RF сразу после использования, чтобы
@@ -387,28 +399,35 @@ static Ref extractbody(const Ref A, FEState *const E)
 {
 	if(A.code == NODE)
 	{
-		// Имеем дело с узлом. Пока это может быть только FEnv. Который
+		// Имеем дело с узлом. Это может быть либо FEnv, который
 		// оценивается в тело формы из окружения. Её и возвращаем в виде
-		// ссылки
+		// ссылки. Либо F, который защищает тело формы. Её надо
+		// скопировать в этом случае, потому что граф с этим телом будет
+		// трансформироваться
 
 		switch(nodeverb(A, E->verbs))
 		{
 		case FENV:
 			return markext(refmap(E->formmarks, A));
 
+		case FNODE:
+			return forkdag(nodeattribute(A));
+
 		default:
 			return reffree();
 		}
 	}
 
-	// В противном случае имеем дело с формой, заданной F-выражением
+// 	// В противном случае имеем дело с формой, заданной F-выражением
+// 
+// 	if(!isnode(A) || nodeverb(A, E->verbs) != FNODE)
+// 	{
+// 		return reffree();
+// 	}
+// 
+// 	return forkdag(nodeattribute(A));
 
-	if(!isnode(A) || nodeverb(A, E->verbs) != FNODE)
-	{
-		return reffree();
-	}
-
-	return forkdag(nodeattribute(A));
+	return reffree();
 }
 
 static void fenv(const Ref N, FEState *const E)
@@ -685,7 +704,10 @@ static void eval(const Ref r, FEState *const st)
 	case TYPE:
 		return;
 
+	// Здесь различия между DAG и LIST неcущественны 
+
 	case LIST:
+	case DAG:
 		forlist(r.u.list, evalone, st, 0);
 		return;
 

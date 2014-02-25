@@ -369,9 +369,11 @@ void enveval(
 // 	case TYPE:
 // 		break;
 
-	// Интересные варианты развития событий
+	// Интересные варианты развития событий. Текущие алгоритмы таковы, что
+	// они не делают разницу между DAG и LIST
 
 	case LIST:
+	case DAG:
 		// FIXME: возможно, имеет смысл написать assert(!r.external)
 
 		evalcore(U, env, envmarks, r.u.list, escape, markit);	

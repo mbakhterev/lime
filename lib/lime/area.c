@@ -44,7 +44,8 @@ static void initdag(Array *const U, Array *const area)
 {
 	Binding *const b = mapreadin(area, readtoken(U, "DAG"));
 	assert(b);
-	b->ref = cleanext(reflist(NULL));
+// 	b->ref = cleanext(reflist(NULL));
+	b->ref = cleanext(refdag(NULL));
 }
 
 Array *newarea(Array *const U)
@@ -84,7 +85,8 @@ Ref *areadag(Array *const U, const Array *const area)
 {
 	Binding *const b = (Binding *)maplookup(area, readtoken(U, "DAG"));
 	assert(b);
-	assert(b->ref.code == LIST);
+// 	assert(b->ref.code == LIST);
+	assert(isdag(b->ref));
 	return &b->ref;
 }
 

@@ -25,8 +25,9 @@ static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 	return reftype(typeenummap(T, key));
 }
 
-static Ref getform(
-	Ref *const K,
+// static Ref getform(
+// 	Ref *const K,
+static Ref getbody(
 	const Core *const C, const unsigned op, const unsigned atom)
 {
 	DBG(DBGGF, "%s", "entry");
@@ -56,7 +57,7 @@ static Ref getform(
 		{
 			freelist(p);
 
-			*K = key;
+// 			*K = key;
 			// Подчёркиваем, что форма из окружения
 			return markext(b->ref);
 		}
@@ -86,7 +87,7 @@ static Ref getform(
 		{
 			freelist(p);
 
-			*K = key;
+// 			*K = key;
 			return markext(b->ref);
 		}
 
@@ -95,7 +96,7 @@ static Ref getform(
 
 	freelist(p);
 
-	*K = reffree();
+// 	*K = reffree();
 	return reffree();
 }
 
@@ -172,7 +173,8 @@ static void activate(
 	const Array *const escape = newverbmap(C->U, 0, ES("F"));
 
 	const Array *const nonroots
-		= newverbmap(C->U, 0, ES("FIn", "Nth", "FOut"));
+		= newverbmap(C->U, 0,
+			ES("FIn", "Nth", "F", "FEnv", "FPut", "FOut"));
 
 	const Ref body
 		= ntheval(
@@ -213,7 +215,8 @@ static void activate(
 	// Наращиваем тело графа:
 
 	Ref *const AD = areadag(C->U, area);
-	assert(body.code == LIST && AD->code == LIST);
+// 	assert(body.code == LIST && AD->code == LIST);
+	assert(isdag(body) && isdag(*AD));
 	AD->u.list = append(AD->u.list, body.u.list);
 }
 
@@ -292,12 +295,16 @@ static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 
 void progress(Core *const C, const SyntaxNode op)
 {
-	const Ref key;
-	const Ref form = getform((Ref *)&key, C, op.op, op.atom);
+// 	const Ref key;
+// 	const Ref form = getform((Ref *)&key, C, op.op, op.atom);
 
-	if(form.code == FREE)
+// 	DL(key, RS(refatom(op.op), refatom(op.atom)));
+	const Ref key = reflist(RL(refatom(op.op), refatom(op.atom)));
+	const Ref body = getbody(C, op.op, op.atom);
+
+	if(body.code == FREE)
 	{		
-		DL(key, RS(refatom(op.op), refatom(op.atom)));
+// 		DL(key, RS(refatom(op.op), refatom(op.atom)));
 		char *const strkey = strref(C->U, NULL, key);
 
 		item = op.pos.line;
@@ -306,7 +313,9 @@ void progress(Core *const C, const SyntaxNode op)
 		free(strkey);
 	}
 
-	DBG(DBGPRGS, "found form: %p", (void *)form.u.list);
+	assert(isdag(body));
+
+	DBG(DBGPRGS, "found body: %p", (void *)body.u.list);
 
 	// Форма найдена, нужно теперь её вместе с подходящим out-ом
 	// зарегистрировать в области вывода
@@ -318,7 +327,8 @@ void progress(Core *const C, const SyntaxNode op)
 	// Создаём спсиок вида ((keys op.atom)) - список из одной пары (ключ
 	// значение)
 
-	const List *const out = RL(reflist(RL(key, refatom(op.atom))));
+	const List *const out
+		= RL(reflist(RL(forkref(key, NULL), refatom(op.atom))));
 
 	// Забираем его в область вывода. intakeout скопирует компоненты ключа
 	// при необходимости
@@ -328,15 +338,19 @@ void progress(Core *const C, const SyntaxNode op)
 		char *const ostr = strlist(C->U, out);
 		ERR("can't intake output list: %s", ostr);
 		free(ostr);
+		freelist((List *)out);
+		return;
 	}
 
-	// WARNING: Освободит и key среди прочего
+	// WARNING: Освободит и forkref(key) среди прочего
 	freelist((List *)out);
 
 	// form у нас здесь помечена, как external. intakeform умеет сама
 	// разобраться с такой ситуацией
 
-	intakeform(C->U, A.u.array, 0, form);
+// 	intakeform(C->U, A.u.array, 0, key, body);
+	intakeform(
+		C->U, areareactor(C->U, A.u.array, 0), reflist(RL(key)), body);
 
 	// Информация принята в реактор, синтезируем на её основе продолжение
 	// графа

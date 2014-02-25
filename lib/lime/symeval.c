@@ -214,7 +214,10 @@ static void eval(const Ref N, EState *const E)
 	case ATOM:
 		return;
 	
+	// Для текущих алгоритмов нет разницы между DAG и LIST
+
 	case LIST:
+	case DAG:
 		forlist(N.u.list, evalone, E, 0);
 		return;
 	

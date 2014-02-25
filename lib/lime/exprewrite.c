@@ -113,6 +113,7 @@ static Ref rewrite(
 		return r;
 	
 	case LIST:
+	case DAG:
 	{
 		RState st =
 		{
@@ -124,7 +125,8 @@ static Ref rewrite(
 
 		forlist(r.u.list, rewriteone, &st, 0);
 
-		return reflist(st.result);
+// 		return reflist(st.result);
+		return (r.code == LIST ? reflist : refdag)(st.result);
 	}
 
 	case NODE:
@@ -159,6 +161,7 @@ static void fix(Ref *const r, const Array *const nodemap)
 		break;
 
 	case LIST:
+	case DAG:
 		forlist(r->u.list, fixone, (void *)nodemap, 0);
 		break;
 

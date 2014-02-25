@@ -14,8 +14,9 @@
 
 // #define DBGFLAGS (DBGMAIN | DBGMAINEX | DBGINIT)
 // #define DBGFLAGS (DBGMAIN | DBGMAINEX)
+#define DBGFLAGS (DBGMAIN | DBGINIT)
 
-#define DBGFLAGS 0
+// #define DBGFLAGS 0
 
 unsigned item = 1;
 const char *unitname = "stdin";
@@ -328,6 +329,15 @@ int main(int argc, char *const argv[])
 		initforms(argc, argv, C.U, C.env, C.types);
 		DBG(DBGMAIN, "%s", "forms loaded");
 
+		if(DBGFLAGS & DBGMAIN)
+		{
+			DBG(DBGMAIN, "env: count = %u", C.env->count);
+			dumpkeymap(1, stderr, 0, U, C.env);
+
+			DBG(DBGMAIN, "%s", "types:");
+			dumptable(stderr, 0, U, C.types);
+		}
+
 		item = 1;
 		unitname = "stdin";
 
@@ -339,15 +349,6 @@ int main(int argc, char *const argv[])
 	else
 	{
 		DBG(DBGMAIN, "%s", "progression error; dumping result anyway");
-	}
-
-	if(DBGFLAGS & DBGMAINEX)
-	{
-		DBG(DBGMAINEX, "env: count = %u", C.env->count);
-		dumpkeymap(1, stderr, 0, U, C.env);
-
-		DBG(DBGMAINEX, "%s", "types:");
-		dumptable(stderr, 0, U, C.types);
 	}
 
 	const Array *const map = newverbmap(C.U, 0, stdmap);

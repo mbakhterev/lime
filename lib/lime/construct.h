@@ -712,9 +712,12 @@ extern Ref *reactorforms(Array *const U, const Array *const reactor);
 // Это неплохо согласовано с вызывающими intakeform. При обработке .FPut можно
 // отрегулировать external-флаги для компонент целевой формы
 
+// extern void intakeform(
+// 	Array *const U, Array *const area, const unsigned R, const Ref form);
+// // 	const Ref dag, const Ref keys);
+
 extern void intakeform(
-	Array *const U, Array *const area, const unsigned R, const Ref form);
-// 	const Ref dag, const Ref keys);
+	Array *const U, Array *const R, const Ref key, const Ref body);
 
 // Двойственная к intakeform процедура. Список outs должен состоять из пар (ключ
 // значение). Обе компоненты будут скопированы в реактор при помощи forkref, так
