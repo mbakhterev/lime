@@ -12,7 +12,7 @@
 // #define DBGFLAGS (DBGPRGS | DBGGF)
 // #define DBGFLAGS (DBGPRGS | DBGSYNTH | DBGCLLT)
 
-#define DBGFLAGS (DBGSYNTH)
+#define DBGFLAGS (DBGSYNTH | DBGACT)
 
 // #define DBGFLAGS 0
 
@@ -176,6 +176,15 @@ static void activate(
 		= newverbmap(C->U, 0,
 			ES("FIn", "Nth", "F", "FEnv", "FPut", "FOut"));
 
+	if(DBGFLAGS & DBGACT)
+	{
+		char *const kstr = strlist(C->U, inlist);
+		DBG(DBGACT, "pre-ntheval: (form %p) (links %s)\ndag:",
+			(void *)formdag(form).u.list, kstr);
+		free(kstr);
+		dumpdag(0, stderr, 0, C->U, formdag(form));
+	}
+
 	const Ref body
 		= ntheval(
 			C->U, formdag(form), escape,
@@ -284,11 +293,16 @@ static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 
 
 	// Нам в дальнейшем интересны только неиспользованные формы, поэтому
-	// заменяем текущий список форм
+	// (заменяем - ОШИБОЧНО) дополняем текущий список форм, которые могли
+	// накопиться в процессе активации других форм при помощи FPut
 
 	assert(areforms(reflist(st.inactive)));
 	DBG(DBGSYNTH, "%s", "RF 2");
-	*reactorforms(C->U, st.reactor) = reflist(st.inactive);
+	{
+		Ref *const RF = reactorforms(C->U, st.reactor);
+		RF->u.list = append(RF->u.list, st.inactive);
+	}
+// 	*reactorforms(C->U, st.reactor) = reflist(st.inactive);
 
 	return st.alive;
 }

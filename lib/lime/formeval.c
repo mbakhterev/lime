@@ -5,9 +5,10 @@
 
 #define DBGFENV 1
 #define DBGFOUT 2
+#define DBGFPUT 3
 
 // #define DBGFLAGS (DBGFENV)
-#define DBGFLAGS (DBGFOUT)
+#define DBGFLAGS (DBGFOUT | DBGFPUT)
 
 // #define DBGFLAGS 0
 
@@ -695,6 +696,71 @@ static void fout(const Ref N, FEState *const E)
 	freelist(st.out);
 }
 
+static void fput(const Ref N, FEState *const E)
+{
+	DBG(DBGFPUT, "%s", "here");
+
+	const Ref r = nodeattribute(N);
+	if(r.code != LIST)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting attribute list", nodename(E->U, N));
+		return;
+	}
+
+	const unsigned len = listlen(r.u.list);
+	if(len != 3)
+	{
+		item = nodeline(N);
+		ERR("noe \"%s\": expecting 3 attributes", nodename(E->U, N));
+		return;
+	}
+
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+	if(R[0].code != NUMBER || R[0].u.number > 1
+		|| R[1].code != LIST || R[2].code != NODE)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't detect reactor with 1st attribute",
+			nodename(E->U, N));
+
+		return;
+	}
+
+	const unsigned rid = R[0].u.number;
+	const Ref K = exprewrite(R[1], E->typemarks, E->typeverbs);
+	if(!issignaturekey(K))
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't get signature from 2nd attribute",
+			nodename(E->U, N));
+
+		freeref(K);
+		return;
+	}
+
+	const Ref body = extractbody(R[2], E);
+	if(body.code == FREE)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't extract form body from 3rd attribute",
+			nodename(E->U, N));
+
+		freeref(K);
+		return;
+	}
+
+	if(DBGFLAGS & DBGFPUT)
+	{
+		char *const kstr = strref(E->U, NULL, K);
+		DBG(DBGFPUT, "intaking with key: %s", kstr);
+		free(kstr);
+	}
+
+	intakeform(E->U, areareactor(E->U, E->area, rid), K, body);
+}
+
 static void eval(const Ref r, FEState *const st)
 {
 	switch(r.code)
@@ -725,6 +791,7 @@ static void eval(const Ref r, FEState *const st)
 			return;
 
 		case FPUT:
+			fput(r, st);
 			return;
 
 		case FOUT:
