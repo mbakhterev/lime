@@ -12,6 +12,11 @@
 
 // #define DBGFLAGS 0
 
+// Реализовано в соответствии с
+// 	2014-02-05 13:03:53
+// 	2014-02-13 14:40:18
+// 	2014-02-28 09:07:52
+
 typedef struct
 {
 	Array *const U;
@@ -32,55 +37,52 @@ static int registerone(List *const l, void *const ptr)
 	if(out)
 	{
 		// Если существует, то надо уменьшить счётчик активации у формы
-		// и больше ничего не делать
-
-// 		countdown(&st->form);
 		countdown(st->form);
+
+		// Компонента исходной сигнатуры в l->ref нам больше не нужна
+		freeref(l->ref);
+
+		// Заменяем её ссылкой на ключ, хранящийся в out
+		{
+			const Ref R[2];
+			assert(splitpair(out->key, (Ref *)R));
+			l->ref = dynamark(R[1]);
+		}
+
 		return 0;
 	}
 
 	// Если не существует, то надо записать форму в соответствующую input-у 
-	// очередь форм. Ключ нужно сделать external-ом, потому что он хранится
-	// где-то во внешнем контексте (в списке форм реактора, например).
-	// НАПОМИНАНИЕ: bindkey копирует ключ при необходимости
+	// очередь форм. input-ы могут жить дольше форм, поэтому мы позволяем
+	// скопировать bindkey ключ из l->ref внутрь, в случае необходимости.
+	// После привязывания исходный l->ref нам уже не нужен
 
-	DL(inkey, RS(decoatom(st->U, DIN), dynamark(l->ref)));
+// 	DL(inkey, RS(decoatom(st->U, DIN), dynamark(l->ref)));
+	DL(inkey, RS(decoatom(st->U, DIN), l->ref));
 	Binding *const in = bindkey(st->reactor, inkey);
+	freeref(l->ref);
+
+	// Небольшая поправка содержимого и проверка корректности
 
 	if(in->ref.code == FREE)
 	{
 		in->ref = reflist(NULL);
 	}
 
-	// Ну всё, сохраняем ссылку на форму, убедившись, что всё пока верно
-
 	assert(areforms(in->ref));
+
+	// В l->ref сохраняем теперь ссылку на содержимое ключа в in
+	{
+		const Ref R[2];
+		assert(splitpair(in->key, (Ref *)R));
+		l->ref = dynamark(R[1]);
+	}
+
+	// Сохраняем форму в списке ожидающих входа форм
 	in->ref.u.list = append(in->ref.u.list, RL(markext(st->form)));
 
 	return 0;
 }
-
-// Реализовано в соответствии с txt/log-2014.txt:2014-02-05 13:03:53. С
-// поправкой на управление памятью по мотивам 2014-02-13 14:40:18
-
-// static Ref reform(const Ref f)
-// {
-// 	if(f.external)
-// 	{
-// 		// Имеем дело со ссылкой на форму. Для корректной работы надо
-// 		// создать новую форму со своим счётчиком. Но сигнатуру и граф
-// 		// можно использовать внешние
-// 
-// 		return newform(markext(formdag(f)), markext(formkeys(f)));
-// 	}
-// 
-// 	// Здесь мы имеем дело с определением формы. Пока логика такая, что это
-// 	// некая форма уже скопированная из графа. Поэтому, её можно
-// 	// использовать (см. extractform)
-// 
-// 	assert(isform(f));
-// 	return f;
-// }
 
 static Ref reform(const Ref keys, const Ref body)
 {
@@ -130,23 +132,6 @@ extern void intakeform(
 
 	// Кажется, всё
 }
-
-// static unsigned splitpair(const Ref p, Ref R[])
-// {
-// 	if(p.code != LIST)
-// 	{
-// 		return 0;
-// 	}
-// 
-// 	const unsigned len = listlen(p.u.list);
-// 
-// 	if(len != 2)
-// 	{
-// 		return 0;
-// 	}
-// 
-// 	return writerefs(p.u.list, R, len) == len;
-// }
 
 enum { KEY = 0, VALUE };
 

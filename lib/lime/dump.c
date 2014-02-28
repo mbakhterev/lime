@@ -24,6 +24,7 @@ typedef struct
 
 	List *L;
 	List *F;
+	List *D;
 
 	const Array *const map;
 	Array *const nodes;
@@ -104,7 +105,7 @@ void dumpref(
 	
 	case DAG:
 		assert(isdaglist(r.u.list));
-		assert(fprintf(f, "D: %p", (void *)r.u.list));
+		assert(fprintf(f, "D:%p", (void *)r.u.list));
 		break;
 
 	case FORM:
@@ -375,6 +376,13 @@ static int dumpbindingone(Binding *const b, void *const ptr)
 
 	switch(b->ref.code)
 	{
+	case DAG:
+		if(!b->ref.external)
+		{
+			st->D = append(st->D, RL(markext(b->ref)));
+		}
+		break;
+
 	case FORM:
 		if(!b->ref.external)
 		{
@@ -429,6 +437,21 @@ static int dumpformone(List *const l, void *const ptr)
 	return 0;
 }
 
+static int dumpdagone(List *const l, void *const ptr)
+{
+	assert(l && isdag(l->ref));
+	const Ref D = l->ref;
+	assert(ptr);
+	const DState *const st = ptr;
+
+	assert(fprintf(
+		st->f, "\n%s\tdag: %p\n", st->tabstr, (void *)D.u.list) > 0);
+	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, D);
+	assert(fputc('\n', st->f) == '\n');
+
+	return 0;
+}
+
 void dumpkeymap(
 	const unsigned debug,
 	FILE *const f, const unsigned tabs, const Array *const U,
@@ -443,6 +466,7 @@ void dumpkeymap(
 		.U = U,
 		.L = NULL,
 		.F = NULL,
+		.D = NULL,
 		.tabs = tabs,
 		.tabstr = tabstr(tabs),
 		.dbg = debug
@@ -458,6 +482,11 @@ void dumpkeymap(
 		if(st.F && U)
 		{
 			forlist(st.F, dumpformone, &st, 0);
+		}
+
+		if(st.D && U)
+		{
+			forlist(st.D, dumpdagone, &st, 0);
 		}
 
 		if(st.L)

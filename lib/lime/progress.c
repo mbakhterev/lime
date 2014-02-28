@@ -176,14 +176,14 @@ static void activate(
 		= newverbmap(C->U, 0,
 			ES("FIn", "Nth", "F", "FEnv", "FPut", "FOut"));
 
-	if(DBGFLAGS & DBGACT)
-	{
-		char *const kstr = strlist(C->U, inlist);
-		DBG(DBGACT, "pre-ntheval: (form %p) (links %s)\ndag:",
-			(void *)formdag(form).u.list, kstr);
-		free(kstr);
-		dumpdag(0, stderr, 0, C->U, formdag(form));
-	}
+// 	if(DBGFLAGS & DBGACT)
+// 	{
+// 		char *const kstr = strlist(C->U, inlist);
+// 		DBG(DBGACT, "pre-ntheval: (form %p) (links %s)\ndag:",
+// 			(void *)formdag(form).u.list, kstr);
+// 		free(kstr);
+// 		dumpdag(0, stderr, 0, C->U, formdag(form));
+// 	}
 
 	const Ref body
 		= ntheval(
@@ -195,6 +195,7 @@ static void activate(
 	{
 		DBG(DBGACT, "%s", "ntheval");
 		dumpdag(0, stderr, 0, C->U, body);
+		assert(fputc('\n', stderr) == '\n');
 // 		, NULL);
 	}
 
@@ -280,7 +281,7 @@ static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 
 	if(DBGFLAGS & DBGSYNTH)
 	{
-		dumpkeymap(0, stderr, 0, C->U, A);
+		dumpkeymap(1, stderr, 0, C->U, A);
 	}
 	
 	DBG(DBGSYNTH, "%s", "RF 1");
