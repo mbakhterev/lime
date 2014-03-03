@@ -212,6 +212,7 @@ static void eval(const Ref N, EState *const E)
 	{
 	case NUMBER:
 	case ATOM:
+	case TYPE:
 		return;
 	
 	// Для текущих алгоритмов нет разницы между DAG и LIST
@@ -292,7 +293,8 @@ Ref symname(const Array *const symbols, const Ref id)
 		&& writerefs(b->key.u.list, (Ref *)R, len) == len
 		&& R[0].code == MAP);
 
-	return markext(R[1]);
+// 	return markext(R[1]);
+	return dynamark(R[1]);
 }
 
 Ref symtype(const Array *const symbols, const Ref id)

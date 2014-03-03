@@ -315,6 +315,7 @@ static void nominate(const Ref r, EState *const E)
 	{
 	case NUMBER:
 	case ATOM:
+	case TYPE:
 		// В этом нет никакой информации о типах
 		return;
 

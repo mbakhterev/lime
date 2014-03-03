@@ -658,8 +658,8 @@ extern Ref symname(const Array *const symbols, const Ref id);
 extern Ref ntheval(
 	Array *const U,
 	const Ref dag, const Array *const escape,
-	const Array *const symmarks,
 	const Array *const typemarks, const Array *const types,
+	const Array *const symmarks, const Array *const symbols,
 	const List *const inlist);
 
 // Формы. Реализованы в виде списков из: списка сигнатур, списка узлов (тела

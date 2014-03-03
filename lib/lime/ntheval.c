@@ -40,6 +40,7 @@ typedef struct
 	const Array *const typemarks;
 	const Array *const types;
 	const Array *const symmarks;
+	const Array *const symbols;
 	
 	// Соответствия узлов Nth и FIn выражениям
 
@@ -148,6 +149,7 @@ typedef struct
 	Ref L;
 	const Array *const verbs;
 	const Array *const symmarks;
+	const Array *const symbols;
 	const Array *const types;
 	const Array *const typemarks;
 	const Array *const evalmarks;
@@ -193,12 +195,25 @@ static Ref reftolist(const Ref r, const DCState *const st)
 
 		if(verb == SNODE)
 		{
-			// Убедимся, что имеем дело с обработанным символом и
-			// поступим с ним так же, как с типом
+// 			// Убедимся, что имеем дело с обработанным символом и
+// 			// поступим с ним так же, как с типом
+// 
+// 			const Binding *const b = ptrmap(st->symmarks, r);
+// 			assert(b);
+// 			return reflist(RL(markext(b->key), markext(b->ref)));
 
-			const Binding *const b = ptrmap(st->symmarks, r);
-			assert(b);
-			return reflist(RL(markext(b->key), markext(b->ref)));
+			// Убедимся, что имеем дело с обработанным S-узлом. И
+			// поступим с ним примерно так же, как с типом
+
+			const Ref id = refmap(st->symmarks, r);
+			if(id.code == FREE)
+			{
+				return reffree();
+			}
+			
+			return reflist(RL(
+				symname(st->symbols, id),
+				symtype(st->symbols, id)));
 		}
 
 		// Мы можем так же иметь дело с FIn или Nth. Информация о них
@@ -330,6 +345,7 @@ static Ref deconstruct(const Ref N, NState *const S)
 		.L = R[0],
 		.verbs = S->verbs,
 		.types = S->types,
+		.symbols = S->symbols,
 		.symmarks = S->symmarks,
 		.typemarks = S->typemarks,
 		.evalmarks = S->evalmarks
@@ -399,8 +415,8 @@ static void eval(const Ref N, NState *const S)
 Ref ntheval(
 	Array *const U,
 	const Ref dag, const Array *const escape,
-	const Array *const symmarks,
 	const Array *const typemarks, const Array *const types,
+	const Array *const symmarks, const Array *const symbols,
 	const List *const inlist)
 {
 	if(DBGFLAGS & DBGNTH)
@@ -415,6 +431,7 @@ Ref ntheval(
 		.U = U,
 		.escape = escape,
 		.symmarks = symmarks,
+		.symbols = symbols,
 		.typemarks = typemarks,
 		.inlist = inlist,
 		.verbs = newverbmap(U, 0, verbs),

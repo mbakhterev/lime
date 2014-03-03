@@ -27,8 +27,8 @@
 		.FPut (0; (('0.4."Symb"; '0a.1."a"); ('0.4."Symb";'0a.1."b")); .F (
 			
 			.FIn in ();
-			.Nth Ta (in; (1; 0));
-			.Nth Tb (in; (1; 1));
+			.Nth Ta (in; (1; 0; 1));
+			.Nth Tb (in; (1; 1; 1));
 
 			.ggg (Ta;Tb)
 

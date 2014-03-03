@@ -188,7 +188,7 @@ static void activate(
 	const Ref body
 		= ntheval(
 			C->U, formdag(form), escape,
-			C->symmarks, C->typemarks, C->types,
+			C->typemarks, C->types, C->symmarks, C->symbols,
 			inlist);
 
 	if(DBGFLAGS & DBGACT)
@@ -200,12 +200,18 @@ static void activate(
 	}
 
 	Array *const envmarks = newkeymap();
-	const Array *const tomark = newverbmap(C->U, 0, ES("FEnv", "TEnv"));
+	const Array *const tomark
+		= newverbmap(C->U, 0, ES("FEnv", "TEnv", "S"));
 
 	enveval(C->U, C->env, envmarks, body, escape, tomark);
 	freekeymap((Array *)tomark);
 
 	typeeval(C->U, C->types, C->typemarks, body, escape, envmarks);
+
+	symeval(
+		C->U, C->symbols, C->symmarks,
+		body, escape, envmarks, C->typemarks);
+
 	formeval(C->U, area, body, escape, envmarks, C->typemarks);
 
 	freekeymap(envmarks);

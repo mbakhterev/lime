@@ -36,10 +36,11 @@ int main(int argc, char *argv[])
 	const Array *const symmarks = newkeymap();
 	const Array *const typemarks = newkeymap();
 	const Array *const types = newkeymap();
+	const Array *const symbols = newkeymap();
 
 	const List *const L = RL(refnum(1), refnum(2), refnum(3), refnum(4));
 
-	Ref el = ntheval(U, l, escape, symmarks, typemarks, types, L);
+	Ref el = ntheval(U, l, escape, typemarks, types, symmarks, symbols, L);
 
 	freeref(l);
 	freelist((List *)L);

@@ -84,6 +84,7 @@ static unsigned isfirstcore(const int c)
 	switch(c)
 	{
 	case '\'':
+	case '\"':
 	case '.':
 	case '(':
 		return 1;
@@ -264,6 +265,10 @@ static LoadCurrent core(
 	case '\'':
 		// Загрузка атома
 		return ce(ctx, env, nodes, append(refs, RL(loadatom(U, f))));
+	
+	case '\"':
+		break;
+		// Загрузка атома в формате "цепочка символов"
 	}
 
 	// Остаётся один возможный вариант: имя ссылки на узел
