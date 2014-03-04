@@ -453,17 +453,17 @@ List *tracepath(
 {
 	assert(map && map->code == MAP);
 
-	// dynamark для того, чтобы при удалении ключей не удалить path и name
+	// markext для того, чтобы при удалении ключей не удалить path и name
 	// на стороне пользователя. look ключи не копирует, поэтому не
 	// оптимизация
 
 	const Ref pathkey
-		= decorate(reflist(RL(dynamark(path), dynamark(name))), U, MAP);
+		= decorate(reflist(RL(markext(path), markext(name))), U, MAP);
 
 	const Ref thiskey
 		= decorate(
 			reflist(RL(
-				dynamark(path),
+				markext(path),
 				readpack(U, strpack(0, "this")))),
 			U, MAP);
 	
@@ -540,13 +540,13 @@ static Binding *maptofree(Array *const map, const Ref key)
 
 void tunerefmap(Array *const map, const Ref key, const Ref val)
 {
-	Binding *const b = maptofree(map, dynamark(key));
-	b->ref = dynamark(val);
+	Binding *const b = maptofree(map, markext(key));
+	b->ref = markext(val);
 }
 
 Ref refmap(const Array *const map, const Ref key)
 {
-	const Binding *const b = maplookup(map, dynamark(key));
+	const Binding *const b = maplookup(map, markext(key));
 	if(b)
 	{
 		return b->ref;
@@ -668,10 +668,10 @@ unsigned verbmap(const Array *const map, const unsigned verb)
 unsigned enummap(Array *const map, const Ref key)
 {
 	assert(map);
-	const Binding *b = maplookup(map, dynamark(key));
+	const Binding *b = maplookup(map, markext(key));
 	if(!b)
 	{
-		b = mapreadin(map, dynamark(key));
+		b = mapreadin(map, markext(key));
 		assert(b);
 	}
 

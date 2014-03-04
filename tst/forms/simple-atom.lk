@@ -10,16 +10,20 @@
 	.FEnv (("A"; '0a.1."a"); newsym);
 	.FEnv (("A"; '0a.1."b"); newsym);
 
-	.FEnv (("E"; '10.1."+"); .F ());
+	.L plus ('10.1."+");
 
-	.FEnv (("L"; '10.1."+"); .F
+// 	.FEnv (("E"; '10.1."+"); .F ());
+// 	.FEnv (("L"; '10.1."+"); .F
+
+	.FEnv (("E"; plus); .F ());
+	.FEnv (("L"; plus); .F
 	(
 		.FPut (0; ('0a.1."a"; '0a.1."b"); .F
 		(
 			.FIn in ();
 			.Nth a (in; (1; 0));
 			.Nth b (in; (1; 1));
-			.T f4 ("F"; 4);
+			.L f4 (.T ("F"; 4));
 			.add r (f4; a; b);
 			.addr c (.T ("P"; 4); .S ('0a.1."R"; f4));
 			.wr (f4; c; r)

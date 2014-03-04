@@ -114,7 +114,7 @@ static int collectone(List *const l, void *const ptr)
 	assert(ptr);
 	AState *const st = ptr;
 
-	DL(key, RS(decoatom(st->U, DOUT), dynamark(l->ref)));
+	DL(key, RS(decoatom(st->U, DOUT), markext(l->ref)));
 	const Binding *const b = maplookup(st->R, key);
 
 	if(DBGFLAGS & DBGCLLT)
@@ -174,7 +174,7 @@ static void activate(
 
 	const Array *const nonroots
 		= newverbmap(C->U, 0,
-			ES("FIn", "Nth", "F", "FEnv", "FPut", "FOut"));
+			ES("L", "FIn", "Nth", "F", "FEnv", "FPut", "FOut"));
 
 // 	if(DBGFLAGS & DBGACT)
 // 	{
@@ -185,11 +185,14 @@ static void activate(
 // 		dumpdag(0, stderr, 0, C->U, formdag(form));
 // 	}
 
-	const Ref body
+	const Ref rawbody
 		= ntheval(
 			C->U, formdag(form), escape,
 			C->typemarks, C->types, C->symmarks, C->symbols,
 			inlist);
+	
+	const Ref body = leval(C->U, rawbody, escape);
+	freeref(rawbody);
 
 	if(DBGFLAGS & DBGACT)
 	{

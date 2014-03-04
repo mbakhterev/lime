@@ -46,7 +46,7 @@ static int registerone(List *const l, void *const ptr)
 		{
 			const Ref R[2];
 			assert(splitpair(out->key, (Ref *)R));
-			l->ref = dynamark(R[1]);
+			l->ref = markext(R[1]);
 		}
 
 		return 0;
@@ -57,7 +57,7 @@ static int registerone(List *const l, void *const ptr)
 	// скопировать bindkey ключ из l->ref внутрь, в случае необходимости.
 	// После привязывания исходный l->ref нам уже не нужен
 
-// 	DL(inkey, RS(decoatom(st->U, DIN), dynamark(l->ref)));
+// 	DL(inkey, RS(decoatom(st->U, DIN), markext(l->ref)));
 	DL(inkey, RS(decoatom(st->U, DIN), l->ref));
 	Binding *const in = bindkey(st->reactor, inkey);
 	freeref(l->ref);
@@ -75,7 +75,7 @@ static int registerone(List *const l, void *const ptr)
 	{
 		const Ref R[2];
 		assert(splitpair(in->key, (Ref *)R));
-		l->ref = dynamark(R[1]);
+		l->ref = markext(R[1]);
 	}
 
 	// Сохраняем форму в списке ожидающих входа форм

@@ -93,7 +93,7 @@ extern Ref cleanext(const Ref);
 // Иногда нужно поставить бит external, в зависимости от типа Ref-ы. Процедура
 // для этого
 
-extern Ref dynamark(const Ref);
+// extern Ref dynamark(const Ref);
 
 // Ориентируясь на Ref.code вызвать соответствующее freexxx из доступных, если
 // необходимо
@@ -650,6 +650,10 @@ extern Ref symid(const Array *const symmarks, const Ref N);
 
 extern Ref symtype(const Array *const symbols, const Ref id);
 extern Ref symname(const Array *const symbols, const Ref id);
+
+// Внутренняя оценка графа. Раскрытие L-узлов
+
+extern Ref leval(Array *const U, const Ref dag, const Array *const escape);
 
 // Оценка узлов Nth и FIn. Процедура сконструирует новый граф с подставленными
 // вместо FIn и Nth значениями. Самих узлов не будет в новом графе. Отображения

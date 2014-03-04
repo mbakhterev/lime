@@ -10,11 +10,11 @@
 
 #define DBGFLAGS 0
 
-#define FIN 0U
-#define NTH 1U
-#define SNODE 2U
-#define TNODE 3U
-#define TENV 4U
+#define FIN	0U
+#define NTH	1U
+#define SNODE	2U
+#define TNODE	3U
+#define TENV	4U
 
 static const char *const verbs[] =
 {

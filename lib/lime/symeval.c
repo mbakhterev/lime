@@ -54,7 +54,7 @@ static Ref getexisting(
 			readpack(U, strpack(0, "ENV")),
 			readpack(U, strpack(0, "parent")));
 	
-	const Ref K = decorate(dynamark(key), U, DSYM);
+	const Ref K = decorate(markext(key), U, DSYM);
 	const Binding *const b = pathlookup(l, K, NULL);
 
 	freeref(K);
@@ -95,7 +95,7 @@ static Ref setnew(
 	const unsigned symnum = symb - (Binding *)symbols->u.data;
 	assert(symnum + 1 == symbols->count);
 
-	const Ref K = decorate(dynamark(name), U, DSYM);
+	const Ref K = decorate(markext(name), U, DSYM);
 	Binding *const b = mapreadin(env, K);
 
 	if(!b)
@@ -293,8 +293,7 @@ Ref symname(const Array *const symbols, const Ref id)
 		&& writerefs(b->key.u.list, (Ref *)R, len) == len
 		&& R[0].code == MAP);
 
-// 	return markext(R[1]);
-	return dynamark(R[1]);
+	return markext(R[1]);
 }
 
 Ref symtype(const Array *const symbols, const Ref id)

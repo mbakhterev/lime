@@ -127,7 +127,7 @@ static unsigned getexisting(Array *const env, Array *const U, const Ref key)
 		free(strpath);
 	}
 
-	const Ref K = decorate(dynamark(key), U, TYPE); 
+	const Ref K = decorate(markext(key), U, TYPE); 
 	const Binding *const b = pathlookup(l, K, NULL);
 
 	freeref(K);

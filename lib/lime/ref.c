@@ -120,10 +120,10 @@ static Ref setbit(const Ref r, const unsigned bit)
 	};
 }
 
-Ref markext(const Ref r)
-{
-	return setbit(r, 1);
-}
+// Ref markext(const Ref r)
+// {
+// 	return setbit(r, 1);
+// }
 
 Ref cleanext(const Ref r)
 {
@@ -135,7 +135,9 @@ static Ref skip(const Ref r)
 	return r;
 }
 
-Ref dynamark(const Ref r)
+// Ref dynamark(const Ref r)
+
+Ref markext(const Ref r)
 {
 	switch(r.code)
 	{
@@ -151,7 +153,8 @@ Ref dynamark(const Ref r)
 	case DAG:
 	case FORM:
 	case AREA:
-		return markext(r);
+// 		return markext(r);
+		return setbit(r, 1);
 	}
 
 	DBG(DBGDM, "r.(code pointer) = (%u %p)", r.code, r.u.pointer);

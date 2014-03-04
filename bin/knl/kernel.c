@@ -49,22 +49,23 @@ static void initforms(
 			}
 
 			Array *const subdags = newverbmap(U, 0, stdmap);
-			const Ref dag = loaddag(f, U, subdags);
+			const Ref rawdag = loaddag(f, U, subdags);
+			freekeymap(subdags);
+			fclose(f);
 			
 			if(DBGFLAGS & DBGINIT)
 			{
-				dumpdag(1, stderr, 0, U, dag);
-// 				, subdags);
+				dumpdag(1, stderr, 0, U, rawdag);
 				assert(fputc('\n', stderr) == '\n');
 			}
 
-			freekeymap(subdags);
-			fclose(f);
+			Array *const escape = newverbmap(U, 0, ES("F"));
+
+			const Ref dag = leval(U, rawdag, escape);
+			freeref(rawdag);
 
 			Array *const envmarks = newkeymap();
 			Array *const typemarks = newkeymap();
-
-			Array *const escape = newverbmap(U, 0, ES("F"));
 
 			Array *const tomark
 				= newverbmap(U, 0, ES("FEnv", "TEnv"));
