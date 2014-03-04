@@ -35,6 +35,7 @@ static void eval(const Ref N, LState *const S)
 	{
 	case NUMBER:
 	case ATOM:
+	case TYPE:
 		return;
 	
 	case LIST:

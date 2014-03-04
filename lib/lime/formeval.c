@@ -290,7 +290,8 @@ static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 
 	if(b)
 	{
-		assert(b->ref.code == FORM);
+// 		assert(b->ref.code == FORM);
+		assert(b->ref.code == DAG);
 
 		// Здесь нам нужна только ссылка на форму, которая уже сохранена
 		// неким образом в окружении. Поэтому markext
