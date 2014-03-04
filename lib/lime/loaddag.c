@@ -267,8 +267,18 @@ static LoadCurrent core(
 		return ce(ctx, env, nodes, append(refs, RL(loadatom(U, f))));
 	
 	case '\"':
-		break;
-		// Загрузка атома в формате "цепочка символов"
+	{
+		// Загрузка атома из последовательности между кавычек
+
+		const Ref t = loadtoken(U, f, 0, "[0-9A-Za-z]");
+		int n = 0;
+		if(fscanf(f, "\"%n", &n) != 0 || n != 1)
+		{
+			ERR("%s", "can't detect \"-finishing");
+		}
+
+		return ce(ctx, env, nodes, append(refs, RL(t)));
+	}
 	}
 
 	// Остаётся один возможный вариант: имя ссылки на узел

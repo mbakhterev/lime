@@ -2,27 +2,27 @@
 	.F newsym
 	(
 		.Nth name (.FIn (); (1));
-		.addr A (.T ('00.1."P"; 4); .S (name; .T ('00.1."F"; 4)));
-		.rd r (.T ('00.1."F"; 4); A);
+		.addr A (.T ("P"; 4); .S (name; .T ("F"; 4)));
+		.rd r (.T ("F"; 4); A);
 		.FOut (0; ((name; r)))
 	);
 
-	.FEnv (('00.1."A"; '0a.1."a"); newsym);
-	.FEnv (('00.1."A"; '0a.1."b"); newsym);
+	.FEnv (("A"; '0a.1."a"); newsym);
+	.FEnv (("A"; '0a.1."b"); newsym);
 
-	.FEnv (('00.1."E"; '10.1."+"); .F ());
+	.FEnv (("E"; '10.1."+"); .F ());
 
-	.FEnv (('00.1."L"; '10.1."+"); .F
+	.FEnv (("L"; '10.1."+"); .F
 	(
 		.FPut (0; ('0a.1."a"; '0a.1."b"); .F
 		(
 			.FIn in ();
 			.Nth a (in; (1; 0));
 			.Nth b (in; (1; 1));
-			.T f4 ('00.1."F"; 4);
-			.add r (f4; a; b)
-			.addr c (.T ('00.1."P"; 4); .S ('0a.1."R"; f4));
-			wr (f4; c; r)
+			.T f4 ("F"; 4);
+			.add r (f4; a; b);
+			.addr c (.T ("P"; 4); .S ('0a.1."R"; f4));
+			.wr (f4; c; r)
 		))
 	))
 )

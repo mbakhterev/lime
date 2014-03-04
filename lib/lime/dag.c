@@ -78,7 +78,7 @@ static int walkone(List *const l, void *const ptr)
 
 void walkdag(const Ref dag, WalkOne wlk, void *const ptr, Array *const vm)
 {
-	assert(dag.code == LIST);
+	assert(dag.code == LIST || dag.code == DAG);
 
 	WState st =
 	{
