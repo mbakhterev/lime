@@ -744,6 +744,17 @@ extern void formeval(
 	const Ref dag, const Array *const escape,
 	const Array *const envmarks, const Array *const typemarks);
 
+typedef struct
+{
+	Array *const env;
+	Array *const area;
+} GoNode;
+
+extern GoNode areaeval(
+	Array *const U,
+	Array *const area,
+	const Ref dag, const Array *const escape, const Array *const envmarks);
+
 // Ядерная функциональность
 
 // Синтаксические команды. Тут и дальше получается некий свободный поток
@@ -756,7 +767,7 @@ extern void formeval(
 #define BOP 4
 #define EOP 5
 
-// О Position заметка txt/log-2013.txt Position 2013-08-27 18:24:10
+// О Position заметка 2013-08-27 18:24:10
 
 typedef struct
 {
