@@ -210,7 +210,9 @@ static Ref *keytoref(List *const env, const Ref r)
 		return &b->ref;
 	}
 
-	b = mapreadin(tip(env)->ref.u.array, r);
+	b = (Binding *)bindingat(
+		tip(env)->ref.u.array,
+		mapreadin(tip(env)->ref.u.array, r));
 	assert(b);
 
 	return &b->ref;

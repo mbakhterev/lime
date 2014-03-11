@@ -5,10 +5,12 @@
 #include <string.h>
 
 #define DBGFREE	1
-#define DBGKM 2
-#define DBGPLU 4
-#define DBGDM 8
-#define DBGCK 16
+#define DBGKM	2
+#define DBGPLU	4
+#define DBGDM	8
+#define DBGCK	16
+#define DBGMO	32
+#define DBGBL	64
 
 // #define DBGFLAGS (DBGFREE)
 // #define DBGFLAGS (DBGKM)
@@ -16,7 +18,9 @@
 // #define DBGFLAGS (DBGDM | DBGCK | DBGPLU)
 // #define DBGFLAGS (DBGCK)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGMO | DBGBL)
+
+// #define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -191,35 +195,53 @@ void freekeymap(Array *const env)
 	freemap(env);
 }
 
+static const char *const codestr[] =
+{
+	[DMAP]	= "/",
+	[DTYPE]	= "@",
+	[DSYM]	= "$",
+	[DFORM]	= "#",
+	[DIN]	= "-",
+	[DOUT]	= "+",
+	[DAREA]	= "*",
+	[DUTIL]	= "^"
+};
+
 static const char *codetostr(const unsigned code)
 {
-	switch(code)
-	{
-	case DMAP:
-		return "/";
-	
-	case DTYPE:
-		return "@";
-	
-	case DSYM:
-		return "$";
-	
-	case DFORM:
-		return "#";
-	
-	case DIN:
-		return "-";
-	
-	case DOUT:
-		return "+";
-	
-	case DREACTOR:
-		return "?";
-	}
-
-	assert(0);
-	return NULL;
+	assert(code < sizeof(codestr)/sizeof(const char *));
+	return codestr[code];
 }
+
+// static const char *codetostr(const unsigned code)
+// {
+// 	switch(code)
+// 	{
+// 	case DMAP:
+// 		return "/";
+// 	
+// 	case DTYPE:
+// 		return "@";
+// 	
+// 	case DSYM:
+// 		return "$";
+// 	
+// 	case DFORM:
+// 		return "#";
+// 	
+// 	case DIN:
+// 		return "IN";
+// 	
+// 	case DOUT:
+// 		return "OUT";
+// 	
+// 	case DREACTOR:
+// 		return "?";
+// 	}
+// 
+// 	assert(0);
+// 	return NULL;
+// }
 
 Ref decoatom(Array *const U, const unsigned code)
 {
@@ -231,7 +253,8 @@ Ref decoatom(Array *const U, const unsigned code)
 	case DFORM:
 	case DIN:
 	case DOUT:
-	case DREACTOR:
+	case DAREA:
+	case DUTIL:
 		return readpack(U, strpack(0, codetostr(code)));
 
 	default:
@@ -260,39 +283,74 @@ static const Binding *look(const Array *const map, const Ref key)
 	return NULL;
 }
 
-static Binding *allocate(Array *const map, const Ref key)
+// static Binding *allocate(Array *const map, const Ref key)
+// {
+// 	assert(map && map->code == MAP);
+// 
+// 	const Binding b =
+// 	{
+// 		.key = key,
+// 		.ref = { .code = FREE, .u.pointer = NULL }
+// 	};
+// 
+// 	const unsigned k = readin(map, &b);
+// 
+// 	return (Binding *)map->u.data + k;
+// }
+
+static unsigned allocate(Array *const map, const Ref key)
 {
 	assert(map && map->code == MAP);
 
 	const Binding b =
 	{
 		.key = key,
-		.ref = { .code = FREE, .u.pointer = NULL }
+		.ref = reffree()
 	};
 
-	const unsigned k = readin(map, &b);
-
-	return (Binding *)map->u.data + k;
+	return readin(map, &b);
 }
 
-const Binding *maplookup(const Array *const map, const Ref key)
+// const Binding *maplookup(const Array *const map, const Ref key)
+// {
+// 	if(map)
+// 	{
+// 		return look(map, key);
+// 	}
+// 
+// 	return NULL;
+// }
+
+unsigned maplookup(const Array *const map, const Ref key)
 {
 	if(map)
 	{
-		return look(map, key);
+		return lookup(map, &key);
 	}
 
-	return NULL;
+	return -1;
 }
 
-Binding *mapreadin(Array *const map, const Ref key)
+// Binding *mapreadin(Array *const map, const Ref key)
+// {
+// 	if(!look(map, key))
+// 	{
+// 		return allocate(map, key);
+// 	}
+// 
+// 	return NULL;
+// }
+
+unsigned mapreadin(Array *const map, const Ref key)
 {
-	if(!look(map, key))
+	assert(map && map->code == MAP);
+
+	if(lookup(map, &key) == -1)
 	{
 		return allocate(map, key);
 	}
 
-	return NULL;
+	return -1;
 }
 
 typedef struct
@@ -305,27 +363,79 @@ typedef struct
 	unsigned ok;
 } PState;
 
-Binding *bindkey(Array *const map, const Ref key)
-{
-	Binding *b = (Binding *)maplookup(map, key);
-	if(b)
-	{
-		// Binding нашлась, ничего не нужно делать кроме как вернуть
-		// ссылку
+// Binding *bindkey(Array *const map, const Ref key)
+// {
+// 	Binding *b = (Binding *)maplookup(map, key);
+// 	if(b)
+// 	{
+// 		// Binding нашлась, ничего не нужно делать кроме как вернуть
+// 		// ссылку
+// 
+// 		return b;
+// 	}
+// 
+// 	// Здесь необходимо выделить новый Binding. И сохранить в нём копию
+// 	// ключа. FIXME: копирование - накладные расходы, но это плата за
+// 	// текущий вариант управления память. В следующей версии в этом не будет
+// 	// необходимости
+// 
+// 	assert(map);
+// 	b = mapreadin(map, forkref(key, NULL));
+// 	assert(b);
+// 
+// 	return b;
+// }
 
-		return b;
+unsigned bindkey(Array *const map, const Ref key)
+{
+	unsigned id = maplookup(map, key);
+	if(id != -1)
+	{
+		return id;
 	}
 
-	// Здесь необходимо выделить новый Binding. И сохранить в нём копию
-	// ключа. FIXME: копирование - накладные расходы, но это плата за
-	// текущий вариант управления память. В следующей версии в этом не будет
-	// необходимости
-
 	assert(map);
-	b = mapreadin(map, forkref(key, NULL));
-	assert(b);
+	id = mapreadin(map, forkref(key, NULL));
+	assert(id != -1);
+	return id;
+}
 
-	return b;
+const Binding *bindingat(const Array *const map, const unsigned N)
+{
+	if(!map || N == -1)
+	{
+		return NULL;
+	}
+
+	assert(N < map->count);
+	return (const Binding *)map->u.data + N;
+}
+
+static void backlink(
+	Array *const U,
+	Array *const src, const Array *const dst, const Ref name)
+{
+	if(DBGFLAGS & DBGBL)
+	{
+		char *const rstr = strref(U, NULL, name);
+		DBG(DBGBL, "full name = %s", rstr);
+		free(rstr);
+	}
+
+	const Ref R[2];
+	assert(splitpair(name, (Ref *)R) && splitpair(R[1], (Ref *)R));
+	const Ref r = R[1];
+
+	DL(key, RS(decoatom(U, DUTIL), markext(refkeymap((Array *)dst))));
+	Binding *const b = (Binding *)bindingat(src, bindkey(src, key));
+	if(b->ref.code == FREE)
+	{
+		b->ref = reflist(NULL);
+	}
+
+	assert(b->ref.code == LIST);
+
+	b->ref.u.list = append(b->ref.u.list, RL(markext(r)));
 }
 
 static int makeone(List *const k, void *const ptr)
@@ -347,7 +457,18 @@ static int makeone(List *const k, void *const ptr)
 			st->U, 
 			MAP);
 
-	Binding *const b = bindkey(st->current, key);
+	const unsigned bid = bindkey(st->current, key);
+	const Binding *const b = bindingat(st->current, bid);
+
+// 	Binding *const b
+// 		= (Binding *)bindingat(st->current, bindkey(st->current, key));
+
+	if(DBGFLAGS & DBGMO)
+	{
+		char *const kstr = strref(st->U, NULL, b->key);
+		DBG(DBGMO, "b.key = %s", kstr);
+		free(kstr);
+	}
 
 	// В случае, когда key копируется в новый Binding отображения, bindkey
 	// выставит key.external, и freekey ничего с этим key не будет делать
@@ -356,6 +477,8 @@ static int makeone(List *const k, void *const ptr)
 
 	if(b->ref.code != FREE)
 	{
+		DBG(DBGMO, "%s", "found");
+
 		// Найденное должно быть keymap-ой
 		assert(iskeymap(b->ref));
 
@@ -364,10 +487,13 @@ static int makeone(List *const k, void *const ptr)
 
 		// Но если k - это последнее имя в списке, то нужно убедится,
 		// что (M.code == FREE)
-
 		st->ok = k != st->L || st->M.code == FREE;
 
-		return 0;
+		// В этом случае не нежно обновлять структуры связей между
+		// отображениями: речь о счётчиках и списке имён
+
+// 		return 0;
+		return !st->ok;
 	}
 
 	// Если ничего не нашлось, то в зависимости от k и st->L занимаемся
@@ -375,23 +501,68 @@ static int makeone(List *const k, void *const ptr)
 
 	if(k != st->L)
 	{
-		// Речь идёт не о последнем имени, поэтому нужно создать пустую
-		// новую keymap. В ней и будем работать на следующей итерации
+// 		// Речь идёт не о последнем имени, поэтому нужно создать пустую
+// 		// новую keymap. В ней и будем работать на следующей итерации
+// 
+// 		b->ref = refkeymap(st->current = newkeymap());
+// 		return 0;
 
-		b->ref = refkeymap(st->current = newkeymap());
+		DBG(DBGMO, "%s", "not found. middle");
+
+		// Речь идёт не о последнем имени, нужно создать промежуточную
+		// keymap
+		Array *const map = newkeymap();
+
+		// Редактируем связи. Записываем в текущую keymap ссылку на имя
+		// map. Записываем её в список с ключом ((decoatom UTIL) map)
+		backlink(st->U, st->current, map, b->key);
+		linkup(st->U, map);
+// 		backlink(st->U, st->current, map, b->key);
+// 		backlink(
+// 			st->U, st->current, map,
+// 			bindkey(st->current, bid)->ref);
+
+		// С этим новым отображением будем работать на следующей
+		// итерации
+// 		b->ref = refkeymap(st->current = map);
+		((Binding *)bindingat(st->current, bid))->ref = refkeymap(map);
+		st->current = map;
+
 		return 0;
 	}
 
 	if(st->M.code == FREE)
 	{
+		DBG(DBGMO, "%s", "not found. last. no specific map");
+
 		// Речь идёт о последнем имени, но ссылка на таблицу не
 		// предоставлена. Поэтому создаём свежую. Всё будет в порядке,
 		// если инициализация корректная
 
-		b->ref = refkeymap(st->current = newkeymap());
+// 		b->ref = refkeymap(st->current = newkeymap());
+
+		Array *const map = newkeymap();
+		backlink(st->U, st->current, map, b->key);
+		linkup(st->U, map);
+// 		backlink(st->U, st->current, map, b->key);
+
+// 		b->ref = refkeymap(st->current = map);
+		((Binding *)bindingat(st->current, bid))->ref = refkeymap(map);
+		st->current = map;
+
 		st->ok = iskeymap(b->ref);
 
-		return 0;
+// 		return 0;
+		return !st->ok;
+	}
+
+	DBG(DBGMO, "%s", "not found. last. specific map");
+
+	if(DBGFLAGS & DBGMO)
+	{
+		char *const kstr = strref(st->U, NULL, b->key);
+		DBG(DBGMO, "b.key = %s", kstr);
+		free(kstr);
 	}
 
 	// Ничего не нашлось, имя последнее и передан указатель на таблицу для
@@ -399,12 +570,42 @@ static int makeone(List *const k, void *const ptr)
 	// Подготовится к возврату этой таблицы и проверить, что всё ОК. То, что
 	// st->M корректная ссылка проверено в самой makepath
 
-	b->ref = st->M;
-	st->current = st->M.u.array;
+// 	st->ok = st->M.code == MAP;
+	st->ok = iskeymap(st->M);
 
-	st->ok = st->M.code == MAP;
+	DBG(DBGMO, "st.ok = %u", st->ok);
 
-	return 0;
+	if(st->ok)
+	{
+		if(DBGFLAGS & DBGMO)
+		{
+			char *const kstr = strref(st->U, NULL, b->key);
+			DBG(DBGMO, "b.key = %s", kstr);
+			free(kstr);
+		}
+
+		backlink(st->U, st->current, st->M.u.array, b->key);
+
+		linkup(st->U, st->M.u.array);
+
+// 		if(DBGFLAGS & DBGMO)
+// 		{
+// 			char *const kstr = strref(st->U, NULL, b->key);
+// 			DBG(DBGMO, "b.key = %s", kstr);
+// 			free(kstr);
+// 		}
+// 
+// 		backlink(st->U, st->current, st->M.u.array, b->key);
+
+// 		b->ref = st->M;
+		((Binding *)bindingat(st->current, bid))->ref = st->M;
+		st->current = st->M.u.array;
+	}
+
+	DBG(DBGMO, "b.ref.code = %u", b->ref.code);
+
+// 	return 0;
+	return !st->ok;
 }
 
 Array *makepath(
@@ -533,7 +734,7 @@ const Binding *pathlookup(
 
 static Binding *maptofree(Array *const map, const Ref key)
 {
-	Binding *const b = mapreadin(map, key);
+	Binding *const b = (Binding *)bindingat(map, mapreadin(map, key));
 	assert(b);
 	return b;
 }
@@ -546,7 +747,7 @@ void tunerefmap(Array *const map, const Ref key, const Ref val)
 
 Ref refmap(const Array *const map, const Ref key)
 {
-	const Binding *const b = maplookup(map, markext(key));
+	const Binding *const b = bindingat(map, maplookup(map, markext(key)));
 	if(b)
 	{
 		return b->ref;
@@ -668,10 +869,10 @@ unsigned verbmap(const Array *const map, const unsigned verb)
 unsigned enummap(Array *const map, const Ref key)
 {
 	assert(map);
-	const Binding *b = maplookup(map, markext(key));
+	const Binding *b = bindingat(map, maplookup(map, markext(key)));
 	if(!b)
 	{
-		b = mapreadin(map, markext(key));
+		b = bindingat(map, mapreadin(map, markext(key)));
 		assert(b);
 	}
 
@@ -686,7 +887,7 @@ unsigned typeenummap(Array *const map, const Ref key)
 	assert(map);
 	assert(istypekey(key));
 
-	const Binding *const b = bindkey(map, key);
+	const Binding *const b = bindingat(map, bindkey(map, key));
 
 	const unsigned n = b - (Binding *)map->u.data;
 	assert(n < map->count);
@@ -826,3 +1027,60 @@ void walkbindings(Array *const map, WalkBinding wlk, void *const ptr)
 		}
 	}
 }
+
+unsigned linkup(Array *const U, Array *const map)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LINKS")));
+	Binding *const b = (Binding *)bindingat(map, bindkey(map, key));
+	assert(b);
+
+	if(b->ref.code == NUMBER)
+	{
+		assert(b->ref.u.number < MAXNUM);
+		b->ref.u.number += 1;
+	}
+	else
+	{
+		// Это должна быть свободная ячейка
+		assert(b->ref.code == FREE);
+
+		// Сразу записываем единицу, считая, что всё началось с 0
+		b->ref = refnum(1);
+	}
+
+	return b->ref.u.number;
+}
+
+unsigned linkdown(Array *const U, Array *const map)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LINKS")));
+	const Binding *const b = bindingat(map, maplookup(map, key));
+
+	// Корректно вызывать linkdown можно только после linkup, поэтому должно
+	// выполняться
+
+	assert(b && b->ref.code == NUMBER && b->ref.u.number > 0);
+
+	return (((Binding *)b)->ref.u.number -= 1);
+}
+
+unsigned isconnected(Array *const U, const Array *const map)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LINKS")));
+	const Binding *const b = bindingat(map, maplookup(map, key));
+
+	if(b)
+	{
+		assert(b->ref.code == NUMBER);
+		return b->ref.code > 0;
+	}
+
+	return 0;
+}
+
+// const Binding *bindingat(const Array *const map, const unsigned N)
+// {
+// 	assert(map && map->code == MAP);
+// 	assert(N < map->count);
+// 	return (const Binding *)map->u.data + N;
+// }

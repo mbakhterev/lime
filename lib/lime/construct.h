@@ -310,11 +310,11 @@ typedef struct
 // (keymap): mapreadin - зачитывание нового ключа с выделением Binding под его
 // связку; maplookup - поиск Binding по ключу.
 // 
-// Функции возвращают NULL в случае логического неуспеха: maplookup(map, key) ==
-// NULL, если ничего не найдено; mapreadin(map, key) == NULL, если конфликт
+// Функции возвращают -1 в случае логического неуспеха: maplookup(map, key) ==
+// NULL, если ничего не найдено; mapreadin(map, key) == -1, если конфликт
 // ключей.
 // 
-// maplookup(NULL, key) всегда равно NULL. mapreadin(NULL, key) - это assert.
+// maplookup(NULL, key) всегда равно -1. mapreadin(NULL, key) - это assert.
 // 
 // mapreadin сохраняя ключ в отображении ничего с ним не делает, соответствующая
 // Ref просто копируется. Например, чтобы передать дополнительно украшенный
@@ -325,16 +325,27 @@ typedef struct
 // 
 // Или можно оставить на хранении прямо оригинал ключа:
 // 
-//	mapreadin(map, decorate(sourcekey), U, TYPE)
+//	mapreadin(map, sourcekey, U, TYPE)
 
-extern Binding *mapreadin(Array *const map, const Ref key);
-extern const Binding *maplookup(const Array *const map, const Ref key);
+// extern Binding *mapreadin(Array *const map, const Ref key);
+// extern const Binding *maplookup(const Array *const map, const Ref key);
+
+extern unsigned mapreadin(Array *const map, const Ref key);
+extern unsigned maplookup(const Array *const map, const Ref key);
 
 // Достаточно часто требуется отыскать Binding по ключу, если соответствующая
 // Binding в отображении есть. А если нет, то создать её и скопировать ключ в
 // структуру отображения. Почему-то эта процедура называется bindkey
 
-extern Binding *bindkey(Array *const map, const Ref key);
+// extern Binding *bindkey(Array *const map, const Ref key);
+
+extern unsigned bindkey(Array *const map, const Ref key);
+
+// Процедура для упрощения извлечения (Binding *) по индексу. Часто полезно.
+// Использовать можно так:
+// 	const Binding *const b = bindingat(map, mapreadin(map, key));
+
+extern const Binding *bindingat(const Array *const map, const unsigned id);
 
 // Процедура декорирует ключи специальными атомами. Это нужно для удобства
 // отладки (в основном). Дополнительный плюс, что различно декорированные ключи
@@ -342,7 +353,7 @@ extern Binding *bindkey(Array *const map, const Ref key);
 // если code ей поддерживается: (deco-atom key). Бит external в Ref-е установлен
 // не будет. В противном случае вылетит с assert-ом
 
-enum { DSYM = ATOM, DTYPE = TYPE, DMAP = MAP, DFORM, DIN, DOUT, DREACTOR };
+enum { DSYM = ATOM, DTYPE = TYPE, DMAP = MAP, DFORM, DIN, DOUT, DAREA, DUTIL };
 
 extern Ref decorate(const Ref key, Array *const U, const unsigned code);
 
@@ -393,6 +404,18 @@ extern List *tracepath(
 
 extern const Binding *pathlookup(
 	const List *const stack, const Ref key, unsigned *const depth);
+
+// Для управления и анализа связей между разными keymap-ами (как связаны
+// окружения или области вывода, которые реализованы через keymap) полезно уметь
+// отслеживать перекрёстные ссылки между окружениями. Процедуры linkup и
+// linkdown помогают подсчитывать количество ссылок на map из других окружений.
+// Они возвращают результат выполнения операции. Счётчик не должен падать ниже
+// нуля, иначе assert. isconnected проверяет, счётчик и позволяет сделать вывод
+// о связанности map с другими
+
+extern unsigned linkup(Array *const U, Array *const map);
+extern unsigned linkdown(Array *const U, Array *const map);
+extern unsigned isconnected(Array *const U, const Array *const map);
 
 // В некоторых случаях необходима уверенность в том, что ключ состоит только из
 // элементов определённого типа элементов:

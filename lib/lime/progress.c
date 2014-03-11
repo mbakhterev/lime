@@ -115,7 +115,7 @@ static int collectone(List *const l, void *const ptr)
 	AState *const st = ptr;
 
 	DL(key, RS(decoatom(st->U, DOUT), markext(l->ref)));
-	const Binding *const b = maplookup(st->R, key);
+	const Binding *const b = bindingat(st->R, maplookup(st->R, key));
 
 	if(DBGFLAGS & DBGCLLT)
 	{

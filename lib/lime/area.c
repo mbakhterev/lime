@@ -10,10 +10,11 @@ unsigned isarea(const Ref r)
 
 static void initreactor(Array *const U, const unsigned id, Array *const area)
 {
-	const Ref rkey = decorate(refnum(id), U, DREACTOR);
+	const Ref rkey = decorate(refnum(id), U, DAREA);
 
 	// Чистим external-бит для уверенности
-	Binding *const b = mapreadin(area, cleanext(rkey));
+	Binding *const b
+		= (Binding *)bindingat(area, mapreadin(area, cleanext(rkey)));
 
 	if(!b)
 	{
@@ -26,7 +27,8 @@ static void initreactor(Array *const U, const unsigned id, Array *const area)
 	}
 
 	Array *const r = newkeymap();
-	Binding *const fb = mapreadin(r, readtoken(U, "FORMS"));
+	Binding *const fb
+		= (Binding *)bindingat(r, mapreadin(r, readtoken(U, "FORMS")));
 
 	if(!fb)
 	{
@@ -42,7 +44,9 @@ static void initreactor(Array *const U, const unsigned id, Array *const area)
 
 static void initdag(Array *const U, Array *const area)
 {
-	Binding *const b = mapreadin(area, readtoken(U, "DAG"));
+	Binding *const b
+		= (Binding *)bindingat(
+			area, mapreadin(area, readtoken(U, "DAG")));
 	assert(b);
 // 	b->ref = cleanext(reflist(NULL));
 	b->ref = cleanext(refdag(NULL));
@@ -64,8 +68,8 @@ Array *newarea(Array *const U)
 
 Array *areareactor(Array *const U, const Array *const area, const unsigned id)
 {
-	DL(rkey, RS(decoatom(U, DREACTOR), refnum(id)));
-	const Binding *const b = maplookup(area, rkey);
+	DL(rkey, RS(decoatom(U, DAREA), refnum(id)));
+	const Binding *const b = bindingat(area, maplookup(area, rkey));
 	
 	// Можно было бы создавать реакторы по запросу, но для лучшего контроля
 	// за ошибками требуем, чтобы это вхождение уже было и было корректным
@@ -83,7 +87,9 @@ unsigned areforms(const Ref r)
 
 Ref *areadag(Array *const U, const Array *const area)
 {
-	Binding *const b = (Binding *)maplookup(area, readtoken(U, "DAG"));
+	Binding *const b
+		= (Binding *)bindingat(area,
+			maplookup(area, readtoken(U, "DAG")));
 	assert(b);
 // 	assert(b->ref.code == LIST);
 	assert(isdag(b->ref));
@@ -92,7 +98,8 @@ Ref *areadag(Array *const U, const Array *const area)
 
 Ref *reactorforms(Array *const U, const Array *const reactor)
 {
-	const Binding *const b = maplookup(reactor, readtoken(U, "FORMS"));
+	const Binding *const b
+		= bindingat(reactor, maplookup(reactor, readtoken(U, "FORMS")));
 	assert(b);
 
 	assert(areforms(b->ref));

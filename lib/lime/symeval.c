@@ -80,7 +80,8 @@ static Ref setnew(
 	const Ref name = forkref(key, NULL);
 	const Ref id = reflist(RL(markext(refkeymap(env)), name));
 
-	Binding *const symb = mapreadin(symbols, id);
+	Binding *const symb
+		= (Binding *)bindingat(symbols, mapreadin(symbols, id));
 
 	if(!symb)
 	{
@@ -96,7 +97,7 @@ static Ref setnew(
 	assert(symnum + 1 == symbols->count);
 
 	const Ref K = decorate(markext(name), U, DSYM);
-	Binding *const b = mapreadin(env, K);
+	Binding *const b = (Binding *)bindingat(env, mapreadin(env, K));
 
 	if(!b)
 	{

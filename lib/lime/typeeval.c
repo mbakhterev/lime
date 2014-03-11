@@ -151,7 +151,7 @@ static unsigned setnew(
 	}
 
 	const Ref K = decorate(forkref(key, NULL), U, TYPE);
-	Binding *const b = mapreadin(env, K);
+	Binding *const b = (Binding *)bindingat(env, mapreadin(env, K));
 
 	if(!b)
 	{

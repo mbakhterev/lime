@@ -33,7 +33,8 @@ static int registerone(List *const l, void *const ptr)
 	// Надо поискать, существует ли соответствующий output
 
 	DL(outkey, RS(decoatom(st->U, DOUT), l->ref));
-	const Binding *const out = maplookup(st->reactor, outkey);
+	const Binding *const out
+		= bindingat(st->reactor, maplookup(st->reactor, outkey));
 	if(out)
 	{
 		// Если существует, то надо уменьшить счётчик активации у формы
@@ -59,7 +60,9 @@ static int registerone(List *const l, void *const ptr)
 
 // 	DL(inkey, RS(decoatom(st->U, DIN), markext(l->ref)));
 	DL(inkey, RS(decoatom(st->U, DIN), l->ref));
-	Binding *const in = bindkey(st->reactor, inkey);
+	Binding *const in
+		= (Binding *)bindingat(st->reactor,
+			bindkey(st->reactor, inkey));
 	freeref(l->ref);
 
 	// Небольшая поправка содержимого и проверка корректности
@@ -145,7 +148,8 @@ static int checkone(List *const l, void *const ptr)
 	RState *const st = ptr;
 
 	DL(key, RS(decoatom(st->U, DOUT), R[KEY]));
-	const Binding *const b = maplookup(st->reactor, key);
+	const Binding *const b
+		= bindingat(st->reactor, maplookup(st->reactor, key));
 
 	// Если (b == NULL), то всё хорошо, и надо вернуть 0. Поэтому
 	return b != NULL;
@@ -172,8 +176,10 @@ static int outone(List *const l, void *const ptr)
 
 	{
 		Binding *const b
-			= mapreadin(st->reactor,
-				decorate(forkref(R[KEY], NULL), st->U, DOUT));
+			= (Binding *)bindingat(st->reactor,
+				mapreadin(st->reactor,
+					decorate(forkref(R[KEY], NULL),
+						st->U, DOUT)));
 
 		assert(b);
 		b->ref = forkref(R[VALUE], NULL);
@@ -182,7 +188,9 @@ static int outone(List *const l, void *const ptr)
 	// Теперь надо уменьшить счётчики у тех форм, которым нужен этот вход
 
 	DL(key, RS(decoatom(st->U, DIN), R[KEY]));
-	Binding *const b = (Binding *)maplookup(st->reactor, key);
+	Binding *const b
+		= (Binding *)bindingat(st->reactor,
+			maplookup(st->reactor, key));
 	if(!b)
 	{
 		// Ничего не было найдено, продолжаем
@@ -312,7 +320,7 @@ static Ref setnew(
 	// локально. Чтобы избежать дополнительных копирований
 
 	const Ref K = decorate(key, U, DFORM);
-	Binding *const b = mapreadin(env, K);
+	Binding *const b = (Binding *)bindingat(env, mapreadin(env, K));
 	if(!b)
 	{
 // 		freeform(form);
