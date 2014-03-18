@@ -155,3 +155,8 @@ unsigned knownverb(const Ref n, const Array *const map)
 {
 	return map != NULL && nodeverb(n, map) != -1;
 }
+
+const unsigned char *nodename(const Array *const U, const Ref N)
+{
+	return atombytes(atomat(U, nodeverb(N, NULL)));
+}

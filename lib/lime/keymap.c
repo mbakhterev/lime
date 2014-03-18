@@ -361,6 +361,7 @@ typedef struct
 	const Ref path;
 	const Ref M;
 	unsigned ok;
+	const unsigned creative;
 } PState;
 
 // Binding *bindkey(Array *const map, const Ref key)
@@ -479,8 +480,8 @@ static int makeone(List *const k, void *const ptr)
 	{
 		DBG(DBGMO, "%s", "found");
 
-		// Найденное должно быть keymap-ой
-		assert(iskeymap(b->ref));
+		// Найденное должно быть keymap-ой или областью
+		assert(iskeymap(b->ref) || isarea(b->ref));
 
 		// В любом случае вернуть надо ссылку на эту keymap-у
 		st->current = b->ref.u.array;
@@ -489,11 +490,21 @@ static int makeone(List *const k, void *const ptr)
 		// что (M.code == FREE)
 		st->ok = k != st->L || st->M.code == FREE;
 
-		// В этом случае не нежно обновлять структуры связей между
+		// В этом случае не нужно обновлять структуры связей между
 		// отображениями: речь о счётчиках и списке имён
 
 // 		return 0;
 		return !st->ok;
+	}
+
+	// Здесь мы должны проверить разрешено ли нам самовольно создавать
+	// keymap-ы. Если !st->creative, то должно выполняться условие: мы на
+	// последнем шаге обработки и M.code != FREE. Иначе, нужно создать нечто
+	// промежуточное, а нам не разрешено
+
+	if(!st->creative && (st->M.code == FREE || k != st->L))
+	{
+		return !(st->ok = 0);
 	}
 
 	// Если ничего не нашлось, то в зависимости от k и st->L занимаемся
@@ -501,9 +512,10 @@ static int makeone(List *const k, void *const ptr)
 
 	if(k != st->L)
 	{
-// 		// Речь идёт не о последнем имени, поэтому нужно создать пустую
-// 		// новую keymap. В ней и будем работать на следующей итерации
-// 
+		// Речь идёт не о последнем имени, поэтому нужно создать пустую
+		// новую keymap. В ней и будем работать на следующей итерации.
+		// Эта часть кода не должна работать с областями
+
 // 		b->ref = refkeymap(st->current = newkeymap());
 // 		return 0;
 
@@ -550,10 +562,12 @@ static int makeone(List *const k, void *const ptr)
 		((Binding *)bindingat(st->current, bid))->ref = refkeymap(map);
 		st->current = map;
 
-		st->ok = iskeymap(b->ref);
+// 		st->ok = iskeymap(b->ref);
 
 // 		return 0;
-		return !st->ok;
+// 		return !st->ok;
+
+		return 0;
 	}
 
 	DBG(DBGMO, "%s", "not found. last. specific map");
@@ -571,7 +585,7 @@ static int makeone(List *const k, void *const ptr)
 	// st->M корректная ссылка проверено в самой makepath
 
 // 	st->ok = st->M.code == MAP;
-	st->ok = iskeymap(st->M);
+	st->ok = iskeymap(st->M) || isarea(st->M);
 
 	DBG(DBGMO, "st.ok = %u", st->ok);
 
@@ -609,15 +623,17 @@ static int makeone(List *const k, void *const ptr)
 }
 
 Array *makepath(
+	const unsigned creative,
 	Array *const map,
 	Array *const U, const Ref path, const List *const names,
 	const Ref M)
 {
 	assert(map && map->code == MAP);
-	assert(M.code == FREE || iskeymap(M));
+	assert(M.code == FREE || iskeymap(M) || (!creative && isarea(M)));
 
 	PState st =
 	{
+		.creative = creative,
 		.U = U,
 		.L = (List *)names,
 		.M = M,

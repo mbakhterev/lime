@@ -215,7 +215,7 @@ static void activate(
 		C->U, C->symbols, C->symmarks,
 		body, escape, envmarks, C->typemarks);
 
-	formeval(C->U, area, body, escape, envmarks, C->typemarks);
+	formeval(C->U, area, body, escape,envmarks, NULL, C->typemarks);
 
 	freekeymap(envmarks);
 

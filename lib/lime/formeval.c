@@ -275,10 +275,10 @@ static int evalone(List *const l, void *const ptr)
 	return 0;
 }
 
-static const unsigned char *nodename(const Array *const U, const Ref N)
-{
-	return atombytes(atomat(U, nodeverb(N, NULL)));
-}
+// static const unsigned char *nodename(const Array *const U, const Ref N)
+// {
+// 	return atombytes(atomat(U, nodeverb(N, NULL)));
+// }
 
 static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 {
@@ -811,7 +811,7 @@ static const char *const sysverbs[] =
 {
 	"FIn", "Nth",
 	"F", "FEnv", "FOut",
-	"R", "Rip",
+	"R", "Rip", "Done", "Go",
 	NULL
 };
 
@@ -819,7 +819,9 @@ void formeval(
 	Array *const U,
 	Array *const area,
 	const Ref dag, const Array *const escape,
-	const Array *const envmarks, const Array *const typemarks)
+	const Array *const envmarks,
+	const Array *const areamarks,
+	const Array *const typemarks)
 {
 	FEState st =
 	{

@@ -106,3 +106,51 @@ Ref *reactorforms(Array *const U, const Array *const reactor)
 	
 	return (Ref *)&b->ref;
 }
+
+void areaonstack(Array *const U, Array *const A, const unsigned on)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "STACK")));
+	Binding *const b = (Binding *)bindingat(A, bindkey(A, key));
+	assert(b);
+	if(b->ref.code == FREE)
+	{
+		b->ref = refnum(0);
+	}
+	assert(b->ref.code == NUMBER);
+
+	b->ref.u.number = on != 0;
+}
+
+unsigned isareaonstack(Array *const U, const Array *const A)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "STACK")));
+	const Binding *const b = bindingat(A, maplookup(A, key));
+	if(b)
+	{
+		assert(b->ref.code == NUMBER);
+		return b->ref.u.number != 0;
+	}
+
+	return 0;
+}
+
+void areadone(Array *const U, Array *const A)
+{
+	DL(key, RS(decoatom(U, DUTIL, readtoken(U, "DONE"))));
+	Binding *const b = (Binding *)bindingat(A, bindkey(A, key));
+	assert(b && b->ref.code == FREE);
+	b->ref = refnum(1);
+}
+
+void isareadone(Array *const U, const Array *const A)
+{
+	DL(key, RS(decoatom(U, DUTIL, readtoken(U, "DONE"))));
+	const Binding *const b = bindingat(A, maplookup(A, key));
+	if(b)
+	{
+		assert(b->ref.code == NUMBER && b->ref.u.number == 1);
+		return 1;
+	}
+
+	return 0;
+}

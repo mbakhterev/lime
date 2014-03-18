@@ -386,6 +386,7 @@ extern Ref decoatom(Array *const U, const unsigned code);
 // map и последнее имя согласованы. В случае несогласованности NULL
 
 extern Array *makepath(
+	const unsigned creative,
 	Array *const env,
 	Array *const U, const Ref path, const List *const names, const Ref map);
 
@@ -518,6 +519,8 @@ extern void walkbindings(Array *const map, WalkBinding, void *const);
 
 extern unsigned nodeverb(const Ref exp, const Array *const vm);
 extern unsigned nodeline(const Ref exp);
+extern const unsigned char *nodename(const Array *const U, const Ref N);
+
 extern Ref nodeattribute(const Ref exp);
 extern const Ref *nodeattributecell(const Ref exp);
 
@@ -765,18 +768,28 @@ extern void formeval(
 	Array *const U,
 	Array *const area,
 	const Ref dag, const Array *const escape,
-	const Array *const envmarks, const Array *const typemarks);
+	const Array *const envmarks,
+	const Array *const areamarks, 
+	const Array *const typemarks);
 
-typedef struct
-{
-	Array *const env;
-	Array *const area;
-} GoNode;
+// Обработка областей вывода
 
-extern GoNode areaeval(
+// Обработка R-узлов. По образу и подобию обработки окружений. 
+extern void reval(
 	Array *const U,
-	Array *const area,
-	const Ref dag, const Array *const escape, const Array *const envmarks);
+	Array *const area, Array *const areamarks,
+	const Ref dag, const Array *const escape);
+
+// typedef struct
+// {
+// 	Array *const env;
+// 	Array *const area;
+// } GoNode;
+// 
+// extern GoNode areaeval(
+// 	Array *const U,
+// 	Array *const area,
+// 	const Ref dag, const Array *const escape, const Array *const envmarks);
 
 // Ядерная функциональность
 

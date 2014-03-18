@@ -80,7 +80,8 @@ static void initforms(
 			}
 
 			typeeval(U, types, typemarks, dag, escape, envmarks);
-			formeval(U, NULL, dag, escape, envmarks, typemarks);
+			formeval(U, NULL, dag, escape,
+				envmarks, NULL, typemarks);
 
 			if(DBGFLAGS & DBGINIT)
 			{
