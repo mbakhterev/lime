@@ -173,7 +173,8 @@ Array *newkeymap(void)
 
 unsigned iskeymap(const Ref r)
 {
-	return r.code == MAP && r.u.array && r.u.array->code == MAP;
+	return r.code == MAP && r.external
+		&& r.u.array && r.u.array->code == MAP;
 }
 
 void freekeymap(Array *const env)
@@ -212,36 +213,6 @@ static const char *codetostr(const unsigned code)
 	assert(code < sizeof(codestr)/sizeof(const char *));
 	return codestr[code];
 }
-
-// static const char *codetostr(const unsigned code)
-// {
-// 	switch(code)
-// 	{
-// 	case DMAP:
-// 		return "/";
-// 	
-// 	case DTYPE:
-// 		return "@";
-// 	
-// 	case DSYM:
-// 		return "$";
-// 	
-// 	case DFORM:
-// 		return "#";
-// 	
-// 	case DIN:
-// 		return "IN";
-// 	
-// 	case DOUT:
-// 		return "OUT";
-// 	
-// 	case DREACTOR:
-// 		return "?";
-// 	}
-// 
-// 	assert(0);
-// 	return NULL;
-// }
 
 Ref decoatom(Array *const U, const unsigned code)
 {
@@ -283,21 +254,6 @@ static const Binding *look(const Array *const map, const Ref key)
 	return NULL;
 }
 
-// static Binding *allocate(Array *const map, const Ref key)
-// {
-// 	assert(map && map->code == MAP);
-// 
-// 	const Binding b =
-// 	{
-// 		.key = key,
-// 		.ref = { .code = FREE, .u.pointer = NULL }
-// 	};
-// 
-// 	const unsigned k = readin(map, &b);
-// 
-// 	return (Binding *)map->u.data + k;
-// }
-
 static unsigned allocate(Array *const map, const Ref key)
 {
 	assert(map && map->code == MAP);
@@ -311,16 +267,6 @@ static unsigned allocate(Array *const map, const Ref key)
 	return readin(map, &b);
 }
 
-// const Binding *maplookup(const Array *const map, const Ref key)
-// {
-// 	if(map)
-// 	{
-// 		return look(map, key);
-// 	}
-// 
-// 	return NULL;
-// }
-
 unsigned maplookup(const Array *const map, const Ref key)
 {
 	if(map)
@@ -330,16 +276,6 @@ unsigned maplookup(const Array *const map, const Ref key)
 
 	return -1;
 }
-
-// Binding *mapreadin(Array *const map, const Ref key)
-// {
-// 	if(!look(map, key))
-// 	{
-// 		return allocate(map, key);
-// 	}
-// 
-// 	return NULL;
-// }
 
 unsigned mapreadin(Array *const map, const Ref key)
 {
@@ -359,33 +295,11 @@ typedef struct
 	List *L;
 	Array *current;
 	const Ref path;
+	NewInterlink *const newitem;
 	const Ref M;
-	unsigned ok;
-	const unsigned creative;
+// 	unsigned ok;
+// 	const unsigned creative;
 } PState;
-
-// Binding *bindkey(Array *const map, const Ref key)
-// {
-// 	Binding *b = (Binding *)maplookup(map, key);
-// 	if(b)
-// 	{
-// 		// Binding нашлась, ничего не нужно делать кроме как вернуть
-// 		// ссылку
-// 
-// 		return b;
-// 	}
-// 
-// 	// Здесь необходимо выделить новый Binding. И сохранить в нём копию
-// 	// ключа. FIXME: копирование - накладные расходы, но это плата за
-// 	// текущий вариант управления память. В следующей версии в этом не будет
-// 	// необходимости
-// 
-// 	assert(map);
-// 	b = mapreadin(map, forkref(key, NULL));
-// 	assert(b);
-// 
-// 	return b;
-// }
 
 unsigned bindkey(Array *const map, const Ref key)
 {
@@ -394,6 +308,11 @@ unsigned bindkey(Array *const map, const Ref key)
 	{
 		return id;
 	}
+
+	// Здесь необходимо выделить новый Binding. И сохранить в нём копию
+	// ключа. FIXME: копирование - накладные расходы, но это плата за
+	// текущий вариант управления память. В следующей версии в этом не будет
+	// необходимости
 
 	assert(map);
 	id = mapreadin(map, forkref(key, NULL));
@@ -412,196 +331,185 @@ const Binding *bindingat(const Array *const map, const unsigned N)
 	return (const Binding *)map->u.data + N;
 }
 
-static void backlink(
-	Array *const U,
-	Array *const src, const Array *const dst, const Ref name)
-{
-	if(DBGFLAGS & DBGBL)
-	{
-		char *const rstr = strref(U, NULL, name);
-		DBG(DBGBL, "full name = %s", rstr);
-		free(rstr);
-	}
-
-	const Ref R[2];
-	assert(splitpair(name, (Ref *)R) && splitpair(R[1], (Ref *)R));
-	const Ref r = R[1];
-
-	DL(key, RS(decoatom(U, DUTIL), markext(refkeymap((Array *)dst))));
-	Binding *const b = (Binding *)bindingat(src, bindkey(src, key));
-	if(b->ref.code == FREE)
-	{
-		b->ref = reflist(NULL);
-	}
-
-	assert(b->ref.code == LIST);
-
-	b->ref.u.list = append(b->ref.u.list, RL(markext(r)));
-}
-
-static int makeone(List *const k, void *const ptr)
-{
-	PState *const st = ptr;
-	assert(st);
-	assert(k);
-
-	// Поиск в текущем окружении по ключу ("/" (path name)). path и ref
-	// пропускаются через forkref, чтобы ключ можно было удалить без
-	// повреждения оригинала. FIXME: не самая оптимальная логика. В
-	// следующей версии это не понадобится
-
-	const Ref key
-		= decorate(
-			reflist(RL(
-				forkref(st->path, NULL),
-				forkref(k->ref, NULL))),
-			st->U, 
-			MAP);
-
-	const unsigned bid = bindkey(st->current, key);
-	const Binding *const b = bindingat(st->current, bid);
-
-// 	Binding *const b
-// 		= (Binding *)bindingat(st->current, bindkey(st->current, key));
-
-	if(DBGFLAGS & DBGMO)
-	{
-		char *const kstr = strref(st->U, NULL, b->key);
-		DBG(DBGMO, "b.key = %s", kstr);
-		free(kstr);
-	}
-
-	// В случае, когда key копируется в новый Binding отображения, bindkey
-	// выставит key.external, и freekey ничего с этим key не будет делать
-
-	freeref(key);
-
-	if(b->ref.code != FREE)
-	{
-		DBG(DBGMO, "%s", "found");
-
-		// Найденное должно быть keymap-ой или областью
-		assert(iskeymap(b->ref) || isarea(b->ref));
-
-		// В любом случае вернуть надо ссылку на эту keymap-у
-		st->current = b->ref.u.array;
-
-		// Но если k - это последнее имя в списке, то нужно убедится,
-		// что (M.code == FREE)
-		st->ok = k != st->L || st->M.code == FREE;
-
-		// В этом случае не нужно обновлять структуры связей между
-		// отображениями: речь о счётчиках и списке имён
-
-// 		return 0;
-		return !st->ok;
-	}
-
-	// Здесь мы должны проверить разрешено ли нам самовольно создавать
-	// keymap-ы. Если !st->creative, то должно выполняться условие: мы на
-	// последнем шаге обработки и M.code != FREE. Иначе, нужно создать нечто
-	// промежуточное, а нам не разрешено
-
-	if(!st->creative && (st->M.code == FREE || k != st->L))
-	{
-		return !(st->ok = 0);
-	}
-
-	// Если ничего не нашлось, то в зависимости от k и st->L занимаемся
-	// инициализацией
-
-	if(k != st->L)
-	{
-		// Речь идёт не о последнем имени, поэтому нужно создать пустую
-		// новую keymap. В ней и будем работать на следующей итерации.
-		// Эта часть кода не должна работать с областями
-
-// 		b->ref = refkeymap(st->current = newkeymap());
-// 		return 0;
-
-		DBG(DBGMO, "%s", "not found. middle");
-
-		// Речь идёт не о последнем имени, нужно создать промежуточную
-		// keymap
-		Array *const map = newkeymap();
-
-		// Редактируем связи. Записываем в текущую keymap ссылку на имя
-		// map. Записываем её в список с ключом ((decoatom UTIL) map)
-		backlink(st->U, st->current, map, b->key);
-		linkup(st->U, map);
-// 		backlink(st->U, st->current, map, b->key);
-// 		backlink(
-// 			st->U, st->current, map,
-// 			bindkey(st->current, bid)->ref);
-
-		// С этим новым отображением будем работать на следующей
-		// итерации
-// 		b->ref = refkeymap(st->current = map);
-		((Binding *)bindingat(st->current, bid))->ref = refkeymap(map);
-		st->current = map;
-
-		return 0;
-	}
-
-	if(st->M.code == FREE)
-	{
-		DBG(DBGMO, "%s", "not found. last. no specific map");
-
-		// Речь идёт о последнем имени, но ссылка на таблицу не
-		// предоставлена. Поэтому создаём свежую. Всё будет в порядке,
-		// если инициализация корректная
-
-// 		b->ref = refkeymap(st->current = newkeymap());
-
-		Array *const map = newkeymap();
-		backlink(st->U, st->current, map, b->key);
-		linkup(st->U, map);
-// 		backlink(st->U, st->current, map, b->key);
-
-// 		b->ref = refkeymap(st->current = map);
-		((Binding *)bindingat(st->current, bid))->ref = refkeymap(map);
-		st->current = map;
-
-// 		st->ok = iskeymap(b->ref);
-
-// 		return 0;
+// static void backlink(
+// 	Array *const U,
+// 	Array *const src, const Array *const dst, const Ref name)
+// {
+// 	if(DBGFLAGS & DBGBL)
+// 	{
+// 		char *const rstr = strref(U, NULL, name);
+// 		DBG(DBGBL, "full name = %s", rstr);
+// 		free(rstr);
+// 	}
+// 
+// 	const Ref R[2];
+// 	assert(splitpair(name, (Ref *)R) && splitpair(R[1], (Ref *)R));
+// 	const Ref r = R[1];
+// 
+// 	DL(key, RS(decoatom(U, DUTIL), markext(refkeymap((Array *)dst))));
+// 	Binding *const b = (Binding *)bindingat(src, bindkey(src, key));
+// 	if(b->ref.code == FREE)
+// 	{
+// 		b->ref = reflist(NULL);
+// 	}
+// 
+// 	assert(b->ref.code == LIST);
+// 
+// 	b->ref.u.list = append(b->ref.u.list, RL(markext(r)));
+// }
+// 
+// static int makeone(List *const k, void *const ptr)
+// {
+// 	PState *const st = ptr;
+// 	assert(st);
+// 	assert(k);
+// 
+// 	// Поиск в текущем окружении по ключу ("/" (path name)). path и ref
+// 	// пропускаются через forkref, чтобы ключ можно было удалить без
+// 	// повреждения оригинала. FIXME: не самая оптимальная логика. В
+// 	// следующей версии это не понадобится
+// 
+// 	const Ref key
+// 		= decorate(
+// 			reflist(RL(
+// 				forkref(st->path, NULL),
+// 				forkref(k->ref, NULL))),
+// 			st->U, 
+// 			MAP);
+// 
+// 	const unsigned bid = bindkey(st->current, key);
+// 	const Binding *const b = bindingat(st->current, bid);
+// 
+// // 	Binding *const b
+// // 		= (Binding *)bindingat(st->current, bindkey(st->current, key));
+// 
+// 	if(DBGFLAGS & DBGMO)
+// 	{
+// 		char *const kstr = strref(st->U, NULL, b->key);
+// 		DBG(DBGMO, "b.key = %s", kstr);
+// 		free(kstr);
+// 	}
+// 
+// 	// В случае, когда key копируется в новый Binding отображения, bindkey
+// 	// выставит key.external, и freekey ничего с этим key не будет делать
+// 
+// 	freeref(key);
+// 
+// 	if(b->ref.code != FREE)
+// 	{
+// 		DBG(DBGMO, "%s", "found");
+// 
+// 		// Найденное должно быть keymap-ой или областью
+// 		assert(iskeymap(b->ref) || isarea(b->ref));
+// 
+// 		// В любом случае вернуть надо ссылку на эту keymap-у
+// 		st->current = b->ref.u.array;
+// 
+// 		// Но если k - это последнее имя в списке, то нужно убедится,
+// 		// что (M.code == FREE)
+// 		st->ok = k != st->L || st->M.code == FREE;
+// 
+// 		// В этом случае не нужно обновлять структуры связей между
+// 		// отображениями: речь о счётчиках и списке имён
+// 
+// // 		return 0;
 // 		return !st->ok;
-
-		return 0;
-	}
-
-	DBG(DBGMO, "%s", "not found. last. specific map");
-
-	if(DBGFLAGS & DBGMO)
-	{
-		char *const kstr = strref(st->U, NULL, b->key);
-		DBG(DBGMO, "b.key = %s", kstr);
-		free(kstr);
-	}
-
-	// Ничего не нашлось, имя последнее и передан указатель на таблицу для
-	// инициализации. Поэтому надо записать st->M в созданную ячейку b.
-	// Подготовится к возврату этой таблицы и проверить, что всё ОК. То, что
-	// st->M корректная ссылка проверено в самой makepath
-
-// 	st->ok = st->M.code == MAP;
-	st->ok = iskeymap(st->M) || isarea(st->M);
-
-	DBG(DBGMO, "st.ok = %u", st->ok);
-
-	if(st->ok)
-	{
-		if(DBGFLAGS & DBGMO)
-		{
-			char *const kstr = strref(st->U, NULL, b->key);
-			DBG(DBGMO, "b.key = %s", kstr);
-			free(kstr);
-		}
-
-		backlink(st->U, st->current, st->M.u.array, b->key);
-
-		linkup(st->U, st->M.u.array);
-
+// 	}
+// 
+// 	// Здесь мы должны проверить разрешено ли нам самовольно создавать
+// 	// keymap-ы. Если !st->creative, то должно выполняться условие: мы на
+// 	// последнем шаге обработки и M.code != FREE. Иначе, нужно создать нечто
+// 	// промежуточное, а нам не разрешено
+// 
+// 	if(!st->creative && (st->M.code == FREE || k != st->L))
+// 	{
+// 		return !(st->ok = 0);
+// 	}
+// 
+// 	// Если ничего не нашлось, то в зависимости от k и st->L занимаемся
+// 	// инициализацией
+// 
+// 	if(k != st->L)
+// 	{
+// 		// Речь идёт не о последнем имени, поэтому нужно создать пустую
+// 		// новую keymap. В ней и будем работать на следующей итерации.
+// 		// Эта часть кода не должна работать с областями
+// 
+// // 		b->ref = refkeymap(st->current = newkeymap());
+// // 		return 0;
+// 
+// 		DBG(DBGMO, "%s", "not found. middle");
+// 
+// 		// Речь идёт не о последнем имени, нужно создать промежуточную
+// 		// keymap
+// 		Array *const map = newkeymap();
+// 
+// 		// Редактируем связи. Записываем в текущую keymap ссылку на имя
+// 		// map. Записываем её в список с ключом ((decoatom UTIL) map)
+// 		backlink(st->U, st->current, map, b->key);
+// 		linkup(st->U, map);
+// // 		backlink(st->U, st->current, map, b->key);
+// // 		backlink(
+// // 			st->U, st->current, map,
+// // 			bindkey(st->current, bid)->ref);
+// 
+// 		// С этим новым отображением будем работать на следующей
+// 		// итерации
+// // 		b->ref = refkeymap(st->current = map);
+// 		((Binding *)bindingat(st->current, bid))->ref = refkeymap(map);
+// 		st->current = map;
+// 
+// 		return 0;
+// 	}
+// 
+// 	if(st->M.code == FREE)
+// 	{
+// 		DBG(DBGMO, "%s", "not found. last. no specific map");
+// 
+// 		// Речь идёт о последнем имени, но ссылка на таблицу не
+// 		// предоставлена. Поэтому создаём свежую. Всё будет в порядке,
+// 		// если инициализация корректная
+// 
+// // 		b->ref = refkeymap(st->current = newkeymap());
+// 
+// 		Array *const map = newkeymap();
+// 		backlink(st->U, st->current, map, b->key);
+// 		linkup(st->U, map);
+// // 		backlink(st->U, st->current, map, b->key);
+// 
+// // 		b->ref = refkeymap(st->current = map);
+// 		((Binding *)bindingat(st->current, bid))->ref = refkeymap(map);
+// 		st->current = map;
+// 
+// // 		st->ok = iskeymap(b->ref);
+// 
+// // 		return 0;
+// // 		return !st->ok;
+// 
+// 		return 0;
+// 	}
+// 
+// 	DBG(DBGMO, "%s", "not found. last. specific map");
+// 
+// 	if(DBGFLAGS & DBGMO)
+// 	{
+// 		char *const kstr = strref(st->U, NULL, b->key);
+// 		DBG(DBGMO, "b.key = %s", kstr);
+// 		free(kstr);
+// 	}
+// 
+// 	// Ничего не нашлось, имя последнее и передан указатель на таблицу для
+// 	// инициализации. Поэтому надо записать st->M в созданную ячейку b.
+// 	// Подготовится к возврату этой таблицы и проверить, что всё ОК. То, что
+// 	// st->M корректная ссылка проверено в самой makepath
+// 
+// // 	st->ok = st->M.code == MAP;
+// 	st->ok = iskeymap(st->M) || isarea(st->M);
+// 
+// 	DBG(DBGMO, "st.ok = %u", st->ok);
+// 
+// 	if(st->ok)
+// 	{
 // 		if(DBGFLAGS & DBGMO)
 // 		{
 // 			char *const kstr = strref(st->U, NULL, b->key);
@@ -610,46 +518,105 @@ static int makeone(List *const k, void *const ptr)
 // 		}
 // 
 // 		backlink(st->U, st->current, st->M.u.array, b->key);
+// 
+// 		linkup(st->U, st->M.u.array);
+// 
+// // 		if(DBGFLAGS & DBGMO)
+// // 		{
+// // 			char *const kstr = strref(st->U, NULL, b->key);
+// // 			DBG(DBGMO, "b.key = %s", kstr);
+// // 			free(kstr);
+// // 		}
+// // 
+// // 		backlink(st->U, st->current, st->M.u.array, b->key);
+// 
+// // 		b->ref = st->M;
+// 		((Binding *)bindingat(st->current, bid))->ref = st->M;
+// 		st->current = st->M.u.array;
+// 	}
+// 
+// 	DBG(DBGMO, "b.ref.code = %u", b->ref.code);
+// 
+// // 	return 0;
+// 	return !st->ok;
+// }
 
-// 		b->ref = st->M;
-		((Binding *)bindingat(st->current, bid))->ref = st->M;
-		st->current = st->M.u.array;
+static int makeone(List *const n, void *const ptr)
+{
+	assert(n);
+	assert(ptr);
+	PState *const st = ptr;
+
+	Array *const curr = st->current;
+
+	if(st->M.code == FREE || n != st->L)
+	{
+		// Нам не передано отображение, с которым надо устроить связь
+		// или мы находимся не в конце списка имён. В обоих случаях надо
+		// отыскать отображение с подходящим именем или создать новое 
+
+
+		st->current = linkmap(st->U, curr, st->path, n->ref, reffree());
+		if(st->current)
+		{
+			return 0;
+		}
+
+		const Ref m = refkeymap(newkeymap());
+		st->current = linkmap(st->U, curr, st->path, n->ref, m);
+		assert(st->current == m.u.array);
+
+		return 0;
 	}
 
-	DBG(DBGMO, "b.ref.code = %u", b->ref.code);
+	// Привязываем указанное отображение к концу цепочки
 
-// 	return 0;
-	return !st->ok;
+	assert(st->M.code == FREE && n == st->L);
+	st->current = linkmap(st->U, curr, st->path, n->ref, st->M);
+	if(st->current)
+	{
+		assert(st->current == st->M.u.array);
+		return 0;
+	}
+
+	return !0;
 }
 
 Array *makepath(
-	const unsigned creative,
+// 	const unsigned creative,
 	Array *const map,
-	Array *const U, const Ref path, const List *const names,
-	const Ref M)
+	Array *const U,
+	const Ref path,
+	const List *const names,
+	NewInterlink newitem, const Ref M)
 {
 	assert(map && map->code == MAP);
-	assert(M.code == FREE || iskeymap(M) || (!creative && isarea(M)));
+// 	assert(M.code == FREE || iskeymap(M) || (!creative && isarea(M)));
+	assert(newitem);
+	assert(M.code == FREE || iskeymap(M));
 
 	PState st =
 	{
-		.creative = creative,
+// 		.creative = creative,
 		.U = U,
 		.L = (List *)names,
+		.newitem = newitem,
 		.M = M,
 		.current = map,
-		.path = path,
-		.ok = 0
+// 		.path = path,
+// 		.ok = 0
 	};
 
-	forlist((List *)names, makeone, &st, 0);
+// 	forlist((List *)names, makeone, &st, 0);
+// 
+// 	if(st.ok)
+// 	{
+// 		return st.current;
+// 	}
+// 
+// 	return NULL;
 
-	if(st.ok)
-	{
-		return st.current;
-	}
-
-	return NULL;
+	return forlist((List *)names, makeone, &st, 0) ? NULL : st.current;
 }
 
 static List *tracekey(List *const acc, const Binding *const b, const Ref key)
@@ -1044,7 +1011,7 @@ void walkbindings(Array *const map, WalkBinding wlk, void *const ptr)
 	}
 }
 
-unsigned linkup(Array *const U, Array *const map)
+static unsigned linkup(Array *const U, Array *const map)
 {
 	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LINKS")));
 	Binding *const b = (Binding *)bindingat(map, bindkey(map, key));
@@ -1067,36 +1034,221 @@ unsigned linkup(Array *const U, Array *const map)
 	return b->ref.u.number;
 }
 
-unsigned linkdown(Array *const U, Array *const map)
+static unsigned linkdown(Array *const U, Array *const map)
 {
-	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LINKS")));
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LNKCNT")));
 	const Binding *const b = bindingat(map, maplookup(map, key));
 
 	// Корректно вызывать linkdown можно только после linkup, поэтому должно
 	// выполняться
-
 	assert(b && b->ref.code == NUMBER && b->ref.u.number > 0);
-
 	return (((Binding *)b)->ref.u.number -= 1);
 }
 
-unsigned isconnected(Array *const U, const Array *const map)
-{
-	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LINKS")));
-	const Binding *const b = bindingat(map, maplookup(map, key));
+// static unsigned isconnected(Array *const U, const Array *const map)
+// {
+// 	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LNKCNT")));
+// 	const Binding *const b = bindingat(map, maplookup(map, key));
+// 
+// 	if(b)
+// 	{
+// 		assert(b->ref.code == NUMBER);
+// // 		return b->ref.code > 0;
+// 		return b->ref.u.number > 0;
+// 	}
+// 
+// 	return 0;
+// }
 
+static unsigned nlinks(Array *const U, const Array *const map)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LNKCNT")));
+	const Binding *const b = bindingat(map, maplookup(map, key));
 	if(b)
 	{
 		assert(b->ref.code == NUMBER);
-		return b->ref.code > 0;
+		return b->ref.u.number;
 	}
 
 	return 0;
 }
 
-// const Binding *bindingat(const Array *const map, const unsigned N)
-// {
-// 	assert(map && map->code == MAP);
-// 	assert(N < map->count);
-// 	return (const Binding *)map->u.data + N;
-// }
+void markactive(Array *const U, Array *const map, const unsigned flag)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "ACTIVE")));
+	Binding *const b = (Binding *)bindingat(map, maplookup(map, key));
+	assert(b);
+
+	if(flag)
+	{
+		// Мы можем установить флаг активности только в том случае, если
+		// его вообще не было. Иначе это повторная попытка или попытка
+		// оживить неактивную сущность. Пока семантика такого поведения
+		// не понятна, не допускаем её
+
+		assert(b->ref.code == FREE);
+		b->ref = refnum(!0);
+		return;
+	}
+
+	// Сбросить флаг активности можно только с активной сущности
+	assert(b->ref.code == NUMBER && b->ref.u.number != 0);
+	b->ref = refnum(0);
+}
+
+unsigned isactive(Array *const U, const Array *const map)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "ACTIVE")));
+	const Binding *const b = bindingat(map, maplookup(map, key));
+	assert(!b || b->ref.code == NUMBER);
+
+	return b != NULL && b->ref.u.number != 0;
+}
+
+Array *linkmap(
+	Array *const U,
+	Array *const map,
+	const Ref path, const Ref name, const Ref target)
+{
+	DL(pair, RS(path, name));
+	DL(key, RS(decoatom(U, DMAP), pair));
+
+	const unsigned bid = bindkey(map, key);
+	const Binding *const b = bindingat(map, bid);
+
+	if(b->ref.code != FREE)
+	{
+		// Нечто нашлось и оно должно быть keymap-ой
+		assert(iskeymap(b->ref));
+
+		// Если всё корректно, то есть, target.code == FREE, то можно
+		// возвращать эту найденную keymap. В противном случае NULL
+		return target.code == FREE ? b->ref.u.array : NULL;
+	}
+
+	// Здесь известно, что позиция свободна. Но если при этом target.code ==
+	// FREE, то не понятно, что дальше делать. Поэтому возвращаем NULL
+
+	if(target.code == FREE)
+	{
+		return NULL;
+	}
+
+	assert(iskeymap(target));
+
+	// Здесь нам нужно зацепить map и target.
+	linkup(U, target.u.array);
+	((Binding *)bindingat(map, bid))->ref = refkeymap(target.u.array);
+
+	return target.u.array;
+}
+
+static unsigned cleankill(
+	Array *const U, const Array *const map, Array *const visited)
+{
+	// Это относительно простая рекурсия. Если уже были здесь, то всё
+	// хорошо
+
+	if(setmap(visited, refkeymap((Array *)map)))
+	{
+		return !0;
+	}
+
+	tunesetmap(visited, refkeymap((Array *)map));
+
+	// Если не были, но при этом счётчик ссылок большой, то всё хорошо и
+	// погружаться в детали этой области не нужно
+
+	const unsigned N = nlinks(U, map);
+	if(N > 1)
+	{
+		return !0;
+	}
+
+	assert(N == 1);
+	
+	// Эта область будет удалена. Надо проверить, что она не активна
+
+	if(isactive(U, map))
+	{
+		return 0;
+	}
+
+	// Теперь надо пройтись по всем Binding-ам в этой области и убедится,
+	// что они тоже удовлетворяют cleankill
+
+	for(unsigned i = 0; i < map->count; i += 1)
+	{
+		const Ref m = bindingat(map, i)->ref;
+		if(iskeymap(m) && cleankill(U, m.u.array, visited))
+		{
+			continue;
+		}
+
+		return 0;
+	}
+
+	return !0;
+}
+
+static unsigned unlinkcore(
+	Array *const U, Array *const map, const unsigned bid, Array *const V)
+{
+	const Binding *const b = bindingat(map, bid);
+	if(!b)
+	{
+		return 0;
+	}
+
+	assert(iskeymap(b->ref));
+	Array *const M = b->ref.u.array;
+
+	// Проверим, что удаление этой ссылки не приведёт к удалению чего-то
+	// активного
+
+	if(!cleankill(U, M, V))
+	{
+		return 0;
+	}
+
+	// Забываем об этой связи
+	((Binding *)b)->ref = reffree();
+	if(linkdown(U, M) > 0)
+	{
+		// Если ссылка не была последней, то всё успешно завершилось
+		return !0;
+	}
+
+	// Ссылка последняя, значит, надо удалять M. Но перед этим следует
+	// убрать все ссылки на другие области
+
+	for(unsigned i = 0; i < M->count; i += 1)
+	{
+		const Ref m = bindingat(M, i)->ref;
+		if(iskeymap(m))
+		{
+			// Здесь уже всё должно быть проверено и корректно
+			assert(unlinkcore(U, M, i, V));
+		}
+	}
+
+	// Последняя капелька паранойи
+	assert(!isactive(U, M) && !nlinks(U, M));
+	freekeymap(M);
+
+	return !0;
+}
+
+unsigned unlinkmap(
+	Array *const U, Array *const map, const Ref path, const Ref name)
+{
+	DL(pair, RS(path, name));
+	DL(key, RS(decoatom(U, DMAP), pair));
+
+	Array *const V = newkeymap();
+	const unsigned bid = maplookup(map, key);
+	const unsigned ok = unlinkcore(U, map, bid, V);
+
+	freekeymap(V);
+	return ok;
+}

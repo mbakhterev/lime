@@ -70,6 +70,11 @@ static const List *attrlist(const Ref r, Array *const U)
 	return NULL;
 }
 
+static Ref newitem(Array *const U)
+{
+	return refkeymap(newkeymap());
+}
+
 static void mkenv(
 	Array *const U, const Ref r, const Array *const recode,
 	Array *const env, Array *const envdefs, Array *const envmarks)
@@ -98,13 +103,18 @@ static void mkenv(
 		return;
 	}
 
+	const Ref path = readtoken(U, "ENV");
 	Array *newenv = NULL;
 
 	switch(len)
 	{
 	case 2:
 	{
-		newenv = makepath(env, U, R[0], R[1].u.list, reffree());
+// 		newenv = makepath(env, U, R[0], R[1].u.list, reffree());
+		newenv
+			= makepath(env, U,
+				path, R[1].u.list, newitem, reffree());
+					
 		assert(newenv && newenv->code == MAP);
 
 		break;
@@ -124,10 +134,21 @@ static void mkenv(
 				atombytes(atomat(U, nodeverb(r, NULL))));
 		}
 
+// 		const Array *const t
+// 			= makepath(env, U, R[0], R[1].u.list,
+// 				markext(refkeymap(newenv)));
+
 		const Array *const t
-			= makepath(env, U, R[0], R[1].u.list,
-				markext(refkeymap(newenv)));
+			= makepath(env, U,
+				path, R[1].u.list, newitem, refkeymap(newenv));
 		
+		if(!t)
+		{
+			item = nodeline(r);
+			ERR("node \"%s\": can't link environments",
+				nodename(U, r));
+		}
+
 		assert(t == newenv);
 
 		break;

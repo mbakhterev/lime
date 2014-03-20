@@ -81,7 +81,10 @@ Ref refform(List *const f)
 Ref refkeymap(Array *const a)
 {
 	assert(a && a->code == MAP);
-	return (Ref) { .code = MAP, .u.array = a, .external = 0 };
+// 	return (Ref) { .code = MAP, .u.array = a, .external = 0 };
+
+	// Внимание на 1
+	return (Ref) { .code = MAP, .u.array = a, .external = 1 };
 }
 
 Ref refarea(Array *const a)
@@ -104,8 +107,8 @@ static Ref setbit(const Ref r, const unsigned bit)
 	case LIST:
 	case DAG:
 	case FORM:
-	case MAP:
-	case AREA:
+// 	case MAP:
+// 	case AREA:
 		break;
 	
 	default:
@@ -120,11 +123,6 @@ static Ref setbit(const Ref r, const unsigned bit)
 	};
 }
 
-// Ref markext(const Ref r)
-// {
-// 	return setbit(r, 1);
-// }
-
 Ref cleanext(const Ref r)
 {
 	return setbit(r, 0);
@@ -134,8 +132,6 @@ static Ref skip(const Ref r)
 {
 	return r;
 }
-
-// Ref dynamark(const Ref r)
 
 Ref markext(const Ref r)
 {
@@ -147,14 +143,16 @@ Ref markext(const Ref r)
 	case PTR:
 		return skip(r);
 
-	case MAP:
 	case NODE:
 	case LIST:
 	case DAG:
 	case FORM:
-	case AREA:
-// 		return markext(r);
 		return setbit(r, 1);
+	
+	case MAP:
+	case AREA:
+		assert(r.external);
+		return skip(r);
 	}
 
 	DBG(DBGDM, "r.(code pointer) = (%u %p)", r.code, r.u.pointer);

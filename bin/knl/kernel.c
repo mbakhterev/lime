@@ -292,6 +292,11 @@ static Array *const inittypes(Array *const U)
 	return T;
 }
 
+static Ref newenv(Array *const U)
+{
+	return refkeymap(newkeymap());
+}
+
 static Array *const initroot(Array *const U)
 {
 	Array *const R = newkeymap();
@@ -300,7 +305,7 @@ static Array *const initroot(Array *const U)
 	makepath(
 		R, U, 
 		readpack(U, strpack(0, "ENV")), names.u.list,
-		markext(refkeymap(R)));
+		newenv, markext(refkeymap(R)));
 
 	return R;
 }

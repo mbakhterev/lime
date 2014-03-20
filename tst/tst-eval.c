@@ -4,6 +4,11 @@
 unsigned item = 1;
 const char *unitname = "test";
 
+static Ref newitem(Array *const U)
+{
+	return refkeymap(newkeymap());
+}
+
 int main(int argc, char *argv[])
 {
 	Array *const U = newatomtab();
@@ -26,7 +31,7 @@ int main(int argc, char *argv[])
 	makepath(
 		root, U, 
 		readpack(U, strpack(0, "ENV")), names.u.list,
-		markext(refkeymap(root)));
+		newitem, markext(refkeymap(root)));
 
 	Array *const envmarks = newkeymap();
 	Array *const types = newkeymap();

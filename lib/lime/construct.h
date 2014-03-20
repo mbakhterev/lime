@@ -385,10 +385,13 @@ extern Ref decoatom(Array *const U, const unsigned code);
 // Вернёт makepath ссылку на последние из заданных списком имён окружений, если
 // map и последнее имя согласованы. В случае несогласованности NULL
 
+typedef Ref NewInterlink(Array *const U);
+
 extern Array *makepath(
-	const unsigned creative,
 	Array *const env,
-	Array *const U, const Ref path, const List *const names, const Ref map);
+	Array *const U,
+	const Ref path, const List *const names,
+	NewInterlink, const Ref map);
 
 // В некотором смысле обратная операция: которая строит стек окружений,
 // связанных по имени name на пути path, начиная с того, которое в окружении map
@@ -406,17 +409,27 @@ extern List *tracepath(
 extern const Binding *pathlookup(
 	const List *const stack, const Ref key, unsigned *const depth);
 
-// Для управления и анализа связей между разными keymap-ами (как связаны
-// окружения или области вывода, которые реализованы через keymap) полезно уметь
-// отслеживать перекрёстные ссылки между окружениями. Процедуры linkup и
-// linkdown помогают подсчитывать количество ссылок на map из других окружений.
-// Они возвращают результат выполнения операции. Счётчик не должен падать ниже
-// нуля, иначе assert. isconnected проверяет, счётчик и позволяет сделать вывод
-// о связанности map с другими
+// // Для управления и анализа связей между разными keymap-ами (как связаны
+// // окружения или области вывода, которые реализованы через keymap) полезно уметь
+// // отслеживать перекрёстные ссылки между окружениями. Процедуры linkup и
+// // linkdown помогают подсчитывать количество ссылок на map из других окружений.
+// // Они возвращают результат выполнения операции. Счётчик не должен падать ниже
+// // нуля, иначе assert. isconnected проверяет, счётчик и позволяет сделать вывод
+// // о связанности map с другими
+// 
+// extern unsigned linkup(Array *const U, Array *const map);
+// extern unsigned linkdown(Array *const U, Array *const map);
+// extern unsigned isconnected(Array *const U, const Array *const map);
 
-extern unsigned linkup(Array *const U, Array *const map);
-extern unsigned linkdown(Array *const U, Array *const map);
-extern unsigned isconnected(Array *const U, const Array *const map);
+extern void markactive(Array *const U, Array *const map, const unsigned flag);
+extern unsigned isactive(Array *const U, const Array *const map);
+
+extern Array *linkmap(
+	Array *const U, Array *const map,
+	const Ref path, const Ref key, const Ref target);
+
+extern unsigned unlinkmap(
+	Array *const U, Array *const map, const Ref path, const Ref key);
 
 // В некоторых случаях необходима уверенность в том, что ключ состоит только из
 // элементов определённого типа элементов:

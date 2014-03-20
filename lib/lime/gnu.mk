@@ -20,11 +20,11 @@ lmsrc = \
 	symeval.c	\
 	form.c		\
 	ntheval.c	\
-	area.c		\
 	formeval.c	\
 	progress.c	\
 	leval.c		\
-	areaeval.c	\
+	area.c		\
+# 	areaeval.c	\
 
 lminc = \
 	$(I)/lime/construct.h	\
