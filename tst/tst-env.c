@@ -60,7 +60,7 @@ int main(int argc, char *const argv[])
 		B, names.u.list, newitem, markext(refkeymap(N))) == N);
 	assert(makepath(M, U, B, names.u.list, newitem, reffree()) == N);
 
-	dumpkeymap(1, stdout, 0, U, M);
+	dumpkeymap(1, stdout, 0, U, M, NULL);
 	fputc('\n', stdout);
 
 	freekeymap(M);

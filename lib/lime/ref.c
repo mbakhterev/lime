@@ -89,8 +89,10 @@ Ref refkeymap(Array *const a)
 
 Ref refarea(Array *const a)
 {
-	assert(a && a->code == MAP);
-	return (Ref) { .code = AREA, .u.array = a, .external = 0 };
+// 	assert(a && a->code == MAP);
+// 	return (Ref) { .code = AREA, .u.array = a, .external = 0 };
+
+	return refkeymap(a);
 }
 
 static Ref setbit(const Ref r, const unsigned bit)
@@ -150,7 +152,7 @@ Ref markext(const Ref r)
 		return setbit(r, 1);
 	
 	case MAP:
-	case AREA:
+// 	case AREA:
 		assert(r.external);
 		return skip(r);
 	}
@@ -235,11 +237,14 @@ void freeref(const Ref r)
 		break;
 	
 	case MAP:
-		if(!r.external)
-		{
-			freekeymap(r.u.array);
-		}
+// 		if(!r.external)
+// 		{
+// 			freekeymap(r.u.array);
+// 		}
+// 
+// 		break;
 
+		assert(r.external);
 		break;
 	
 	default:

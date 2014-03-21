@@ -29,6 +29,9 @@ typedef struct
 	const Array *const map;
 	Array *const nodes;
 
+	const Array *const escape;
+	Array *const visited;
+
 	const char *const tabstr;
 	const unsigned tabs;
 
@@ -340,7 +343,13 @@ void dumpdag(
 	freekeymap(nodes);
 }
 
-static int dumpbindingone(Binding *const b, void *const ptr)
+static unsigned islink(Array *const U, const Ref r)
+{
+	DL(pattern, RS(decoatom(U, DMAP), reffree()));
+	return keymatch(pattern, &r, NULL, 0, NULL);
+}
+
+static int dumpbindingone(const Binding *const b, void *const ptr)
 {
 	assert(b);
 	assert(ptr);
@@ -391,24 +400,25 @@ static int dumpbindingone(Binding *const b, void *const ptr)
 		break;
 
 	case MAP:
-		if(!b->ref.external)
+// 		if(!b->ref.external)
+// 		{
+// 			st->L = append(st->L, RL(markext(b->ref)));
+// 		}
+// 		break;
+
+		assert(b->ref.external);
+
+// 		if(!setmap(st->visited, b->ref) && !setmap(st->escape, b->key))
+// 		{
+// 			st->L = append(st->L, RL(markext(b->ref)));
+// 		}
+
+		if(islink((Array *)st->U, b->key)
+			&& !setmap(st->escape, b->key))
 		{
 			st->L = append(st->L, RL(markext(b->ref)));
 		}
-		break;
 	}
-
-	return 0;
-}
-
-static int dumpkeymapone(List *const l, void *const ptr)
-{
-	assert(l && iskeymap(l->ref));
-	assert(ptr);
-	const DState *const st = ptr;
-
-	assert(fputc('\n', st->f) == '\n');
-	dumpkeymap(st->dbg, st->f, st->tabs + 1, st->U, l->ref.u.array);
 
 	return 0;
 }
@@ -452,13 +462,37 @@ static int dumpdagone(List *const l, void *const ptr)
 	return 0;
 }
 
-void dumpkeymap(
-	const unsigned debug,
-	FILE *const f, const unsigned tabs, const Array *const U,
-	const Array *const map)
+static void dumpkeymapcore(
+	const unsigned debug, FILE *const f, const unsigned tabs,
+	const Array *const U,
+	const Array *const map, const Array *const escape, Array *const V);
+
+static int dumpkeymapone(List *const l, void *const ptr)
+{
+	assert(l && iskeymap(l->ref));
+	assert(ptr);
+	const DState *const st = ptr;
+
+	if(!setmap(st->visited, l->ref))
+	{
+		assert(fputc('\n', st->f) == '\n');
+		dumpkeymapcore(
+			st->dbg, st->f, st->tabs + 1,
+			st->U, l->ref.u.array, st->escape, st->visited);
+	}
+
+	return 0;
+}
+
+static void dumpkeymapcore(
+	const unsigned debug, FILE *const f, const unsigned tabs,
+	const Array *const U,
+	const Array *const map, const Array *const escape, Array *const V)
 {
 	assert(f);
 	assert(map && map->code == MAP);
+
+	tunesetmap(V, refkeymap((Array *)map));
 
 	DState st =
 	{
@@ -469,14 +503,16 @@ void dumpkeymap(
 		.D = NULL,
 		.tabs = tabs,
 		.tabstr = tabstr(tabs),
-		.dbg = debug
+		.dbg = debug,
+		.visited = V,
+		.escape = escape
 	};
 
 	assert(fprintf(f, "%smap: %p", st.tabstr, (void *)map) > 0);
 
 	if(map->count)
 	{
-		walkbindings((Array *)map, dumpbindingone, &st);
+		walkbindings((Array *)map, escape, dumpbindingone, &st);
 
 		// FIXME: тут нужен более разумный подход
 		if(st.F && U)
@@ -501,7 +537,18 @@ void dumpkeymap(
 
 	free((void *)st.tabstr);
 	freelist(st.L);
+	freelist(st.D);
 	freelist(st.F);
+}
+
+void dumpkeymap(
+	const unsigned debug, FILE *const f, const unsigned tabs,
+	const Array *const U,
+	const Array *const map, const Array *const escape)
+{
+	Array *const V = newkeymap();
+	dumpkeymapcore(debug, f, tabs, U, map, escape, V);
+	freekeymap(V);
 }
 
 void dumptable(

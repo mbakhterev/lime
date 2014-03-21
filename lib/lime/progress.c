@@ -123,7 +123,7 @@ static int collectone(List *const l, void *const ptr)
 		DBG(DBGCLLT, "key: %s", kstr);
 		free(kstr);
 
-		dumpkeymap(1, stderr, 0, st->U, st->R);
+		dumpkeymap(1, stderr, 0, st->U, st->R, NULL);
 	}
 
 	DBG(DBGCLLT, "b: %p", (void *)b);
@@ -290,7 +290,7 @@ static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 
 	if(DBGFLAGS & DBGSYNTH)
 	{
-		dumpkeymap(1, stderr, 0, C->U, A);
+		dumpkeymap(1, stderr, 0, C->U, A, NULL);
 	}
 	
 	DBG(DBGSYNTH, "%s", "RF 1");
@@ -385,6 +385,6 @@ void progress(Core *const C, const SyntaxNode op)
 
 	if(DBGFLAGS & DBGPRGS)
 	{
-		dumpkeymap(1, stderr, 0, C->U, A.u.array);
+		dumpkeymap(1, stderr, 0, C->U, A.u.array, NULL);
 	}
 }

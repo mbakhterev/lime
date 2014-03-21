@@ -75,7 +75,7 @@ static void initforms(
 
 			if(DBGFLAGS & DBGINIT)
 			{
-				dumpkeymap(1, stderr, 0, U, envmarks);
+				dumpkeymap(1, stderr, 0, U, envmarks, NULL);
 				assert(fputc('\n', stderr) == '\n');
 			}
 
@@ -339,8 +339,10 @@ int main(int argc, char *const argv[])
 
 		if(DBGFLAGS & DBGMAIN)
 		{
+			const Array *const esc = stdupstreams(U);
 			DBG(DBGMAIN, "env: count = %u", C.env->count);
-			dumpkeymap(1, stderr, 0, U, C.env);
+			dumpkeymap(1, stderr, 0, U, C.env, esc);
+			freekeymap((Array *)esc);
 
 			DBG(DBGMAIN, "%s", "types:");
 			dumptable(stderr, 0, U, C.types);

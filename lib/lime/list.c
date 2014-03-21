@@ -69,7 +69,7 @@ static List *newlist(const Ref r)
 	case DAG:
 	case FORM:
 	case MAP:
-	case AREA:
+// 	case AREA:
 	case FREE:
 		break;
 	

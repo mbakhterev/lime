@@ -444,7 +444,7 @@ Ref ntheval(
 	if(DBGFLAGS & DBGNTH)
 	{
 		DBG(DBGNTH, "%s", "evaluated");
-		dumpkeymap(1, stderr, 0, U, st.evalmarks);
+		dumpkeymap(1, stderr, 0, U, st.evalmarks, NULL);
 	}
 
 	const Array *const torewrite = newverbmap(U, 0, ES("FIn", "Nth"));

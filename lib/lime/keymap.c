@@ -571,7 +571,7 @@ static int makeone(List *const n, void *const ptr)
 
 	// Привязываем указанное отображение к концу цепочки
 
-	assert(st->M.code == FREE && n == st->L);
+	assert(st->M.code != FREE && n == st->L);
 	st->current = linkmap(st->U, curr, st->path, n->ref, st->M);
 	if(st->current)
 	{
@@ -603,7 +603,7 @@ Array *makepath(
 		.newitem = newitem,
 		.M = M,
 		.current = map,
-// 		.path = path,
+		.path = path,
 // 		.ok = 0
 	};
 
@@ -674,7 +674,7 @@ static int lookone(List *const e, void *const ptr)
 
 	if(DBGFLAGS & DBGPLU)
 	{
-		dumpkeymap(1, stdout, 1, NULL, e->ref.u.array);
+		dumpkeymap(1, stdout, 1, NULL, e->ref.u.array, NULL);
 	}
 
 	const Binding *const b = look(e->ref.u.array, st->key);
@@ -993,27 +993,51 @@ unsigned keymatch(
 	return r;
 }
 
-void walkbindings(Array *const map, WalkBinding wlk, void *const ptr)
+static void walkbindingscore(
+	Array *const map, const Array *const escape,
+	WalkBinding wlk, void *const ptr, Array *const V)
 {
 	assert(map && map->code == MAP);
+
+	// Отмечаемся, что были здесь
+	tunesetmap(V, refkeymap(map));
 	
-	Binding *const B = map->u.data;
+	const Binding *const B = map->u.data;
 	const unsigned *const I = map->index;
 	
 	for(unsigned i = 0; i < map->count; i += 1)
 	{
-		Binding *const b = B + I[i];
+		const Binding *const b = B + I[i];
 
-		if(wlk(b, ptr) && iskeymap(b->ref) && !b->ref.external)
+		const unsigned go
+			= wlk(b, ptr)
+				&& iskeymap(b->ref) && !setmap(V, b->ref)
+				&& !setmap(escape, b->key);
+
+		if(go)
 		{
-			walkbindings(b->ref.u.array, wlk, ptr);
+			walkbindingscore(b->ref.u.array, escape, wlk, ptr, V);
 		}
+
+// 		if(wlk(b, ptr) && iskeymap(b->ref) && !b->ref.external)
+// 		{
+// 			walkbindings(b->ref.u.array, wlk, ptr);
+// 		}
 	}
+}
+
+void walkbindings(
+	Array *const map, const Array *const escape,
+	WalkBinding wlk, void *const ptr)
+{
+	Array *const visited = newkeymap();
+	walkbindingscore(map, escape, wlk, ptr, visited);
+	freekeymap(visited);
 }
 
 static unsigned linkup(Array *const U, Array *const map)
 {
-	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LINKS")));
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "LNKCNT")));
 	Binding *const b = (Binding *)bindingat(map, bindkey(map, key));
 	assert(b);
 
@@ -1251,4 +1275,18 @@ unsigned unlinkmap(
 
 	freekeymap(V);
 	return ok;
+}
+
+Array *stdupstreams(Array *const U)
+{
+	Array *const map = newkeymap();
+
+	DL(pair, RS(readtoken(U, "ENV"), readtoken(U, "parent")));
+	DL(key, RS(decoatom(U, DMAP), pair));
+
+	Binding *const b = (Binding *)bindingat(map, bindkey(map, key));
+	assert(b);
+	b->ref = refnum(0);
+
+	return map;
 }

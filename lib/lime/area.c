@@ -5,7 +5,8 @@
 
 unsigned isarea(const Ref r)
 {
-	return r.code == AREA && r.u.array && r.u.array->code == MAP;
+// 	return r.code == AREA && r.u.array && r.u.array->code == MAP;
+	return iskeymap(r);
 }
 
 static void initreactor(Array *const U, const unsigned id, Array *const area)

@@ -430,7 +430,7 @@ static LoadCurrent node(
 	
 	if(DBGFLAGS & DBGNODE)
 	{
-		dumpkeymap(1, stderr, 1, U, ctx->dagmap); 
+		dumpkeymap(1, stderr, 1, U, ctx->dagmap, NULL); 
 	}
 
 	const LoadCurrent lc

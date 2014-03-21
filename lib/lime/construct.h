@@ -46,8 +46,8 @@ enum
 
 	DAG, FORM,
 
-	// Отсылка к области вывода
-	AREA,
+// 	// Отсылка к области вывода
+// 	AREA,
 
 	// Свободная ссылка, в которой ничего нет
 	FREE = -1
@@ -289,9 +289,9 @@ extern void freekeymap(Array *const);
 // Печать окружения keymap. Рекурсивная по тому же принципу, что и freekeymap
 
 extern void dumpkeymap(
-	const unsigned debug,
-	FILE *const, const unsigned tabs, const Array *const U,
-	const Array *const keymap);
+	const unsigned debug, FILE *const, const unsigned tabs,
+	const Array *const U,
+	const Array *const keymap, const Array *const escape);
 
 // Информация хранится в keymap-ах в виде связок
 
@@ -392,6 +392,8 @@ extern Array *makepath(
 	Array *const U,
 	const Ref path, const List *const names,
 	NewInterlink, const Ref map);
+
+extern Array *stdupstreams(Array *const U);
 
 // В некотором смысле обратная операция: которая строит стек окружений,
 // связанных по имени name на пути path, начиная с того, которое в окружении map
@@ -517,8 +519,9 @@ extern unsigned typeenummap(Array *const map, const Ref key);
 // что (B.ref.code == MAP && !B.ref.external), и когда WalkBinding для B вернёт
 // !0, процедура будет вызвана рекурсивно для B.ref.u.array
 
-typedef int WalkBinding(Binding *const, void *const ptr);
-extern void walkbindings(Array *const map, WalkBinding, void *const);
+typedef int WalkBinding(const Binding *const, void *const ptr);
+extern void walkbindings(
+	Array *const map, const Array *const escape, WalkBinding, void *const);
 
 // Узлы.
 
