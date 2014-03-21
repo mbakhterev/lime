@@ -345,8 +345,9 @@ void dumpdag(
 
 static unsigned islink(Array *const U, const Ref r)
 {
-	DL(pattern, RS(decoatom(U, DMAP), reffree()));
-	return keymatch(pattern, &r, NULL, 0, NULL);
+// 	DL(pattern, RS(decoatom(U, DMAP), reffree()));
+// 	return keymatch(pattern, &r, NULL, 0, NULL);
+	return decomatch(r, U, DMAP);
 }
 
 static int dumpbindingone(const Binding *const b, void *const ptr)
@@ -512,7 +513,8 @@ static void dumpkeymapcore(
 
 	if(map->count)
 	{
-		walkbindings((Array *)map, escape, dumpbindingone, &st);
+		walkbindings((Array *)U,
+			(Array *)map, escape, dumpbindingone, &st);
 
 		// FIXME: тут нужен более разумный подход
 		if(st.F && U)

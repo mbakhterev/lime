@@ -240,6 +240,18 @@ Ref decorate(const Ref key, Array *const U, const unsigned code)
 	return reflist(RL(decoatom(U, code), key));
 }
 
+unsigned decomatch(const Ref r, Array *const U, const unsigned code)
+{
+	const Ref d = decoatom(U, code);
+	const Ref R[2];
+	if(!splitpair(r, (Ref *)R))
+	{
+		return 0;
+	}
+
+	return R[0].code == ATOM && R[0].u.number == d.u.number;
+}
+
 static const Binding *look(const Array *const map, const Ref key)
 {
 	assert(map && map->code == MAP);
@@ -994,6 +1006,7 @@ unsigned keymatch(
 }
 
 static void walkbindingscore(
+	Array *const U,
 	Array *const map, const Array *const escape,
 	WalkBinding wlk, void *const ptr, Array *const V)
 {
@@ -1011,12 +1024,15 @@ static void walkbindingscore(
 
 		const unsigned go
 			= wlk(b, ptr)
-				&& iskeymap(b->ref) && !setmap(V, b->ref)
-				&& !setmap(escape, b->key);
+				&& iskeymap(b->ref)
+				&& decomatch(b->ref, U, DMAP)
+				&& !setmap(escape, b->key)
+				&& !setmap(V, b->ref);
 
 		if(go)
 		{
-			walkbindingscore(b->ref.u.array, escape, wlk, ptr, V);
+			walkbindingscore(U,
+				b->ref.u.array, escape, wlk, ptr, V);
 		}
 
 // 		if(wlk(b, ptr) && iskeymap(b->ref) && !b->ref.external)
@@ -1027,11 +1043,12 @@ static void walkbindingscore(
 }
 
 void walkbindings(
+	Array *const U,
 	Array *const map, const Array *const escape,
 	WalkBinding wlk, void *const ptr)
 {
 	Array *const visited = newkeymap();
-	walkbindingscore(map, escape, wlk, ptr, visited);
+	walkbindingscore(U, map, escape, wlk, ptr, visited);
 	freekeymap(visited);
 }
 

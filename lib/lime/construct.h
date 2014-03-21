@@ -360,6 +360,8 @@ extern Ref decorate(const Ref key, Array *const U, const unsigned code);
 // Возвращает атом для декорации по её коду
 extern Ref decoatom(Array *const U, const unsigned code);
 
+extern unsigned decomatch(const Ref, Array *const U, const unsigned);
+
 // Окружения
 
 // Окружения привязываются друг к другу через именованные атомами ссылки,
@@ -521,6 +523,7 @@ extern unsigned typeenummap(Array *const map, const Ref key);
 
 typedef int WalkBinding(const Binding *const, void *const ptr);
 extern void walkbindings(
+	Array *const U,
 	Array *const map, const Array *const escape, WalkBinding, void *const);
 
 // Узлы.
