@@ -516,3 +516,26 @@ unsigned splitlist(const List *const l, const Ref *R[], const unsigned len)
 
 	return st.N == st.n;
 }
+
+static List *reversecore(
+	const List *const l, const List *const L, List *const r)
+{
+	assert(l && L);
+	if(l == L)
+	{
+		// Обработка последнего элемента в списке
+		return append(newlist(l->ref), r);
+	}
+
+	return reversecore(l->next, L, append(newlist(l->ref), r));
+}
+
+List *reverse(const List *const l)
+{
+	if(!l)
+	{
+		return NULL;
+	}
+
+	return reversecore(l->next, l, NULL);
+}

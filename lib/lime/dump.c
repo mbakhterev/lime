@@ -588,3 +588,30 @@ void dumptable(
 
 	free((char *)pad);
 }
+
+void dumpareastack(
+	const unsigned dbg, FILE *const f, const unsigned tabs,
+	const Array *const U,
+	const List *const stk)
+{
+	DState st =
+	{
+		.f = f,
+		.U = U,
+		.L = NULL,
+		.F = NULL,
+		.D = NULL,
+		.tabs = tabs,
+		.tabstr = tabstr(tabs),
+		.dbg = dbg,
+		.visited = newkeymap(),
+		.escape = NULL
+	};
+
+	List *const l = reverse(stk);
+	forlist(l, dumpkeymapone, &st, 0);
+	freelist(l);
+
+	freekeymap(st.visited);
+	free((char *)st.tabstr);
+}

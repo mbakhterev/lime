@@ -234,6 +234,8 @@ extern List *append(List *const, List *const);
 extern List *tipoff(List **const);
 extern unsigned listlen(const List *const);
 
+extern List *reverse(const List *const);
+
 extern unsigned splitlist(
 	const List *const, const Ref *parts[], const unsigned len);
 
@@ -751,6 +753,11 @@ extern Array *areareactor(
 extern Ref *reactorforms(Array *const U, const Array *const reactor);
 
 // extern void dumparea(FILE *const, const Array *const, const List *const ctx);
+
+extern void dumpareastack(
+	const unsigned dbg, FILE *const, const unsigned tabs,
+	const Array *const U,
+	const List *const stack);
 
 // Процедура вбрасывания в реактор R области area новой формы. Форма задаётся
 // парой ссылок на граф и на сигнатуру (keys). Превращать их в целую форму со
