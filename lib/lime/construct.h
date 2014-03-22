@@ -756,6 +756,8 @@ extern Ref *reactorforms(Array *const U, const Array *const reactor);
 
 // extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
+extern Array *arealinks(Array *const U, const Array *const area);
+
 extern void dumpareastack(
 	const unsigned dbg, FILE *const, const unsigned tabs,
 	const Array *const U,

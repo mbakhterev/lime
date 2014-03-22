@@ -292,20 +292,23 @@ static Array *const inittypes(Array *const U)
 	return T;
 }
 
-static Ref newenv(Array *const U)
-{
-	return refkeymap(newkeymap());
-}
+// static Ref newenv(Array *const U)
+// {
+// 	return refkeymap(newkeymap());
+// }
 
 static Array *const initroot(Array *const U)
 {
 	Array *const R = newkeymap();
 
-	DL(names, RS(readpack(U, strpack(0, "this"))));
-	makepath(
-		R, U, 
-		readpack(U, strpack(0, "ENV")), names.u.list,
-		newenv, markext(refkeymap(R)));
+// 	DL(names, RS(readpack(U, strpack(0, "this"))));
+// 	makepath(
+// 		R, U, 
+// 		readpack(U, strpack(0, "ENV")), names.u.list,
+// 		newenv, markext(refkeymap(R)));
+
+	assert(linkmap(U, R,
+		readtoken(U, "ENV"), readtoken(U, "this"), refkeymap(R)) == R);
 
 	return R;
 }

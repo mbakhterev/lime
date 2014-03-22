@@ -1138,7 +1138,8 @@ static unsigned nlinks(Array *const U, const Array *const map)
 void markactive(Array *const U, Array *const map, const unsigned flag)
 {
 	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "ACTIVE")));
-	Binding *const b = (Binding *)bindingat(map, maplookup(map, key));
+// 	Binding *const b = (Binding *)bindingat(map, maplookup(map, key));
+	Binding *const b = (Binding *)bindingat(map, bindkey(map, key));
 	assert(b);
 
 	if(flag)
@@ -1175,34 +1176,65 @@ Array *linkmap(
 	DL(pair, RS(path, name));
 	DL(key, RS(decoatom(U, DMAP), pair));
 
-	const unsigned bid = bindkey(map, key);
-	const Binding *const b = bindingat(map, bid);
-
-	if(b->ref.code != FREE)
-	{
-		// Нечто нашлось и оно должно быть keymap-ой
-		assert(iskeymap(b->ref));
-
-		// Если всё корректно, то есть, target.code == FREE, то можно
-		// возвращать эту найденную keymap. В противном случае NULL
-		return target.code == FREE ? b->ref.u.array : NULL;
-	}
-
-	// Здесь известно, что позиция свободна. Но если при этом target.code ==
-	// FREE, то не понятно, что дальше делать. Поэтому возвращаем NULL
-
 	if(target.code == FREE)
 	{
+		// Нас просят найти подходящую связь
+		const Binding *const b
+			= bindingat(map, maplookup(map, key));
+
+		if(b)
+		{
+			// Нечто нашлось и оно должно быть keymap-ой
+			assert(iskeymap(b->ref));
+			return b->ref.u.array;
+		}
+
+		// target.code == FREE, поэтому больше сделать ничего не можем
 		return NULL;
 	}
 
 	assert(iskeymap(target));
 
-	// Здесь нам нужно зацепить map и target.
+	const unsigned bid = bindkey(map, key);
+	const Binding *const b = bindingat(map, bid);
+
+	if(b->ref.code != FREE)
+	{
+		// Нечто нашлось, но нас просят зацепить map и target, поэтому
+		return NULL;
+	}
+
+	// Цепляем
 	linkup(U, target.u.array);
-	((Binding *)bindingat(map, bid))->ref = refkeymap(target.u.array);
+	((Binding *)bindingat(map, bid))->ref = target;
 
 	return target.u.array;
+
+// 	if(b->ref.code != FREE)
+// 	{
+// 		// Нечто нашлось и оно должно быть keymap-ой
+// 		assert(iskeymap(b->ref));
+// 
+// 		// Если всё корректно, то есть, target.code == FREE, то можно
+// 		// возвращать эту найденную keymap. В противном случае NULL
+// 		return target.code == FREE ? b->ref.u.array : NULL;
+// 	}
+// 
+// 	// Здесь известно, что позиция свободна. Но если при этом target.code ==
+// 	// FREE, то не понятно, что дальше делать. Поэтому возвращаем NULL
+// 
+// 	if(target.code == FREE)
+// 	{
+// 		return NULL;
+// 	}
+// 
+// 	assert(iskeymap(target));
+// 
+// 	// Здесь нам нужно зацепить map и target.
+// 	linkup(U, target.u.array);
+// 	((Binding *)bindingat(map, bid))->ref = refkeymap(target.u.array);
+// 
+// 	return target.u.array;
 }
 
 // static unsigned cleankill(
