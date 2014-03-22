@@ -307,7 +307,10 @@ typedef struct
 	List *L;
 	Array *current;
 	const Ref path;
-	NewInterlink *const newitem;
+	MayPass *const maypass;
+	NewTarget *const newtarget;
+	NextPoint *const nextpoint;
+// 	NewInterlink *const newitem;
 	const Ref M;
 // 	unsigned ok;
 // 	const unsigned creative;
@@ -559,7 +562,21 @@ static int makeone(List *const n, void *const ptr)
 	assert(ptr);
 	PState *const st = ptr;
 
-	Array *const curr = st->current;
+	assert(st->current);
+
+	// Можем ли мы пройти через этот элемент пути? Структуры, необходимые
+	// для этого могут быть уничтожены. Поэтому проверяем
+
+	if(!st->maypass(st->U, st->current))
+	{
+		return !0;
+	}
+
+	// Привязываться будем к некоторой под-структуре текущей области,
+	// поэтому
+
+	Array *const curr = st->nextpoint(st->U, st->current);
+	assert(curr);
 
 	if(st->M.code == FREE || n != st->L)
 	{
@@ -567,14 +584,14 @@ static int makeone(List *const n, void *const ptr)
 		// или мы находимся не в конце списка имён. В обоих случаях надо
 		// отыскать отображение с подходящим именем или создать новое 
 
-
 		st->current = linkmap(st->U, curr, st->path, n->ref, reffree());
 		if(st->current)
 		{
 			return 0;
 		}
 
-		const Ref m = refkeymap(newkeymap());
+// 		const Ref m = refkeymap(newkeymap());
+		const Ref m = refkeymap(st->newtarget(st->U));
 		st->current = linkmap(st->U, curr, st->path, n->ref, m);
 		assert(st->current == m.u.array);
 
@@ -584,6 +601,7 @@ static int makeone(List *const n, void *const ptr)
 	// Привязываем указанное отображение к концу цепочки
 
 	assert(st->M.code != FREE && n == st->L);
+
 	st->current = linkmap(st->U, curr, st->path, n->ref, st->M);
 	if(st->current)
 	{
@@ -599,12 +617,13 @@ Array *makepath(
 	Array *const map,
 	Array *const U,
 	const Ref path,
-	const List *const names,
-	NewInterlink newitem, const Ref M)
+	const List *const names, const Ref M,
+	MayPass maypass, NewTarget newtarget, NextPoint nextpoint)
 {
 	assert(map && map->code == MAP);
 // 	assert(M.code == FREE || iskeymap(M) || (!creative && isarea(M)));
-	assert(newitem);
+//	assert(newitem);
+	assert(maypass && newtarget && nextpoint);
 	assert(M.code == FREE || iskeymap(M));
 
 	PState st =
@@ -612,7 +631,9 @@ Array *makepath(
 // 		.creative = creative,
 		.U = U,
 		.L = (List *)names,
-		.newitem = newitem,
+		.maypass = maypass,
+		.newtarget = newtarget,
+		.nextpoint = nextpoint,
 		.M = M,
 		.current = map,
 		.path = path,

@@ -4,9 +4,19 @@
 unsigned item = 1;
 const char *unitname = "test";
 
-static Ref newitem(Array *const U)
+static Array *newtarget(Array *const U)
 {
-	return refkeymap(newkeymap());
+	return newkeymap();
+}
+
+static Array *nextpoint(Array *const U, const Array *const map)
+{
+	return (Array *)map;
+}
+
+static unsigned maypass(Array *const U, const Array *const map)
+{
+	return !0;
 }
 
 int main(int argc, char *argv[])
@@ -31,7 +41,8 @@ int main(int argc, char *argv[])
 	makepath(
 		root, U, 
 		readpack(U, strpack(0, "ENV")), names.u.list,
-		newitem, markext(refkeymap(root)));
+		markext(refkeymap(root)),
+		maypass, newtarget, nextpoint);
 
 	Array *const envmarks = newkeymap();
 	Array *const types = newkeymap();

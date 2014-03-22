@@ -389,13 +389,15 @@ extern unsigned decomatch(const Ref, Array *const U, const unsigned);
 // Вернёт makepath ссылку на последние из заданных списком имён окружений, если
 // map и последнее имя согласованы. В случае несогласованности NULL
 
-typedef Ref NewInterlink(Array *const U);
+typedef Array *NewTarget(Array *const U);
+typedef Array *NextPoint(Array *const U, const Array *const map);
+typedef unsigned MayPass(Array *const U, const Array *const map);
 
 extern Array *makepath(
 	Array *const env,
 	Array *const U,
-	const Ref path, const List *const names,
-	NewInterlink, const Ref map);
+	const Ref path, const List *const names, const Ref map,
+	MayPass, NewTarget, NextPoint);
 
 extern Array *stdupstreams(Array *const U);
 

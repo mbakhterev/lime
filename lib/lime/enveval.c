@@ -70,9 +70,24 @@ static const List *attrlist(const Ref r, Array *const U)
 	return NULL;
 }
 
-static Ref newitem(Array *const U)
+// static Ref newitem(Array *const U)
+// {
+// 	return refkeymap(newkeymap());
+// }
+
+static Array *newtarget(Array *const U)
 {
-	return refkeymap(newkeymap());
+	return newkeymap();
+}
+
+static Array *nextpoint(Array *const U, const Array *const map)
+{
+	return (Array *)map;
+}
+
+static unsigned maypass(Array *const U, const Array *const map)
+{
+	return !0;
 }
 
 static void mkenv(
@@ -113,7 +128,8 @@ static void mkenv(
 // 		newenv = makepath(env, U, R[0], R[1].u.list, reffree());
 		newenv
 			= makepath(env, U,
-				path, R[1].u.list, newitem, reffree());
+				path, R[1].u.list, reffree(),
+				maypass, newtarget, nextpoint);
 					
 		assert(newenv && newenv->code == MAP);
 
@@ -140,7 +156,8 @@ static void mkenv(
 
 		const Array *const t
 			= makepath(env, U,
-				path, R[1].u.list, newitem, refkeymap(newenv));
+				path, R[1].u.list, refkeymap(newenv),
+				maypass, newtarget, nextpoint);
 		
 		if(!t)
 		{
