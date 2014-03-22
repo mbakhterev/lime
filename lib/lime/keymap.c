@@ -1184,98 +1184,214 @@ Array *linkmap(
 	return target.u.array;
 }
 
-static unsigned cleankill(
-	Array *const U, const Array *const map, Array *const visited)
+// static unsigned cleankill(
+// 	Array *const U, const Array *const map, Array *const visited)
+// {
+// 	// Это относительно простая рекурсия. Если уже были здесь, то всё
+// 	// хорошо
+// 
+// 	if(setmap(visited, refkeymap((Array *)map)))
+// 	{
+// 		return !0;
+// 	}
+// 
+// 	tunesetmap(visited, refkeymap((Array *)map));
+// 
+// 	// Если не были, но при этом счётчик ссылок большой, то всё хорошо и
+// 	// погружаться в детали этой области не нужно
+// 
+// 	const unsigned N = nlinks(U, map);
+// 	if(N > 1)
+// 	{
+// 		return !0;
+// 	}
+// 
+// 	assert(N == 1);
+// 	
+// 	// Эта область будет удалена. Надо проверить, что она не активна
+// 
+// 	if(isactive(U, map))
+// 	{
+// 		return 0;
+// 	}
+// 
+// 	// Теперь надо пройтись по всем Binding-ам в этой области и убедится,
+// 	// что они тоже удовлетворяют cleankill
+// 
+// 	for(unsigned i = 0; i < map->count; i += 1)
+// 	{
+// 		const Ref m = bindingat(map, i)->ref;
+// 		if(iskeymap(m) && cleankill(U, m.u.array, visited))
+// 		{
+// 			continue;
+// 		}
+// 
+// 		return 0;
+// 	}
+// 
+// 	return !0;
+// }
+// 
+// static unsigned unlinkcore(
+// 	Array *const U, Array *const map, const unsigned bid, Array *const V)
+// {
+// 	const Binding *const b = bindingat(map, bid);
+// 	if(!b)
+// 	{
+// 		return 0;
+// 	}
+// 
+// 	assert(iskeymap(b->ref));
+// 	Array *const M = b->ref.u.array;
+// 
+// 	// Проверим, что удаление этой ссылки не приведёт к удалению чего-то
+// 	// активного
+// 
+// 	if(!cleankill(U, M, V))
+// 	{
+// 		return 0;
+// 	}
+// 
+// 	// Забываем об этой связи
+// 	((Binding *)b)->ref = reffree();
+// 	if(linkdown(U, M) > 0)
+// 	{
+// 		// Если ссылка не была последней, то всё успешно завершилось
+// 		return !0;
+// 	}
+// 
+// 	// Ссылка последняя, значит, надо удалять M. Но перед этим следует
+// 	// убрать все ссылки на другие области
+// 
+// 	for(unsigned i = 0; i < M->count; i += 1)
+// 	{
+// 		const Ref m = bindingat(M, i)->ref;
+// 		if(iskeymap(m))
+// 		{
+// 			// Здесь уже всё должно быть проверено и корректно
+// 			assert(unlinkcore(U, M, i, V));
+// 		}
+// 	}
+// 
+// 	// Последняя капелька паранойи
+// 	assert(!isactive(U, M) && !nlinks(U, M));
+// 	freekeymap(M);
+// 
+// 	return !0;
+// }
+
+static void modelunlink(
+	Array *const U, Array *const model, const Array *const map)
 {
-	// Это относительно простая рекурсия. Если уже были здесь, то всё
-	// хорошо
-
-	if(setmap(visited, refkeymap((Array *)map)))
-	{
-		return !0;
-	}
-
-	tunesetmap(visited, refkeymap((Array *)map));
-
-	// Если не были, но при этом счётчик ссылок большой, то всё хорошо и
-	// погружаться в детали этой области не нужно
-
-	const unsigned N = nlinks(U, map);
-	if(N > 1)
-	{
-		return !0;
-	}
-
-	assert(N == 1);
+	Binding *const b
+		= (Binding *)bindingat(model,
+			bindkey(model, refkeymap((Array *)map)));
+	assert(b);
 	
-	// Эта область будет удалена. Надо проверить, что она не активна
+	// Мы моделируем операцию удаления ссылки, поэтому тут мы должны её
+	// выполнить на модели. Были мы в этой области ли не были, тут не важно.
+	// Мы не должны в ней побывать больше, чем LNKCNT раз. А это значение
+	// должно быть в модели. Модель может видеть эту область первый раз,
+	// поэтому нужна инициализации
 
-	if(isactive(U, map))
+	if(b->ref.code == FREE)
 	{
-		return 0;
+		b->ref = refnum(nlinks(U, map));
 	}
 
-	// Теперь надо пройтись по всем Binding-ам в этой области и убедится,
-	// что они тоже удовлетворяют cleankill
+	// Теперь надо вычеркнуть одну связь из общего их количества
 
-	for(unsigned i = 0; i < map->count; i += 1)
+	assert(b->ref.code == NUMBER && b->ref.u.number > 0);
+	if((b->ref.u.number -= 1) == 0)
 	{
-		const Ref m = bindingat(map, i)->ref;
-		if(iskeymap(m) && cleankill(U, m.u.array, visited))
-		{
-			continue;
-		}
+		// Если счётчик упал до 0, то эта область должна быть удалена и
+		// все link-и ведущие из неё должны быть так же вычеркнуты
 
-		return 0;
+		const Binding *const B = (Binding *)map->u.data;
+		for(unsigned i = 0; i < map->count; i += 1)
+		{
+			if(iskeymap(B[i].ref) && decomatch(B[i].key, U, DMAP))
+			{
+				// Если видим связь, нужно моделировать её
+				// удаление
+
+				modelunlink(U, model, B[i].ref.u.array);
+			}
+		}
+	}
+}
+
+static unsigned checkunlinkmodel(Array *const U, const Array *const model)
+{
+	for(unsigned i = 0; i < model->count; i += 1)
+	{
+		const Binding *const b = bindingat(model, i);
+		assert(iskeymap(b->key) && b->ref.code == NUMBER);
+
+		if(b->ref.u.number == 0 && isactive(U, b->key.u.array))
+		{
+			return 0;
+		}
 	}
 
 	return !0;
 }
 
-static unsigned unlinkcore(
-	Array *const U, Array *const map, const unsigned bid, Array *const V)
+static void unlinkcore(Array *const U, Binding *const B)
 {
-	const Binding *const b = bindingat(map, bid);
-	if(!b)
+	// FIXME: вообще-то вместо assert можно написать if, чтобы не
+	// повторяться. Но пока так
+
+	assert(B && iskeymap(B->ref) && decomatch(B->key, U, DMAP));
+	Array *const map = B->ref.u.array;
+
+	// Нужно выкинуть одну связь. Корректность проверяется в linkdown.
+	// linkdown при этом не меняет набор binding-ов в окружении, поэтому
+	// можно не пересчитывать B
+
+	if(linkdown(U, map))
 	{
-		return 0;
+		// Ссылка была не последней, можно не продолжать
+		return;
 	}
 
-	assert(iskeymap(b->ref));
-	Array *const M = b->ref.u.array;
+	// Надо отцепить все ссылки в этой области видимости
 
-	// Проверим, что удаление этой ссылки не приведёт к удалению чего-то
-	// активного
-
-	if(!cleankill(U, M, V))
+	for(unsigned i = 0; i < map->count; i += 1)
 	{
-		return 0;
-	}
-
-	// Забываем об этой связи
-	((Binding *)b)->ref = reffree();
-	if(linkdown(U, M) > 0)
-	{
-		// Если ссылка не была последней, то всё успешно завершилось
-		return !0;
-	}
-
-	// Ссылка последняя, значит, надо удалять M. Но перед этим следует
-	// убрать все ссылки на другие области
-
-	for(unsigned i = 0; i < M->count; i += 1)
-	{
-		const Ref m = bindingat(M, i)->ref;
-		if(iskeymap(m))
+		Binding *const b = (Binding *)bindingat(map, i);
+		assert(b);
+		if(iskeymap(b->ref) && decomatch(b->key, U, DMAP))
 		{
-			// Здесь уже всё должно быть проверено и корректно
-			assert(unlinkcore(U, M, i, V));
+			unlinkcore(U, b);
 		}
 	}
 
-	// Последняя капелька паранойи
-	assert(!isactive(U, M) && !nlinks(U, M));
-	freekeymap(M);
+	// Саму область теперь можно освободить
+
+	assert(!isactive(U, map) && !nlinks(U, map));
+	B->ref = reffree();
+	freekeymap(map);
+}
+
+static unsigned aftercheckunlink(Array *const U, Array *const model)
+{
+	for(unsigned i = 0; i < model->count; i += 1)
+	{
+		const Binding *const b = bindingat(model, i);
+		assert(b && iskeymap(b->key) && b->ref.code == NUMBER);
+
+		if(b->ref.u.number)
+		{
+			// Если число ссылок в модели не равно 0, то область ещё
+			// жива и можно проверить соответствие счётчиков
+
+			if(b->ref.u.number != nlinks(U, b->key.u.array))
+			{
+				return 0;
+			}
+		}
+	}
 
 	return !0;
 }
@@ -1286,12 +1402,27 @@ unsigned unlinkmap(
 	DL(pair, RS(path, name));
 	DL(key, RS(decoatom(U, DMAP), pair));
 
-	Array *const V = newkeymap();
-	const unsigned bid = maplookup(map, key);
-	const unsigned ok = unlinkcore(U, map, bid, V);
+	Binding *const b = (Binding *)bindingat(map, maplookup(map, key));
+	if(!b)
+	{
+		return 0;
+	}
+	assert(iskeymap(b->ref));
 
-	freekeymap(V);
-	return ok;
+	Array *const model = newkeymap();
+
+	modelunlink(U, model, b->ref.u.array);
+	if(!checkunlinkmodel(U, model))
+	{
+		return 0;
+	}
+
+	unlinkcore(U, b);
+	assert(aftercheckunlink(U, model));
+
+	freekeymap(model);
+
+	return !0;
 }
 
 Array *stdupstreams(Array *const U)
