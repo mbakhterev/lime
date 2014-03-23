@@ -37,6 +37,21 @@ static int revalone(List *const l, void *const ptr)
 	return 0;
 }
 
+static unsigned maypass(Array *const U, const Array *const map)
+{
+	return isactive(U, map);
+}
+
+static Array *newtarget(Array *const U)
+{
+	return newarea(U);
+}
+
+static Array *nextpoint(Array *const U, const Array *const map)
+{
+	return arealinks(U, map);
+}
+
 static void mkarea(
 	Array *const U, const Ref N, Array *const area, Array *const areamarks)
 {
@@ -80,18 +95,19 @@ static void mkarea(
 // 		: len == 2 ? markext(refarea(target))
 // 		: reffree();
 
-	const Ref TR = len == markext(refarea(target)) : reffree();
+	const Ref TR = target ? markext(refarea(target)) : reffree();
 
 // 	assert(len == 1 || iskeymap(TR));
 // 	assert(iskeymap(TR));
 	
 	Array *const T
-		= makepath(area, U, readtoken(U, "CTX"), R[0].u.list, TR);
+		= makepath(area, U, readtoken(U, "CTX"), R[0].u.list, TR,
+			maypass, newtarget, nextpoint);
 	
 	if(!T)
 	{
 		item = nodeline(N);
-		ERR("node \"%s\": can't construct area", nodename(U, N));
+		ERR("node \"%s\": can't trace area path", nodename(U, N));
 	}
 
 	assert(len == 1 || T == target);

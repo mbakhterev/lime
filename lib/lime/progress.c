@@ -8,6 +8,7 @@
 #define DBGSYNTH 4
 #define DBGCLLT 8
 #define DBGACT 16
+#define DBGACTSUBST 32
 
 // #define DBGFLAGS (DBGPRGS | DBGGF)
 // #define DBGFLAGS (DBGPRGS | DBGSYNTH | DBGCLLT)
@@ -18,15 +19,14 @@
 
 static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 {
-	const unsigned hintclass = atomhint(atomat(U, atom)) & 0xf0;
+// 	const unsigned hintclass = atomhint(atomat(U, atom)) & 0xf0;
+	const unsigned hintclass = atomhint(atomat(U, atom));
 
 	// typeenummap скопирует ключ при необходимости
 	DL(key, RS(readpack(U, strpack(hintclass, ""))));
 	return reftype(typeenummap(T, key));
 }
 
-// static Ref getform(
-// 	Ref *const K,
 static Ref getbody(
 	const Core *const C, const unsigned op, const unsigned atom)
 {
@@ -57,7 +57,6 @@ static Ref getbody(
 		{
 			freelist(p);
 
-// 			*K = key;
 			// Подчёркиваем, что форма из окружения
 			return markext(b->ref);
 		}
@@ -87,7 +86,6 @@ static Ref getbody(
 		{
 			freelist(p);
 
-// 			*K = key;
 			return markext(b->ref);
 		}
 
@@ -96,7 +94,6 @@ static Ref getbody(
 
 	freelist(p);
 
-// 	*K = reffree();
 	return reffree();
 }
 
@@ -173,17 +170,10 @@ static void activate(
 	const Array *const escape = newverbmap(C->U, 0, ES("F"));
 
 	const Array *const nonroots
-		= newverbmap(C->U, 0,
-			ES("L", "FIn", "Nth", "F", "FEnv", "FPut", "FOut"));
-
-// 	if(DBGFLAGS & DBGACT)
-// 	{
-// 		char *const kstr = strlist(C->U, inlist);
-// 		DBG(DBGACT, "pre-ntheval: (form %p) (links %s)\ndag:",
-// 			(void *)formdag(form).u.list, kstr);
-// 		free(kstr);
-// 		dumpdag(0, stderr, 0, C->U, formdag(form));
-// 	}
+		= newverbmap(C->U, 0, ES(
+			"L", "FIn", "Nth",
+			"R",
+			"F", "FEnv", "FPut", "FOut"));
 
 	const Ref rawbody
 		= ntheval(
@@ -194,12 +184,11 @@ static void activate(
 	const Ref body = leval(C->U, rawbody, escape);
 	freeref(rawbody);
 
-	if(DBGFLAGS & DBGACT)
+	if(DBGFLAGS & DBGACTSUBST)
 	{
-		DBG(DBGACT, "%s", "ntheval");
+		DBG(DBGACTSUBST, "%s", "ntheval");
 		dumpdag(0, stderr, 0, C->U, body);
 		assert(fputc('\n', stderr) == '\n');
-// 		, NULL);
 	}
 
 	Array *const envmarks = newkeymap();
@@ -211,18 +200,20 @@ static void activate(
 
 	typeeval(C->U, C->types, C->typemarks, body, escape, envmarks);
 
-	symeval(
-		C->U, C->symbols, C->symmarks,
+	Array *const areamarks = newkeymap();
+	reval(C->U, area, areamarks, body, escape);
+
+	symeval(C->U, C->symbols, C->symmarks,
 		body, escape, envmarks, C->typemarks);
 
 	formeval(C->U, area, body, escape,envmarks, NULL, C->typemarks);
 
+	freekeymap(areamarks);
 	freekeymap(envmarks);
 
 	// FIXME: ещё несколько стадий
 
 	// Убираем использованные синтаксические команды
-
 	gcnodes((Ref *)&body, escape, nonroots, NULL);
 
 	freekeymap((Array *)nonroots);
@@ -231,10 +222,8 @@ static void activate(
 	// Будут удалены все части списка:
 	freelist((List *)inlist);
 
-	// Наращиваем тело графа:
-
+	// Наращиваем тело графа
 	Ref *const AD = areadag(C->U, area);
-// 	assert(body.code == LIST && AD->code == LIST);
 	assert(isdag(body) && isdag(*AD));
 	AD->u.list = append(AD->u.list, body.u.list);
 }

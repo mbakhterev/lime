@@ -1,0 +1,20 @@
+(
+	.F newsym
+	(
+		.Nth name (.FIn (); (1));
+		.R (("hello"; name); .R (("from"; "LiME"; "system"; name)))
+	);
+
+	.FEnv (("A"; '0a.1."a"); newsym);
+	.FEnv (("A"; '0a.1."b"); newsym);
+
+	.L plus ('10.1."+");
+
+	.FEnv (("E"; plus); .F ());
+	.FEnv (("L"; plus); .F ())
+)
+
+// A	0.2	0a.1."a"
+// L	0.2	10.1."+"
+// A	0.2	0a.1."b"
+// E	0.0	10.1."+" // 2
