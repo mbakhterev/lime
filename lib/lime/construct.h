@@ -758,6 +758,12 @@ extern Ref *reactorforms(Array *const U, const Array *const reactor);
 
 extern Array *arealinks(Array *const U, const Array *const area);
 
+extern void markonstack(Array *const U, Array *const, const unsigned on);
+extern unsigned isonstack(Array *const U, const Array *const);
+
+extern void markontop(Array *const U, Array *const area, const unsigned on);
+extern unsigned isontop(Array *const U, const Array *const);
+
 extern void dumpareastack(
 	const unsigned dbg, FILE *const, const unsigned tabs,
 	const Array *const U,
@@ -810,16 +816,15 @@ extern void reval(
 	Array *const area, Array *const areamarks,
 	const Ref dag, const Array *const escape);
 
-// typedef struct
-// {
-// 	Array *const env;
-// 	Array *const area;
-// } GoNode;
-// 
-// extern GoNode areaeval(
-// 	Array *const U,
-// 	Array *const area,
-// 	const Ref dag, const Array *const escape, const Array *const envmarks);
+typedef struct
+{
+	Array *const env;
+	const unsigned done;
+} Go;
+
+extern Go goeval(
+	Array *const U,
+	const Ref dag, const Array *const escape, const Array *const envmarks);
 
 // Ядерная функциональность
 

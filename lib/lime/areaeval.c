@@ -172,3 +172,141 @@ extern void reval(
 
 	freekeymap((Array *)st.verbs);
 }
+
+typedef struct
+{
+	Array *const U;
+	Array *const area;
+	Array *const envtogo;
+	const Array *const escape;
+	const Array *const envmarks;
+} GState;
+
+static void goevalcore(const Ref r, GState *const);
+
+static int goevalone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	goevalcore(l->ref, ptr);
+	return 0;
+}
+
+static void done(Array *const U, const Ref N, Array *const area)
+{
+	// Надо проверить на активность, чтобы не допускать повторных Done-ов
+
+	if(!isactive(area))
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't kill inactive area", nodename(U, N));
+	}
+
+	const Ref ctx = readtoken(U, "CTX");
+	Array *const links = arealinks(U, area);
+	assert(links);
+
+	if(!unlinkmap(U, links, ctx, readtoken(U, "LINKS")))
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't kill interlinks", nodename(U, N));
+	}
+
+	DL(rkey, RS(readtoken(U, "R"), refnum(0)));
+	assert(unlinkmap(U, links, ctx, rkey));
+
+	markactive(U, area, 0);
+}
+
+static Array *go(
+	Array *const U, const Ref N,
+	const Array *const area,
+	const Array *const envmarks, const Array *const envtogo)
+{
+	if(envtogo)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": Go already specified", nodename(U, N));
+		return;
+	}
+
+	if(!isontop(U, area))
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can Go only from stack top", nodename(U, N));
+		return;
+	}
+
+	const Ref r = nodeattribute(N);
+	if(r.code != LIST)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+		return;
+	}
+
+	const unsigned len = listlen(r.u.list);
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+	if(len != 1 || R[0].code != NODE)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting 1st attribute to be node reference",
+			nodename(U, N));
+		return;
+	}
+
+	const Array *const target = envmap(st->envmarks, R[0]);
+	if(!target)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": no environment evaluation", nodename(U, N));
+		return;
+	}
+
+	return target;
+}
+
+static void goevalcore(const Ref r, GState *const st)
+{
+	switch(r.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+		return;
+
+	case LIST:
+	case DAG:
+		forlist(r.u.list, goevalone, st, 0);
+	
+	case NODE:
+		if(r.external)
+		{
+			return;
+		}
+
+		switch(nodeverb(r, st->verbs))
+		{
+		case DONE:
+			done(st->U, r, st->area);
+			return;
+
+		case GO:
+			st->envtogo
+				= go(st->U, r,
+					st->area, st->envmarks, st->envtogo);
+			return;
+
+		default:
+			if(!knownverb(r, st->escape))
+			{
+				goevalone(nodeattribute(r), st);
+			}
+			return;
+		}
+
+	default:
+		assert(0);
+	}
+}

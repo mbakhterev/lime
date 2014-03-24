@@ -181,6 +181,38 @@ Array *newarea(Array *const U)
 	return area;
 }
 
+void markonstack(Array *const U, Array *const area, const unsigned on)
+{
+	if(on)
+	{
+		assert(linkmap(U, area,
+			readtoken(U, "CTX"), readtoken(U, "STACK"),
+				refkeymap(area)) == area);
+		return;
+	}
+
+	assert(unlinkmap(U, area, readtoken(U, "CTX"), readtoken(U, "STACK")));
+}
+
+unsigned isonstack(Array *const U, const Array *const area)
+{
+// 	return linkmap(U, (Array *)area,
+// 		readtoken(U, "CTX"), readtoken(U, "STACK"), reffree()) != NULL;
+
+	Array *const t
+		= linkmap(U, (Array *)area,
+			readtoken(U, "CTX"), readtoken(U, "STACK"), reffree());
+	
+	if(!t)
+	{
+		return 0;
+	}
+
+	assert(t == area);
+	return !0;
+}
+
+
 // void areaonstack(Array *const U, Array *const A, const unsigned on)
 // {
 // 	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "STACK")));
@@ -228,3 +260,33 @@ Array *newarea(Array *const U)
 // 
 // 	return 0;
 // }
+
+void markontop(Array *const U, Array *const map, const unsigned on)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "TOP")));
+	Binding *const b = (Binding *)bindingat(map, bindkey(map, key));
+	assert(b);
+
+	if(on)
+	{
+		// Нужно убедится, что установка флага не повторная
+		assert(b->ref.code == FREE
+			|| (b->ref.code == NUMBER && !b->ref.u.number));
+
+		b->ref = refnum(!0);
+		return;
+	}
+
+	// Сбросить флаг активности можно только с активной сущности
+	assert(b->ref.code == NUMBER && b->ref.u.number != 0);
+	b->ref = refnum(0);
+}
+
+unsigned isontop(Array *const U, const Array *const map)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "TOP")));
+	const Binding *const b = bindingat(map, maplookup(map, key));
+	assert(!b || b->ref.code == NUMBER);
+
+	return b != NULL && b->ref.u.number != 0;
+}
