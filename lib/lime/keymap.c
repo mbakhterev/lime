@@ -591,7 +591,7 @@ static int makeone(List *const n, void *const ptr)
 		}
 
 // 		const Ref m = refkeymap(newkeymap());
-		const Ref m = refkeymap(st->newtarget(st->U));
+		const Ref m = refkeymap(st->newtarget(st->U, st->current));
 		st->current = linkmap(st->U, curr, st->path, n->ref, m);
 		assert(st->current == m.u.array);
 

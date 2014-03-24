@@ -326,8 +326,9 @@ int main(int argc, char *const argv[])
 		.symbols = newkeymap(),
 		.symmarks = newkeymap(),
 		.root = R,
-		.env = R,
-		.areastack = RL(refarea(newarea(U))),
+		.envtogo = R,
+// 		.areastack = RL(refarea(newarea(U))),
+		.areastack = NULL,
 		.activities = NULL
 	};
 
@@ -337,14 +338,14 @@ int main(int argc, char *const argv[])
 
 	if(CKPT() == 0)
 	{
-		initforms(argc, argv, C.U, C.env, C.types);
+		initforms(argc, argv, C.U, C.root, C.types);
 		DBG(DBGMAIN, "%s", "forms loaded");
 
 		if(DBGFLAGS & DBGMAIN)
 		{
 			const Array *const esc = stdupstreams(U);
-			DBG(DBGMAIN, "env: count = %u", C.env->count);
-			dumpkeymap(1, stderr, 0, U, C.env, esc);
+			DBG(DBGMAIN, "env: count = %u", C.root->count);
+			dumpkeymap(1, stderr, 0, U, C.root, esc);
 			freekeymap((Array *)esc);
 
 			DBG(DBGMAIN, "%s", "types:");

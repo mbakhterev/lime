@@ -34,7 +34,9 @@ static Ref getbody(
 
 	Array *const U = C->U;
 	Array *const T = C->types;
-	Array *const env = C->env;
+
+	// Работать будем в этом окружении, поэтому
+	Array *const env = C->envtogo;
 
 	// Путь к корню дерева окружений
 	List *const p
@@ -147,7 +149,7 @@ static int collectone(List *const l, void *const ptr)
 
 static void activate(
 	const Ref form, const Array *const reactor,
-	Array *const area, Core *const C)
+	Array *const area, Core *const C, const Array *const envtogo)
 {
 	// Сначала надо составить список входов для формы
 
@@ -194,8 +196,10 @@ static void activate(
 	Array *const envmarks = newkeymap();
 	const Array *const tomark
 		= newverbmap(C->U, 0, ES("FEnv", "TEnv", "S"));
+	
+	Array *const env = areaenv(C->U, area);
 
-	enveval(C->U, C->env, envmarks, body, escape, tomark);
+	enveval(C->U, env, envmarks, body, escape, tomark);
 	freekeymap((Array *)tomark);
 
 	typeeval(C->U, C->types, C->typemarks, body, escape, envmarks);
@@ -206,7 +210,12 @@ static void activate(
 	symeval(C->U, C->symbols, C->symmarks,
 		body, escape, envmarks, C->typemarks);
 
-	formeval(C->U, area, body, escape,envmarks, NULL, C->typemarks);
+	formeval(C->U, area, body, escape, envmarks, NULL, C->typemarks);
+
+	const Array *const etg
+		= goeval(C->U, area, body, escape, envmarks, envtogo);
+
+	assert(!envtogo || etg == envtogo || etg == NULL);
 
 	freekeymap(areamarks);
 	freekeymap(envmarks);
@@ -256,7 +265,7 @@ static int synthone(List *const l, void *const ptr)
 	}
 
 	st->alive = 1;
-	activate(l->ref, st->reactor, st->area, st->core);
+	activate(l->ref, st->reactor, st->area, st->core, NULL);
 
 	// В activate форма будет аккуратно разобрана на запчасти, поэтому
 	// звено списка вместе с ней можно просто удалить

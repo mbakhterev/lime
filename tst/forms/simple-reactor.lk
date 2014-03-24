@@ -10,7 +10,7 @@
 
 	.L plus ('10.1."+");
 
-	.FEnv (("E"; plus); .F ());
+	.FEnv (("E"; plus); .F (.Done ()));
 	.FEnv (("L"; plus); .F ())
 )
 

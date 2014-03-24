@@ -42,9 +42,9 @@ static unsigned maypass(Array *const U, const Array *const map)
 	return isactive(U, map);
 }
 
-static Array *newtarget(Array *const U)
+static Array *newtarget(Array *const U, const Array *const map)
 {
-	return newarea(U);
+	return newarea(U, reffree(), areaenv(U, map));
 }
 
 static Array *nextpoint(Array *const U, const Array *const map)
@@ -204,18 +204,22 @@ static void done(Array *const U, const Ref N, Array *const area)
 		ERR("node \"%s\": can't kill inactive area", nodename(U, N));
 	}
 
-	const Ref ctx = readtoken(U, "CTX");
-	Array *const links = arealinks(U, area);
-	assert(links);
+// 	const Ref ctx = readtoken(U, "CTX");
+// 	Array *const links = arealinks(U, area);
+// 	assert(links);
 
-	if(!unlinkmap(U, links, ctx, readtoken(U, "LINKS")))
+// 	if(!unlinkmap(U, links, ctx, readtoken(U, "LINKS")))
+	if(!unlinkarealinks(U, area))
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": can't kill interlinks", nodename(U, N));
 	}
 
-	DL(rkey, RS(readtoken(U, "R"), refnum(0)));
-	assert(unlinkmap(U, links, ctx, rkey));
+// 	DL(rkey, RS(readtoken(U, "R"), refnum(0)));
+// 	assert(unlinkmap(U, links, ctx, rkey));
+
+	unlinkareareactor(U, area, 1);
+	unlinkareaenv(U, area);
 
 	markactive(U, area, 0);
 }
@@ -281,6 +285,7 @@ static void goevalcore(const Ref r, GState *const st)
 	case LIST:
 	case DAG:
 		forlist(r.u.list, goevalone, st, 0);
+		return;
 	
 	case NODE:
 		if(r.external)

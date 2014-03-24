@@ -113,6 +113,13 @@ Array *areareactor(Array *const U, const Array *const area, const unsigned id)
 	return R;
 }
 
+void unlinkareareactor(Array *const U, Array *const area, const unsigned id)
+{
+	DL(rkey, RS(readtoken(U, "R"), refnum(id)));
+// 	return unlinkmap(U, area, readtoken(U, "CTX"), rkey);
+	assert(unlinkmap(U, area, readtoken(U, "CTX"), rkey));
+}
+
 // static void initdag(Array *const U, Array *const area)
 // {
 // 	Binding *const b
@@ -165,17 +172,68 @@ Array *arealinks(Array *const U, const Array *const area)
 	return L;
 }
 
-Array *newarea(Array *const U)
+unsigned unlinkarealinks(Array *const U, Array *const area)
+{
+	return unlinkmap(U, area, readtoken(U, "CTX"), readtoken(U, "LINKS"));
+}
+
+static void initsyntax(Array *const U, Array *const area, const Ref syntax)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "SYNTAX")));
+	Binding *const b = (Binding *)bindingat(area, bindkey(area, key));
+	assert(b && b->ref.code == FREE);
+
+	b->ref = forkref(syntax, NULL);
+}
+
+Ref areasyntax(Array *const U, Array *const area)
+{
+	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "SYNTAX")));
+	const Binding *const b = bindingat(area, maplookup(area, key));
+	if(b && b->ref.code != FREE)
+	{
+		return markext(b->ref);
+	}
+
+	return reffree();
+}
+
+static void initenv(Array *const U, Array *const area, const Array *const env)
+{
+	const Ref r = refkeymap((Array *)env);
+	const Ref path = readtoken(U, "ENV");
+	assert(linkmap(U, area, path, readtoken(U, "this"), r) == env);
+}
+
+Array *areaenv(Array *const U, const Array *const area)
+{
+	const Ref path = readtoken(U, "ENV");
+	Array *const env
+		= linkmap(U, (Array *)area,
+			path, readtoken(U, "this"), reffree());
+
+	assert(env);
+	return env;
+}
+
+void unlinkareaenv(Array *const U, Array *const area)
+{
+	const Ref path = readtoken(U, "ENV");
+	assert(unlinkmap(U, area, path, readtoken(U, "this")));
+}
+
+Array *newarea(Array *const U, const Ref syntax, const Array *const env)
 {
 	Array *const area = newkeymap();
 	markactive(U, area, 1);
 	initlinks(U, area);
+	initenv(U, area, env);
+	initsyntax(U, area, syntax);
 
 	for(unsigned i = 0; i < 2; i += 1)
 	{
 		initreactor(U, area, i);
 	}
-
 	initdag(U, area);
 
 	return area;

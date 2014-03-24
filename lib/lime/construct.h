@@ -389,7 +389,7 @@ extern unsigned decomatch(const Ref, Array *const U, const unsigned);
 // Вернёт makepath ссылку на последние из заданных списком имён окружений, если
 // map и последнее имя согласованы. В случае несогласованности NULL
 
-typedef Array *NewTarget(Array *const U);
+typedef Array *NewTarget(Array *const U, const Array *const map);
 typedef Array *NextPoint(Array *const U, const Array *const map);
 typedef unsigned MayPass(Array *const U, const Array *const map);
 
@@ -743,11 +743,14 @@ extern unsigned splitform(const Ref form, const Ref *R[]);
 extern unsigned isarea(const Ref);
 extern unsigned areforms(const Ref);
 
-extern Array *newarea(Array *const U);
+extern Array *newarea(Array *const U, const Ref sntx, const Array *const env);
 extern Ref *areadag(Array *const U, const Array *const area);
 
 extern Array *areareactor(
 	Array *const U, const Array *const area, const unsigned id);
+
+extern void unlinkareareactor(
+	Array *const U, Array *const area, const unsigned id);
 
 // extern Ref *reactorforms(
 // 	Array *const U, const Array *const area, const unsigned id);
@@ -757,6 +760,10 @@ extern Ref *reactorforms(Array *const U, const Array *const reactor);
 // extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
 extern Array *arealinks(Array *const U, const Array *const area);
+extern unsigned unlinkarealinks(Array *const U, Array *const area);
+
+extern Array *areaenv(Array *const U, const Array *const area);
+extern void unlinkareaenv(Array *const U, Array *const area);
 
 extern void markonstack(Array *const U, Array *const, const unsigned on);
 extern unsigned isonstack(Array *const U, const Array *const);
@@ -862,16 +869,11 @@ typedef struct
 	Array *const symmarks;
 
 	Array *const root;
-	Array *env;
+	Array *envtogo;
 
 	List *areastack;
 	List *activities;
 } Core;
-
-// extern void progress(
-// 	Array *const universe,
-// 	const List **const penv, const List **const ctx,
-// 	const SyntaxNode cmd);
 
 extern void progress(Core *const, const SyntaxNode);
 

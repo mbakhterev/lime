@@ -4,7 +4,7 @@
 unsigned item = 1;
 const char *unitname = "test";
 
-static Array *newtarget(Array *const U)
+static Array *newtarget(Array *const U, const Array *const map)
 {
 	return newkeymap();
 }

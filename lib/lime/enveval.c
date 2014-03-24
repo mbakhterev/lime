@@ -75,7 +75,7 @@ static const List *attrlist(const Ref r, Array *const U)
 // 	return refkeymap(newkeymap());
 // }
 
-static Array *newtarget(Array *const U)
+static Array *newtarget(Array *const U, const Array *const map)
 {
 	return newkeymap();
 }

@@ -6,9 +6,24 @@
 const char *const unitname = "test";
 unsigned item = 1;
 
-static Ref newitem(Array *const U)
+// static Ref newitem(Array *const U)
+// {
+// 	return refkeymap(newkeymap());
+// }
+
+static Array *newtarget(Array *const U, const Array *const map)
 {
-	return refkeymap(newkeymap());
+	return newkeymap();
+}
+
+static Array *nextpoint(Array *const U, const Array *const map)
+{
+	return (Array *)map;
+}
+
+static unsigned maypass(Array *const U, const Array *const map)
+{
+	return !0;
 }
 
 int main(int argc, char *const argv[])
@@ -57,8 +72,10 @@ int main(int argc, char *const argv[])
 	DL(names, RS(A, B, C));
 
 	assert(makepath(M, U,
-		B, names.u.list, newitem, markext(refkeymap(N))) == N);
-	assert(makepath(M, U, B, names.u.list, newitem, reffree()) == N);
+		B, names.u.list, markext(refkeymap(N)),
+		maypass, newtarget, nextpoint) == N);
+	assert(makepath(M, U, B, names.u.list, reffree(),
+		maypass, newtarget, nextpoint) == N);
 
 	dumpkeymap(1, stdout, 0, U, M, NULL);
 	fputc('\n', stdout);
