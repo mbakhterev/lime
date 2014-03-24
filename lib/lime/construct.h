@@ -816,15 +816,11 @@ extern void reval(
 	Array *const area, Array *const areamarks,
 	const Ref dag, const Array *const escape);
 
-typedef struct
-{
-	Array *const env;
-	const unsigned done;
-} Go;
-
-extern Go goeval(
+extern const Array *goeval(
 	Array *const U,
-	const Ref dag, const Array *const escape, const Array *const envmarks);
+	Array *const area,
+	const Ref dag, const Array *const escape, const Array *const envmarks,
+	const Array *const envtogo);
 
 // Ядерная функциональность
 

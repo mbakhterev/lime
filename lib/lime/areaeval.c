@@ -177,9 +177,11 @@ typedef struct
 {
 	Array *const U;
 	Array *const area;
-	Array *const envtogo;
+	const Array *envtogo;
+
 	const Array *const escape;
 	const Array *const envmarks;
+	const Array *const verbs;
 } GState;
 
 static void goevalcore(const Ref r, GState *const);
@@ -196,7 +198,7 @@ static void done(Array *const U, const Ref N, Array *const area)
 {
 	// Надо проверить на активность, чтобы не допускать повторных Done-ов
 
-	if(!isactive(area))
+	if(!isactive(U, area))
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": can't kill inactive area", nodename(U, N));
@@ -218,7 +220,7 @@ static void done(Array *const U, const Ref N, Array *const area)
 	markactive(U, area, 0);
 }
 
-static Array *go(
+static const Array *go(
 	Array *const U, const Ref N,
 	const Array *const area,
 	const Array *const envmarks, const Array *const envtogo)
@@ -227,14 +229,14 @@ static Array *go(
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": Go already specified", nodename(U, N));
-		return;
+		return NULL;
 	}
 
 	if(!isontop(U, area))
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": can Go only from stack top", nodename(U, N));
-		return;
+		return NULL;
 	}
 
 	const Ref r = nodeattribute(N);
@@ -242,7 +244,7 @@ static Array *go(
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
-		return;
+		return NULL;
 	}
 
 	const unsigned len = listlen(r.u.list);
@@ -253,15 +255,15 @@ static Array *go(
 		item = nodeline(N);
 		ERR("node \"%s\": expecting 1st attribute to be node reference",
 			nodename(U, N));
-		return;
+		return NULL;
 	}
 
-	const Array *const target = envmap(st->envmarks, R[0]);
+	const Array *const target = envmap(envmarks, R[0]);
 	if(!target)
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": no environment evaluation", nodename(U, N));
-		return;
+		return NULL;
 	}
 
 	return target;
@@ -301,7 +303,7 @@ static void goevalcore(const Ref r, GState *const st)
 		default:
 			if(!knownverb(r, st->escape))
 			{
-				goevalone(nodeattribute(r), st);
+				goevalcore(nodeattribute(r), st);
 			}
 			return;
 		}
@@ -309,4 +311,29 @@ static void goevalcore(const Ref r, GState *const st)
 	default:
 		assert(0);
 	}
+}
+
+const Array *goeval(
+	Array *const U,
+	Array *const area,
+	const Ref dag, const Array *const escape, const Array *const envmarks,
+	const Array *const envtogo)
+{
+	GState st =
+	{
+		.U = U,
+		.area = area,
+		.escape = escape,
+		.envmarks = envmarks,
+		.envtogo = envtogo,
+		.verbs = newverbmap(U, 0, verbs)
+	};
+
+	goevalcore(dag, &st);
+
+	// Если envtogo != NULL, то после обработки st->envtogo не должно
+	// измениться, если не встретилось Go, или должно равняться NULL
+	assert(!envtogo || st.envtogo == envtogo || st.envtogo == NULL);
+
+	return st.envtogo;
 }
