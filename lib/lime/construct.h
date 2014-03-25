@@ -765,6 +765,8 @@ extern unsigned unlinkarealinks(Array *const U, Array *const area);
 extern Array *areaenv(Array *const U, const Array *const area);
 extern void unlinkareaenv(Array *const U, Array *const area);
 
+extern Ref areasyntax(Array *const U, const Array *const area);
+
 extern void markonstack(Array *const U, Array *const, const unsigned on);
 extern unsigned isonstack(Array *const U, const Array *const);
 

@@ -186,7 +186,7 @@ static void initsyntax(Array *const U, Array *const area, const Ref syntax)
 	b->ref = forkref(syntax, NULL);
 }
 
-Ref areasyntax(Array *const U, Array *const area)
+Ref areasyntax(Array *const U, const Array *const area)
 {
 	DL(key, RS(decoatom(U, DUTIL), readtoken(U, "SYNTAX")));
 	const Binding *const b = bindingat(area, maplookup(area, key));

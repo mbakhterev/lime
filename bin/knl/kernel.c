@@ -365,6 +365,8 @@ int main(int argc, char *const argv[])
 		DBG(DBGMAIN, "%s", "progression error; dumping result anyway");
 	}
 
+	dumpareastack(1, stderr, 0, C.U, C.areastack);
+
 	const Array *const map = newverbmap(C.U, 0, stdmap);
 	
 	// Нам нужен граф на дне стека
