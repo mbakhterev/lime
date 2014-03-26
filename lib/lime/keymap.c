@@ -5,20 +5,23 @@
 #include <string.h>
 
 #define DBGFREE	1
-#define DBGKM	2
-#define DBGPLU	4
-#define DBGDM	8
-#define DBGCK	16
-#define DBGMO	32
-#define DBGBL	64
+#define DBGKM	(1 << 1)
+#define DBGPLU	(1 << 2)
+#define DBGDM	(1 << 3)
+#define DBGCK	(1 << 4)
+#define DBGMO	(1 << 5)
+#define DBGBL	(1 << 6)
+#define DBGUL	(1 << 7)
+#define DBGULC	(1 << 8)
 
 // #define DBGFLAGS (DBGFREE)
 // #define DBGFLAGS (DBGKM)
 // #define DBGFLAGS (DBGPLU)
 // #define DBGFLAGS (DBGDM | DBGCK | DBGPLU)
 // #define DBGFLAGS (DBGCK)
+// #define DBGFLAGS (DBGMO | DBGBL)
 
-#define DBGFLAGS (DBGMO | DBGBL)
+#define DBGFLAGS (DBGUL | DBGULC)
 
 // #define DBGFLAGS 0
 
@@ -1026,6 +1029,9 @@ static void unlinkcore(Array *const U, Binding *const B)
 	assert(B && iskeymap(B->ref) && decomatch(B->key, U, DMAP));
 	Array *const map = B->ref.u.array;
 
+	// Теперь ref можно безусловно убрать
+	B->ref = reffree();
+
 	// Нужно выкинуть одну связь. Корректность проверяется в linkdown.
 	// linkdown при этом не меняет набор binding-ов в окружении, поэтому
 	// можно не пересчитывать B
@@ -1051,7 +1057,7 @@ static void unlinkcore(Array *const U, Binding *const B)
 	// Саму область теперь можно освободить
 
 	assert(!isactive(U, map) && !nlinks(U, map));
-	B->ref = reffree();
+// 	B->ref = reffree();
 	freekeymap(map);
 }
 
@@ -1090,6 +1096,14 @@ unsigned unlinkmap(
 	}
 	assert(iskeymap(b->ref));
 
+	if(DBGFLAGS & DBGUL)
+	{
+		char *const skey = strref(U, NULL, b->key);
+		DBG(DBGUL, "unlinking from %p key %s map %p",
+			(void *)map, skey, (void *)b->ref.u.array);
+		free(skey);
+	}
+
 	Array *const model = newkeymap();
 
 	modelunlink(U, model, b->ref.u.array);
@@ -1097,6 +1111,8 @@ unsigned unlinkmap(
 	{
 		return 0;
 	}
+
+	DBG(DBGUL, "%s", "model clean. Going to core");
 
 	unlinkcore(U, b);
 	assert(aftercheckunlink(U, model));
