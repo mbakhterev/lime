@@ -458,6 +458,14 @@ static Array *stackarea(Core *const C, const SyntaxNode op)
 				readtoken(U, "UP"), refkeymap(area)) == area);
 		}
 
+		// Нужно поменять стек, убрав top (она теперь RIGHT) и поставив
+		// TOP-отметку в area
+
+		freelist(tipoff(&C->areastack));
+		assert(iskeymap(tip(C->areastack)->ref)
+			&& tip(C->areastack)->ref.u.array == area);
+
+		markontop(U, area, 1);
 		return area;
 	}
 

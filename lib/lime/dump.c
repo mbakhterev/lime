@@ -601,8 +601,10 @@ void dumpareastack(
 		.L = NULL,
 		.F = NULL,
 		.D = NULL,
-		.tabs = tabs,
-		.tabstr = tabstr(tabs),
+// 		.tabs = tabs,
+// 		.tabstr = tabstr(tabs),
+		.tabs = tabs - 1,
+		.tabstr = NULL,
 		.dbg = dbg,
 		.visited = newkeymap(),
 		.escape = NULL
@@ -613,5 +615,5 @@ void dumpareastack(
 	freelist(l);
 
 	freekeymap(st.visited);
-	free((char *)st.tabstr);
+// 	free((char *)st.tabstr);
 }
