@@ -874,9 +874,12 @@ typedef struct
 	Array *envtogo;
 
 	List *areastack;
-	List *activities;
+// 	List *activities;
+	Array *activity;
 } Core;
 
-extern void progress(Core *const, const SyntaxNode);
+extern void ignite(Core *const, const SyntaxNode);
+// extern void progress(Core *const, const SyntaxNode);
+extern void progress(Core *const);
 
 #endif

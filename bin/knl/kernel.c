@@ -29,6 +29,63 @@ const char *const stdmap[] =
 	"F", "LB", NULL
 };
 
+static void initone(
+	const char *const optarg,
+	Array *const U, Array *const env, Array *const types)
+{
+	unitname = optarg;
+	item = 1;
+	FILE *const f = fopen(unitname, "r");
+	if(!f)
+	{
+		ERR("can't open form-source: %s", unitname);
+	}
+
+	Array *const subdags = newverbmap(U, 0, stdmap);
+	const Ref rawdag = loaddag(f, U, subdags);
+	freekeymap(subdags);
+	fclose(f);
+	
+	if(DBGFLAGS & DBGINIT)
+	{
+		dumpdag(1, stderr, 0, U, rawdag);
+		assert(fputc('\n', stderr) == '\n');
+	}
+
+	Array *const escape = newverbmap(U, 0, ES("F"));
+
+	const Ref dag = leval(U, rawdag, escape);
+	freeref(rawdag);
+
+	Array *const envmarks = newkeymap();
+	Array *const typemarks = newkeymap();
+
+	Array *const tomark = newverbmap(U, 0, ES("FEnv", "TEnv"));
+	enveval(U, env, envmarks, dag, escape, tomark);
+	freekeymap(tomark);
+
+	if(DBGFLAGS & DBGINIT)
+	{
+		dumpkeymap(1, stderr, 0, U, envmarks, NULL);
+		assert(fputc('\n', stderr) == '\n');
+	}
+
+	typeeval(U, types, typemarks, dag, escape, envmarks);
+	formeval(U, NULL, dag, escape, envmarks, NULL, typemarks);
+
+	if(DBGFLAGS & DBGINIT)
+	{
+		dumptable(stderr, 0, U, types);
+		assert(fputc('\n', stderr) == '\n');
+	}
+
+	freekeymap(escape);
+	freekeymap(typemarks);
+	freekeymap(envmarks);
+
+	freeref(dag);
+}
+
 static void initforms(
 	int argc, char *const argv[],
 	Array *const U, Array *const env, Array *const types)
@@ -40,63 +97,8 @@ static void initforms(
 		switch(opt)
 		{
 		case 'f':
-		{
-			unitname = optarg;
-			item = 1;
-			FILE *const f = fopen(unitname, "r");
-			if(!f)
-			{
-				ERR("can't open form-source: %s", unitname);
-			}
-
-			Array *const subdags = newverbmap(U, 0, stdmap);
-			const Ref rawdag = loaddag(f, U, subdags);
-			freekeymap(subdags);
-			fclose(f);
-			
-			if(DBGFLAGS & DBGINIT)
-			{
-				dumpdag(1, stderr, 0, U, rawdag);
-				assert(fputc('\n', stderr) == '\n');
-			}
-
-			Array *const escape = newverbmap(U, 0, ES("F"));
-
-			const Ref dag = leval(U, rawdag, escape);
-			freeref(rawdag);
-
-			Array *const envmarks = newkeymap();
-			Array *const typemarks = newkeymap();
-
-			Array *const tomark
-				= newverbmap(U, 0, ES("FEnv", "TEnv"));
-			enveval(U, env, envmarks, dag, escape, tomark);
-			freekeymap(tomark);
-
-			if(DBGFLAGS & DBGINIT)
-			{
-				dumpkeymap(1, stderr, 0, U, envmarks, NULL);
-				assert(fputc('\n', stderr) == '\n');
-			}
-
-			typeeval(U, types, typemarks, dag, escape, envmarks);
-			formeval(U, NULL, dag, escape,
-				envmarks, NULL, typemarks);
-
-			if(DBGFLAGS & DBGINIT)
-			{
-				dumptable(stderr, 0, U, types);
-				assert(fputc('\n', stderr) == '\n');
-			}
-
-			freekeymap(escape);
-			freekeymap(typemarks);
-			freekeymap(envmarks);
-
-			freeref(dag);
-			
+			initone(optarg, U, env, types);
 			break;
-		}
 
 		default:
 			ERR("%s", "usage: [-f form-source]+");
@@ -242,7 +244,8 @@ static void progressread(FILE *const f, Core *const C)
 		if(sntx.op != EOF)
 		{
 //			progress(U, env, ctx, sntx);
-			progress(C, sntx);
+//			progress(C, sntx);
+			ignite(C, sntx);
 		}
 		else
 		{
@@ -329,7 +332,8 @@ int main(int argc, char *const argv[])
 		.envtogo = R,
 // 		.areastack = RL(refarea(newarea(U))),
 		.areastack = NULL,
-		.activities = NULL
+// 		.activities = NULL
+		.activity = newkeymap()
 	};
 
 	// Основной цикл вывода графа программы. Чтение с stdin. Если вывод не
@@ -382,6 +386,7 @@ int main(int argc, char *const argv[])
 	assert(fputc('\n', stdout) == '\n');
 
 	freekeymap((Array *)map);
+	freekeymap(C.activity);
 	freekeymap(C.symmarks);
 	freekeymap(C.symbols);
 	freekeymap(C.typemarks);

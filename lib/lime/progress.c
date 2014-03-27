@@ -21,7 +21,6 @@ static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 {
 	const unsigned hintclass = atomhint(atomat(U, atom));
 
-	// typeenummap скопирует ключ при необходимости
 	DL(key, RS(readpack(U, strpack(hintclass, ""))));
 	return reftype(typeenummap(T, key));
 }
@@ -41,9 +40,6 @@ static Ref getbody(
 	Array *const U = C->U;
 	Array *const T = C->types;
 
-// 	// Работать будем в этом окружении, поэтому
-// 	Array *const env = C->envtogo;
-
 	// Берём окружение для текущей области вывода
 	Array *const env = areaenv(U, toparea(C->areastack));
 
@@ -58,7 +54,6 @@ static Ref getbody(
 	DBG(DBGGF, "%s", "1st");
 
 	// Первый шаг поиска: ищем форму напрямую, без типов
-
 	{
 		const Ref key = reflist(RL(refatom(op), refatom(atom)));
 		DL(lk, RS(decoatom(U, DFORM), key));
@@ -78,7 +73,6 @@ static Ref getbody(
 	DBG(DBGGF, "%s", "2nd");
 
 	// Второй шаг поиска: ищем форму по ключу с типом
-
 	{
 		const Ref key = reflist(RL(refatom(op), atomtype(U, T, atom)));
 		DL(lk, RS(decoatom(U, DFORM), key));
@@ -268,7 +262,6 @@ static int synthone(List *const l, void *const ptr)
 	{
 		// Эту форму рано ещё активировать, перекладываем её в
 		// inactive-список
-
 		st->inactive = append(st->inactive, l);
 		return 0;
 	}
@@ -276,9 +269,8 @@ static int synthone(List *const l, void *const ptr)
 	st->alive = 1;
 	activate(l->ref, st->reactor, st->area, st->core, NULL);
 
-	// В activate форма будет аккуратно разобрана на запчасти, поэтому
+	// В activate форма была аккуратно разобрана на запчасти, поэтому
 	// звено списка вместе с ней можно просто удалить
-
 	freelist(l);
 
 	return 0;
@@ -308,7 +300,6 @@ static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 		forlist(l, synthone, &st, 0);
 	}
 
-
 	// Нам в дальнейшем интересны только неиспользованные формы, поэтому
 	// (заменяем - ОШИБОЧНО) дополняем текущий список форм, которые могли
 	// накопиться в процессе активации других форм при помощи FPut
@@ -336,7 +327,6 @@ static unsigned syntaxmatch(
 }
 
 static Array *stackarea(Core *const C, const SyntaxNode op)
-// , const Array *const area)
 {
 	const Ref key = reflist(RL(refatom(op.op), refatom(op.atom)));
 	Array *const top = C->areastack ? toparea(C->areastack) : NULL;
@@ -356,7 +346,6 @@ static Array *stackarea(Core *const C, const SyntaxNode op)
 
 		// Если на вершине стека была какая-то область, то надо с неё
 		// снять метку ontop
-		
 		if(top)
 		{
 			markontop(U, top, 0);
@@ -402,14 +391,12 @@ static Array *stackarea(Core *const C, const SyntaxNode op)
 		if(isactive(U, top))
 		{
 			// Если top активная, то надо добавить UP-ссылку на area
-
 			Array *const links = arealinks(U, top);
 			assert(linkmap(U, links, path,
 				readtoken(U, "UP"), refkeymap(area)) == area);
 		}
 		
 		// Теперь надо заменить элемент на вершине стека на area
-
 		freelist(tipoff(&C->areastack));
 		C->areastack = append(RL(refkeymap(area)), C->areastack);
 		return area;
@@ -476,7 +463,7 @@ static Array *stackarea(Core *const C, const SyntaxNode op)
 	return NULL;
 }
 
-static void ignite(Core *const C, const SyntaxNode op)
+void ignite(Core *const C, const SyntaxNode op)
 {
 	const Ref key = reflist(RL(refatom(op.op), refatom(op.atom)));
 
@@ -526,78 +513,19 @@ static void ignite(Core *const C, const SyntaxNode op)
 
 	intakeform(C->U, areareactor(C->U, area, 0), reflist(RL(key)), body);
 
-	// Осталось только добавить область в список активных областей
+	// Осталось добавить область в список активных областей
+	if(!setmap(C->activity, refkeymap(area)))
+	{
+		tunesetmap(C->activity, refkeymap(area));
+	}
 
-	C->activities = append(C->activities, RL(refkeymap(area)));
+	// И зарядить Core на ожидание нового Go
+	C->envtogo = NULL;
 }
 
-void progress(Core *const C, const SyntaxNode op)
+// void progress(Core *const C, const SyntaxNode op)
+void progress(Core *const C)
 {
-// 	const Ref key = reflist(RL(refatom(op.op), refatom(op.atom)));
-// 	const Ref body = getbody(C, op.op, op.atom);
-// 
-// 	if(body.code == FREE)
-// 	{		
-// 		char *const strkey = strref(C->U, NULL, key);
-// 
-// 		item = op.pos.line;
-// 		ERR("can't find form for input key: %s", strkey);
-// 		
-// 		free(strkey);
-// 
-// 		return;
-// 	}
-// 
-// 	assert(isdag(body));
-// 
-// 	DBG(DBGPRGS, "found body: %p", (void *)body.u.list);
-// 
-// 	// Форма найдена, нужно теперь её вместе с подходящим out-ом
-// 	// зарегистрировать в области вывода
-// 
-// 	// FIXME:
-// 	const Ref A = tip(C->areastack)->ref;
-// 	assert(isarea(A));
-// 
-// 	// Создаём спсиок вида ((keys op.atom)) - список из одной пары (ключ
-// 	// значение)
-// 
-// 	const List *const out
-// 		= RL(reflist(RL(forkref(key, NULL), refatom(op.atom))));
-// 
-// 	// Забираем его в область вывода. intakeout скопирует компоненты ключа
-// 	// при необходимости
-// 
-// 	if(intakeout(C->U, A.u.array, 0, out))
-// 	{
-// 		char *const ostr = strlist(C->U, out);
-// 		ERR("can't intake output list: %s", ostr);
-// 		free(ostr);
-// 		freelist((List *)out);
-// 		return;
-// 	}
-// 
-// 	// WARNING: Освободит и forkref(key) среди прочего
-// 	freelist((List *)out);
-// 
-// 	// form у нас здесь помечена, как external. intakeform умеет сама
-// 	// разобраться с такой ситуацией
-// 
-// // 	intakeform(C->U, A.u.array, 0, key, body);
-// 	intakeform(
-// 		C->U, areareactor(C->U, A.u.array, 0), reflist(RL(key)), body);
-// 
-// 	// Информация принята в реактор, синтезируем на её основе продолжение
-// 	// графа
-
-	ignite(C, op);
-
-	// Информация принята в контексты вывода. Дальше нужно начать синтез на
-	// её основе. C->envtogo сбрасываем, в ожидании новой команды на
-	// получение следующей синтаксической команды
-
-// 	C->envtogo = NULL;
-
 	if(!C->envtogo)
 	{
 		synthesize(C, NULL, 0);

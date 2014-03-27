@@ -143,6 +143,7 @@ Ref markext(const Ref r)
 	case ATOM:
 	case TYPE:
 	case PTR:
+	case FREE:
 		return skip(r);
 
 	case NODE:
