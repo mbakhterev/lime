@@ -152,7 +152,7 @@ static int collectone(List *const l, void *const ptr)
 
 static void activate(
 	const Ref form, const Array *const reactor,
-	Array *const area, Core *const C, const Array *const envtogo)
+	Array *const area, Core *const C)
 {
 	// Сначала надо составить список входов для формы
 
@@ -216,9 +216,18 @@ static void activate(
 	formeval(C->U, area, body, escape, envmarks, NULL, C->typemarks);
 
 	const Array *const etg
-		= goeval(C->U, area, body, escape, envmarks, envtogo);
+		= goeval(C->U, area, body, escape, envmarks, C->envtogo);
+	
+	// Убеждаемся, что: !envtogo. Если так, то etg может быть произвольным.
+	// Иначе только NULL (случай ошибки) или совпадать с envtogo (Go не
+	// встретили)
 
-	assert(!envtogo || etg == envtogo || etg == NULL);
+	assert(!C->envtogo || !etg || etg == C->envtogo);
+
+	if(!C->envtogo)
+	{
+		C->envtogo = etg;
+	}
 
 	freekeymap(areamarks);
 	freekeymap(envmarks);
@@ -267,7 +276,8 @@ static int synthone(List *const l, void *const ptr)
 	}
 
 	st->alive = 1;
-	activate(l->ref, st->reactor, st->area, st->core, NULL);
+	activate(l->ref, st->reactor, st->area, st->core);
+	// , NULL);
 
 	// В activate форма была аккуратно разобрана на запчасти, поэтому
 	// звено списка вместе с ней можно просто удалить
@@ -526,17 +536,34 @@ void ignite(Core *const C, const SyntaxNode op)
 // void progress(Core *const C, const SyntaxNode op)
 void progress(Core *const C)
 {
-	if(!C->envtogo)
-	{
-		synthesize(C, NULL, 0);
-	}
+	const Array *active = C->activity;
 
-// 	while(synthesize(C, A.u.array, 0))
-// 	{
-// 	}
-// 
-// 	if(DBGFLAGS & DBGPRGS)
-// 	{
-// 		dumpkeymap(1, stderr, 0, C->U, A.u.array, NULL);
-// 	}
+	// Повторяем пока не встретилось Go (условие (!C->envtogo)) или пока
+	// есть какая-то активность (условие (active->count > 0))
+	
+	while(!C->envtogo || active->count > 0)
+	{
+		// Заряжаем новое отображение для описание накопленной
+		// активности
+		C->activity = newkeymap();
+
+		// Идём по предыдущей таблице и обрабатываем все области в ней
+
+		for(unsigned i = 0; i < active->count; i += 1)
+		{
+			const Binding *const b = bindingat(active, i);
+
+			assert(iskeymap(b->key)
+				&& b->ref.code == NUMBER && !b->ref.u.number);
+
+			while(synthesize(C, b->ref.u.array, 0))
+			{
+			}
+		}
+
+		// Теперь надо заменить предыдущую таблицу на новую
+
+		freekeymap((Array *)active);
+		active = C->activity;
+	}
 }

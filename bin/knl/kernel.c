@@ -246,6 +246,7 @@ static void progressread(FILE *const f, Core *const C)
 //			progress(U, env, ctx, sntx);
 //			progress(C, sntx);
 			ignite(C, sntx);
+			progress(C);
 		}
 		else
 		{

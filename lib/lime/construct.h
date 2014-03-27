@@ -871,7 +871,7 @@ typedef struct
 	Array *const symmarks;
 
 	Array *const root;
-	Array *envtogo;
+	const Array *envtogo;
 
 	List *areastack;
 // 	List *activities;
