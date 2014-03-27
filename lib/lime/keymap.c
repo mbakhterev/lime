@@ -373,16 +373,29 @@ static int makeone(List *const n, void *const ptr)
 		// или мы находимся не в конце списка имён. В обоих случаях надо
 		// отыскать отображение с подходящим именем или создать новое 
 
-		st->current = linkmap(st->U, curr, st->path, n->ref, reffree());
-		if(st->current)
+// 		st->current = linkmap(st->U, curr, st->path, n->ref, reffree());
+// 		if(st->current)
+// 		{
+// 			return 0;
+// 		}
+// 
+// 		const Ref m = refkeymap(st->newtarget(st->U, st->current));
+// 		st->current = linkmap(st->U, curr, st->path, n->ref, m);
+// 		assert(st->current == m.u.array);
+
+		const Array *next
+			= linkmap(st->U, curr, st->path, n->ref, reffree());
+		
+		if(!next)
 		{
-			return 0;
+			const Ref m
+				= refkeymap(st->newtarget(st->U, st->current));
+
+			next = linkmap(st->U, curr, st->path, n->ref, m);
+			assert(m.u.array == next);
 		}
 
-		const Ref m = refkeymap(st->newtarget(st->U, st->current));
-		st->current = linkmap(st->U, curr, st->path, n->ref, m);
-		assert(st->current == m.u.array);
-
+		st->current = (Array *)next;
 		return 0;
 	}
 
@@ -540,7 +553,7 @@ Ref refmap(const Array *const map, const Ref key)
 	const Binding *const b = bindingat(map, maplookup(map, markext(key)));
 	if(b)
 	{
-		return b->ref;
+		return markext(b->ref);
 	}
 
 	return reffree();

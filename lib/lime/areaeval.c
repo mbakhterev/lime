@@ -44,7 +44,7 @@ static unsigned maypass(Array *const U, const Array *const map)
 
 static Array *newtarget(Array *const U, const Array *const map)
 {
-	return newarea(U, reffree(), areaenv(U, map));
+	return newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
 }
 
 static Array *nextpoint(Array *const U, const Array *const map)
@@ -85,21 +85,8 @@ static void mkarea(
 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
 	}
 
-// 	const Ref TR
-// 		= len == 1 ? markext(refkeymap(newarea(U)))
-// 		: len == 2 ? markext(refkeymap(target))
-// 		: reffree();
-
-// 	const Ref TR
-// 		= len == 1 ? markext(refarea(newarea(U)))
-// 		: len == 2 ? markext(refarea(target))
-// 		: reffree();
-
 	const Ref TR = target ? markext(refarea(target)) : reffree();
 
-// 	assert(len == 1 || iskeymap(TR));
-// 	assert(iskeymap(TR));
-	
 	Array *const T
 		= makepath(area, U, readtoken(U, "CTX"), R[0].u.list, TR,
 			maypass, newtarget, nextpoint);
@@ -204,19 +191,11 @@ static void done(Array *const U, const Ref N, Array *const area)
 		ERR("node \"%s\": can't kill inactive area", nodename(U, N));
 	}
 
-// 	const Ref ctx = readtoken(U, "CTX");
-// 	Array *const links = arealinks(U, area);
-// 	assert(links);
-
-// 	if(!unlinkmap(U, links, ctx, readtoken(U, "LINKS")))
 	if(!unlinkarealinks(U, area))
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": can't kill interlinks", nodename(U, N));
 	}
-
-// 	DL(rkey, RS(readtoken(U, "R"), refnum(0)));
-// 	assert(unlinkmap(U, links, ctx, rkey));
 
 	unlinkareareactor(U, area, 1);
 	unlinkareaenv(U, area);

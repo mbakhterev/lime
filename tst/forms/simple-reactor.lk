@@ -11,7 +11,7 @@
 
 	.L plus ('10.1."+");
 
-	.FEnv (("E"; plus); .F (.Go (.E ("ENV"; ("this")))));
+	.FEnv (("E"; plus); .F (.Done (); .Go (.E ("ENV"; ("this")))));
 	.FEnv (("L"; plus); .F (.Go (.E ("ENV"; ("this")))))
 )
 
