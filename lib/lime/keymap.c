@@ -926,6 +926,8 @@ Array *linkmap(
 	Array *const map,
 	const Ref path, const Ref name, const Ref target)
 {
+	assert(map && map->code == MAP);
+
 	DL(pair, RS(path, name));
 	DL(key, RS(decoatom(U, DMAP), pair));
 

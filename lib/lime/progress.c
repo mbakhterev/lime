@@ -556,7 +556,7 @@ void progress(Core *const C)
 			assert(iskeymap(b->key)
 				&& b->ref.code == NUMBER && !b->ref.u.number);
 
-			while(synthesize(C, b->ref.u.array, 0))
+			while(synthesize(C, b->key.u.array, 0))
 			{
 			}
 		}
