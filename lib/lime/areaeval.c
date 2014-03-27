@@ -197,7 +197,10 @@ static void done(Array *const U, const Ref N, Array *const area)
 		ERR("node \"%s\": can't kill interlinks", nodename(U, N));
 	}
 
-	unlinkareareactor(U, area, 1);
+// Руки оторвать! 	
+//	unlinkareareactor(U, area, 1);
+
+	unlinkareareactor(U, area, 0);
 	unlinkareaenv(U, area);
 
 	markactive(U, area, 0);

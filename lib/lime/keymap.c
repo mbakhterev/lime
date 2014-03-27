@@ -1081,13 +1081,15 @@ static unsigned aftercheckunlink(Array *const U, Array *const model)
 	for(unsigned i = 0; i < model->count; i += 1)
 	{
 		const Binding *const b = bindingat(model, i);
-		assert(b && iskeymap(b->key) && b->ref.code == NUMBER);
+		assert(b);
+		assert(b->ref.code == NUMBER);
 
 		if(b->ref.u.number)
 		{
 			// Если число ссылок в модели не равно 0, то область ещё
 			// жива и можно проверить соответствие счётчиков
 
+			assert(iskeymap(b->key));
 			if(b->ref.u.number != nlinks(U, b->key.u.array))
 			{
 				return 0;

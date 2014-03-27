@@ -2,8 +2,9 @@
 	.F newsym
 	(
 		.Nth name (.FIn (); (1));
-		.R (("hello"; name); .R (("from"; "LiME"; "system"; name)));
-		.Go (.E ("ENV"; ("this")))
+		.r (("hello"; name); .r (("from"; "LiME"; "system"; name)));
+		.Go (.E ("ENV"; ("this")));
+		.Done ()
 	);
 
 	.FEnv (("A"; '0a.1."a"); newsym);
@@ -11,8 +12,8 @@
 
 	.L plus ('10.1."+");
 
-	.FEnv (("E"; plus); .F (.Done (); .Go (.E ("ENV"; ("this")))));
-	.FEnv (("L"; plus); .F (.Go (.E ("ENV"; ("this")))))
+	.FEnv (("E"; plus); .F (.eNode (); .Done (); .Go (.E ("ENV"; ("this")))));
+	.FEnv (("L"; plus); .F (.lNode (); .Go (.E ("ENV"; ("this")))))
 )
 
 // A	0.2	0a.1."a"

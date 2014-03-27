@@ -7,15 +7,16 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#define DBGMAIN 1
-#define DBGMAINEX 2
-#define DBGINIT 4
-#define DBGTYPES 8
+#define DBGMAIN		1
+#define DBGMAINEX	2
+#define DBGINIT		4
+#define DBGTYPES	8
+#define DBGPRD		16
 
 // #define DBGFLAGS (DBGMAIN | DBGMAINEX | DBGINIT)
 // #define DBGFLAGS (DBGMAIN | DBGMAINEX)
 // #define DBGFLAGS (DBGMAIN | DBGINIT)
-#define DBGFLAGS (DBGMAIN)
+#define DBGFLAGS (DBGMAIN | DBGPRD)
 
 // #define DBGFLAGS 0
 
@@ -246,7 +247,9 @@ static void progressread(FILE *const f, Core *const C)
 //			progress(U, env, ctx, sntx);
 //			progress(C, sntx);
 			ignite(C, sntx);
+			DBG(DBGPRD, "%s", "ignited");
 			progress(C);
+			DBG(DBGPRD, "%s", "progressed");
 		}
 		else
 		{

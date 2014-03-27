@@ -13,7 +13,7 @@
 // #define DBGFLAGS (DBGPRGS | DBGGF)
 // #define DBGFLAGS (DBGPRGS | DBGSYNTH | DBGCLLT)
 
-#define DBGFLAGS (DBGSYNTH | DBGACT)
+#define DBGFLAGS (DBGSYNTH | DBGACT | DBGPRGS)
 
 // #define DBGFLAGS 0
 
@@ -177,7 +177,8 @@ static void activate(
 	const Array *const nonroots
 		= newverbmap(C->U, 0, ES(
 			"L", "FIn", "Nth",
-			"R",
+			"E",
+			"R", "Go", "Done",
 			"F", "FEnv", "FPut", "FOut"));
 
 	const Ref rawbody
@@ -264,30 +265,35 @@ static int synthone(List *const l, void *const ptr)
 	assert(ptr);
 	SState *const st = ptr;
 
-	// Превращаем звено списка в список из одного элемента
-	l->next = l;
-
 	if(formcounter(l->ref))
 	{
 		// Эту форму рано ещё активировать, перекладываем её в
-		// inactive-список
-		st->inactive = append(st->inactive, l);
+		// inactive-список. В исходном списке надо пометить эту форму
+		// external-битом, чтобы она не была удалена при освобождении
+		// исходного списка
+
+		st->inactive = append(st->inactive, RL(l->ref));
+		l->ref = markext(l->ref);
+	
 		return 0;
 	}
 
 	st->alive = 1;
 	activate(l->ref, st->reactor, st->area, st->core);
-	// , NULL);
 
-	// В activate форма была аккуратно разобрана на запчасти, поэтому
-	// звено списка вместе с ней можно просто удалить
-	freelist(l);
+// 	// В activate форма была аккуратно разобрана на запчасти, поэтому
+// 	// звено списка вместе с ней можно просто удалить
+// 	freelist(l);
 
-	return 0;
+	// Область может утратить активность, в этом случае цикл обработки нужно
+	// прекращать
+	return !isactive(st->core->U, st->area);
 }
 
 static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 {
+	assert(isactive(C->U, A));
+
 	SState st =
 	{
 		.inactive = NULL,
@@ -307,14 +313,34 @@ static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 		Ref *const RF = reactorforms(C->U, st.reactor);
 		List *const l = RF->u.list;
 		*RF = reflist(NULL);
-		forlist(l, synthone, &st, 0);
+
+		// После цикла прохода по l активированные формы можно стирать,
+		// они разобраны на кусочки в activate, а неактивные формы
+		// отмечены external в списке l и перенесены в st.inactive.
+		// Поэтому l можно безопасно освободить
+
+		const unsigned active = !forlist(l, synthone, &st, 0);
+		freelist(l);
+
+		if(!active)
+		{
+			// Область больше не активна (убедимся в этом), список
+			// неактивных форм больше не нужен
+
+			assert(!isactive(C->U, A));
+			freelist(st.inactive);
+			return 0;
+		}
 	}
 
-	// Нам в дальнейшем интересны только неиспользованные формы, поэтому
-	// (заменяем - ОШИБОЧНО) дополняем текущий список форм, которые могли
-	// накопиться в процессе активации других форм при помощи FPut
+	// Область активна и в дальнейшем интересны только неиспользованные
+	// формы, поэтому (заменяем - ОШИБОЧНО) дополняем текущий список форм,
+	// которые могли накопиться в процессе активации других форм при помощи
+	// FPut
 
+	assert(isactive(C->U, A));
 	assert(areforms(reflist(st.inactive)));
+
 	DBG(DBGSYNTH, "%s", "RF 2");
 	{
 		Ref *const RF = reactorforms(C->U, st.reactor);
@@ -541,7 +567,7 @@ void progress(Core *const C)
 	// Повторяем пока не встретилось Go (условие (!C->envtogo)) или пока
 	// есть какая-то активность (условие (active->count > 0))
 	
-	while(!C->envtogo || active->count > 0)
+	while(!C->envtogo && active->count > 0)
 	{
 		// Заряжаем новое отображение для описание накопленной
 		// активности
@@ -558,6 +584,7 @@ void progress(Core *const C)
 
 			while(synthesize(C, b->key.u.array, 0))
 			{
+				DBG(DBGPRGS, "%s", "synthesized");
 			}
 		}
 
