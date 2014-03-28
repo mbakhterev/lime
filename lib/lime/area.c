@@ -6,7 +6,9 @@
 #define DBGAR	1
 #define DBGAE	(1 << 1)
 
-#define DBGFLAGS (DBGAR | DBGAE)
+// #define DBGFLAGS (DBGAR | DBGAE)
+
+#define DBGFLAGS 0
 
 unsigned isarea(const Ref r)
 {

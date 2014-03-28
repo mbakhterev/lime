@@ -592,7 +592,7 @@ void dumptable(
 void dumpareastack(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
 	const Array *const U,
-	const List *const stk)
+	const List *const stk, const Array *const escape)
 {
 	DState st =
 	{
@@ -607,7 +607,8 @@ void dumpareastack(
 		.tabstr = NULL,
 		.dbg = dbg,
 		.visited = newkeymap(),
-		.escape = NULL
+// 		.escape = NULL
+		.escape = escape
 	};
 
 	List *const l = reverse(stk);

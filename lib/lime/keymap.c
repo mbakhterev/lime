@@ -20,10 +20,9 @@
 // #define DBGFLAGS (DBGDM | DBGCK | DBGPLU)
 // #define DBGFLAGS (DBGCK)
 // #define DBGFLAGS (DBGMO | DBGBL)
+// #define DBGFLAGS (DBGUL | DBGULC)
 
-#define DBGFLAGS (DBGUL | DBGULC)
-
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -1139,16 +1138,48 @@ unsigned unlinkmap(
 	return !0;
 }
 
+static void setkey(
+	Array *const U,
+	Array *const map, const char *const path, const char *const name)
+{
+	DL(pair, RS(readtoken(U, path), readtoken(U, name)));
+	DL(key, RS(decoatom(U, DMAP), pair));
+
+	Binding *const b = (Binding *)bindingat(map, bindkey(map, key));
+	assert(b && b->ref.code == FREE);
+	b->ref = refnum(0);
+}
+
 Array *stdupstreams(Array *const U)
 {
 	Array *const map = newkeymap();
 
-	DL(pair, RS(readtoken(U, "ENV"), readtoken(U, "parent")));
-	DL(key, RS(decoatom(U, DMAP), pair));
+// 	DL(pair, RS(readtoken(U, "ENV"), readtoken(U, "parent")));
+// 	DL(key, RS(decoatom(U, DMAP), pair));
+// 
+// 	Binding *const b = (Binding *)bindingat(map, bindkey(map, key));
+// 	assert(b);
+// 	b->ref = refnum(0);
 
-	Binding *const b = (Binding *)bindingat(map, bindkey(map, key));
-	assert(b);
-	b->ref = refnum(0);
+	setkey(U, map, "ENV", "parent");
 
+	return map;
+}
+
+Array *stdareaupstreams(Array *const U)
+{
+	Array *const map = newkeymap();
+
+// 	setkey(U, map, "ENV", "parent");
+	setkey(U, map, "ENV", "this");
+	setkey(U, map, "CTX", "LINKS");
+
+	return map;
+}
+
+Array *stdstackupstreams(Array *const U)
+{
+	Array *const map = newkeymap();
+	setkey(U, map, "ENV", "this");
 	return map;
 }

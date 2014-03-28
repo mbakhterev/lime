@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #define DBGMAIN		1
 #define DBGMAINEX	2
@@ -16,9 +17,9 @@
 // #define DBGFLAGS (DBGMAIN | DBGMAINEX | DBGINIT)
 // #define DBGFLAGS (DBGMAIN | DBGMAINEX)
 // #define DBGFLAGS (DBGMAIN | DBGINIT)
-#define DBGFLAGS (DBGMAIN | DBGPRD)
+// #define DBGFLAGS (DBGMAIN | DBGPRD)
 
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 unsigned item = 1;
 const char *unitname = "stdin";
@@ -93,7 +94,7 @@ static void initforms(
 {
 	optind = 1;
 	int opt = 0;
-	while((opt = getopt(argc, argv, "f:")) != -1)
+	while((opt = getopt(argc, argv, "df:")) != -1)
 	{
 		switch(opt)
 		{
@@ -101,10 +102,45 @@ static void initforms(
 			initone(optarg, U, env, types);
 			break;
 
+		case 'd':
+			break;
+		
 		default:
-			ERR("%s", "usage: [-f form-source]+");
+			ERR("%s", "usage: [-d] [-f form-source]+");
 		}
 	}
+}
+
+static unsigned initinfodump(const int argc, char *const argv[])
+{
+	optind = 1;
+	int opt = 0;
+	unsigned dump = 0;
+	while((opt = getopt(argc, argv, "df:")) != -1)
+	{
+		switch(opt)
+		{
+		case 'd':
+			if(!dump)
+			{
+				dump = 1;
+			}
+			else
+			{
+				ERR("%s", "usage: [-d] [-f form-source]+");
+			}
+
+			break;
+		
+		case 'f':
+			break;
+
+		default:
+			ERR("%s", "usage: [-d] [-f form-source]+");
+		}
+	}
+
+	return dump;
 }
 
 const char *const syntaxops[] =
@@ -236,7 +272,6 @@ static SyntaxNode readone(FILE *const f, Array *const U)
 // Тут read в форме past perfect
 
 static void progressread(FILE *const f, Core *const C)
-// 	Array *const U, const List **const env, const List **const ctx)
 {
 	while(1)
 	{
@@ -244,10 +279,21 @@ static void progressread(FILE *const f, Core *const C)
 
 		if(sntx.op != EOF)
 		{
-//			progress(U, env, ctx, sntx);
-//			progress(C, sntx);
 			ignite(C, sntx);
 			DBG(DBGPRD, "%s", "ignited");
+
+			if(C->dumpinfopath)
+			{
+				const Array *const escape
+					= stdstackupstreams(C->U);
+				fprintf(stderr,
+					"\nNEXT STACK PROGRESSION");
+				dumpareastack(0, stderr, 0,
+					C->U, C->areastack, escape);
+				freekeymap((Array *)escape);
+// 				assert(fputc('\n', stderr) == '\n');
+			}
+
 			progress(C);
 			DBG(DBGPRD, "%s", "progressed");
 		}
@@ -276,43 +322,12 @@ static Array *const inituniverse(void)
 static Array *const inittypes(Array *const U)
 {
 	Array *const T = newkeymap();
-
-// FIXME: эта инициализация произойдёт "естественным" образом
-// 	for(unsigned i = 0; i < 0x10; i += 1)
-// 	{
-// 		const Ref key = reflist(RL(readpack(U, strpack(i << 4, ""))));
-// 
-// 		if(DBGFLAGS & DBGTYPES)
-// 		{
-// 			DBG(DBGTYPES, "%u", i);
-// 			dumpkeymap(1, stderr, 0, U, T);
-// 
-// 			char *const kstr = strref(U, NULL, key);
-// 			DBG(DBGTYPES, "%s -> %p",
-// 				kstr, (void *)maplookup(T, key));
-// 			free(kstr);
-// 		}
-// 
-// 		assert(mapreadin(T, key));
-// 	}
-
 	return T;
 }
-
-// static Ref newenv(Array *const U)
-// {
-// 	return refkeymap(newkeymap());
-// }
 
 static Array *const initroot(Array *const U)
 {
 	Array *const R = newkeymap();
-
-// 	DL(names, RS(readpack(U, strpack(0, "this"))));
-// 	makepath(
-// 		R, U, 
-// 		readpack(U, strpack(0, "ENV")), names.u.list,
-// 		newenv, markext(refkeymap(R)));
 
 	assert(linkmap(U, R,
 		readtoken(U, "ENV"), readtoken(U, "this"), refkeymap(R)) == R);
@@ -322,81 +337,70 @@ static Array *const initroot(Array *const U)
 
 int main(int argc, char *const argv[])
 {
+	const unsigned dip = initinfodump(argc, argv);
 	Array *const U = inituniverse();
 	Array *const R = initroot(U);
+	Array *const T = inittypes(U);
+
+	initforms(argc, argv, U, R, T);
+	DBG(DBGMAIN, "%s", "forms loaded");
+
+	if(DBGFLAGS & DBGMAIN)
+	{
+		const Array *const esc = stdupstreams(U);
+		DBG(DBGMAIN, "env: count = %u", R->count);
+		dumpkeymap(1, stderr, 0, U, R, esc);
+		freekeymap((Array *)esc);
+
+		DBG(DBGMAIN, "%s", "types:");
+		dumptable(stderr, 0, U, T);
+	}
 
 	Core C =
 	{
 		.U = U,
-		.types = inittypes(U),
+		.types = T,
 		.typemarks = newkeymap(),
 		.symbols = newkeymap(),
 		.symmarks = newkeymap(),
 		.root = R,
 		.envtogo = R,
-// 		.areastack = RL(refarea(newarea(U))),
 		.areastack = NULL,
-// 		.activities = NULL
-		.activity = newkeymap()
+		.activity = newkeymap(),
+		.dumpinfopath = dip
 	};
 
 	// Основной цикл вывода графа программы. Чтение с stdin. Если вывод не
 	// удался, то, всё равно, выдаём накопленный в "придонном" контексте
 	// граф. Потому что, пока cfe не отлажен корректный вывод не получится
 
+	unsigned ok = 0;
 	if(CKPT() == 0)
 	{
-		initforms(argc, argv, C.U, C.root, C.types);
-		DBG(DBGMAIN, "%s", "forms loaded");
-
-		if(DBGFLAGS & DBGMAIN)
-		{
-			const Array *const esc = stdupstreams(U);
-			DBG(DBGMAIN, "env: count = %u", C.root->count);
-			dumpkeymap(1, stderr, 0, U, C.root, esc);
-			freekeymap((Array *)esc);
-
-			DBG(DBGMAIN, "%s", "types:");
-			dumptable(stderr, 0, U, C.types);
-		}
-
 		item = 1;
 		unitname = "stdin";
 
-// 		progressread(stdin, U, NULL, NULL);
-		
 		progressread(stdin, &C);
+		ok = 1;
 		checkout(0);
 	}
 	else
 	{
-		DBG(DBGMAIN, "%s", "progression error; dumping result anyway");
+		fprintf(stderr, "progression error. Dumping DAG on stderr\n");
 	}
 
-	dumpareastack(1, stderr, 0, C.U, C.areastack);
-
-	const Array *const map = newverbmap(C.U, 0, stdmap);
-	
-	// Нам нужен граф на дне стека
 	const Ref A = C.areastack->ref;
 	assert(isarea(A));
-	const Ref dag = *areadag(C.U, A.u.array);
+	dumpdag(0, ok ? stdout : stderr, 0, U, *areadag(U, A.u.array));
+	assert(fputc('\n', ok ? stdout : stderr) == '\n');
 
-// 	dumpdag(0, stdout, 0, C.U,
-// 		reflist(NULL), newverbmap(C.U, 0, ES("F", "LB")));
-
-	dumpdag(0, stdout, 0, C.U, dag);
-// 	, map);
-	assert(fputc('\n', stdout) == '\n');
-
-	freekeymap((Array *)map);
 	freekeymap(C.activity);
 	freekeymap(C.symmarks);
 	freekeymap(C.symbols);
 	freekeymap(C.typemarks);
-	freekeymap(C.types);
+	freekeymap(T);
 	freekeymap(R);
 	freeatomtab(U);
 
-	return 0;
+	return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -400,6 +400,8 @@ extern Array *makepath(
 	MayPass, NewTarget, NextPoint);
 
 extern Array *stdupstreams(Array *const U);
+extern Array *stdareaupstreams(Array *const U);
+extern Array *stdstackupstreams(Array *const U);
 
 // В некотором смысле обратная операция: которая строит стек окружений,
 // связанных по имени name на пути path, начиная с того, которое в окружении map
@@ -776,7 +778,7 @@ extern unsigned isontop(Array *const U, const Array *const);
 extern void dumpareastack(
 	const unsigned dbg, FILE *const, const unsigned tabs,
 	const Array *const U,
-	const List *const stack);
+	const List *const stack, const Array *const escape);
 
 // Процедура вбрасывания в реактор R области area новой формы. Форма задаётся
 // парой ссылок на граф и на сигнатуру (keys). Превращать их в целую форму со
@@ -874,8 +876,10 @@ typedef struct
 	const Array *envtogo;
 
 	List *areastack;
-// 	List *activities;
 	Array *activity;
+
+	// Флаг для включения вывода промежуточной отладочной информации
+	const unsigned dumpinfopath:1;
 } Core;
 
 extern void ignite(Core *const, const SyntaxNode);

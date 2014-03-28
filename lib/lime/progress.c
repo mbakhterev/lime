@@ -12,10 +12,9 @@
 
 // #define DBGFLAGS (DBGPRGS | DBGGF)
 // #define DBGFLAGS (DBGPRGS | DBGSYNTH | DBGCLLT)
+// #define DBGFLAGS (DBGSYNTH | DBGACT | DBGPRGS)
 
-#define DBGFLAGS (DBGSYNTH | DBGACT | DBGPRGS)
-
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 {
@@ -190,9 +189,16 @@ static void activate(
 	const Ref body = leval(C->U, rawbody, escape);
 	freeref(rawbody);
 
-	if(DBGFLAGS & DBGACTSUBST)
+// 	if(DBGFLAGS & DBGACTSUBST)
+// 	{
+// 		DBG(DBGACTSUBST, "%s", "ntheval");
+// 		dumpdag(0, stderr, 0, C->U, body);
+// 		assert(fputc('\n', stderr) == '\n');
+// 	}
+
+	if(C->dumpinfopath)
 	{
-		DBG(DBGACTSUBST, "%s", "ntheval");
+		fprintf(stderr, "\nnext active form. Expanded body\n");
 		dumpdag(0, stderr, 0, C->U, body);
 		assert(fputc('\n', stderr) == '\n');
 	}
@@ -292,6 +298,15 @@ static int synthone(List *const l, void *const ptr)
 
 static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 {
+	if(C->dumpinfopath)
+	{
+// 		const Array *const escape = stdareaupstreams(C->U);
+		fprintf(stderr, "\nnext synthesis cycle at M:%p\n", (void *)A);
+// 		dumpkeymap(0, stderr, 0, C->U, A, escape);
+// 		freekeymap((Array *)escape);
+// 		assert(fputc('\n', stderr) == '\n');
+	}
+
 	assert(isactive(C->U, A));
 
 	SState st =
@@ -303,10 +318,10 @@ static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 		.alive = 0
 	};
 
-	if(DBGFLAGS & DBGSYNTH)
-	{
-		dumpkeymap(1, stderr, 0, C->U, A, NULL);
-	}
+// 	if(DBGFLAGS & DBGSYNTH)
+// 	{
+// 		dumpkeymap(1, stderr, 0, C->U, A, NULL);
+// 	}
 	
 	DBG(DBGSYNTH, "%s", "RF 1");
 	{
