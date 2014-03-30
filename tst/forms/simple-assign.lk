@@ -1,0 +1,62 @@
+(
+	.FEnv (("L"; '44.1."="); .F
+	(
+		.Nth op (.FIn (); (1));
+		.FPut (0;
+			(("lvalue"; "left"); ("rvalue"; "right")); .F
+		(
+			.Nth l (.FIn (); (1; 0));
+			.Nth r (.FIn (); (1; 1));
+
+			.wr (.T ("I"; 4); l; r);
+
+			// Адрес надо ещё оставить на тот случай, если выражение
+			// будет использовано в качестве rvalue. Си - это такой
+			// Си
+
+			.FOut (0; (
+				("address"; l)))
+		));
+
+		.FPut (0; ("address"; "rvalue"); .F
+		(
+			.Nth position (.FIn (); (1; 1));
+			.Nth address (.FIn (); (1; 0));
+
+			.rd result (.T ("I"; 4); address);
+
+			.FOut (1; (
+				(("rvalue"; position); result)));
+
+			.FOut (.R (("UP")); (
+				(("done"; position)); result));
+
+			.Done ()
+		));
+
+		// Правая ассоциативность для =
+
+		.FPut (0; (("done"; "right")); .F
+		(
+			.FPut (0; (); .R (("RIGHT")));
+
+			.FPut (0; (("done"; "left"); ("rvalue"; "right")); .F
+			(
+				.FPut (0; (); .R (("LEFT")))
+			))
+		));
+
+		.Go (.E ("ENV"; ("this")))
+	));
+
+	.FEnv (("E"; '44.1."="); .F
+	(
+		.FOut (.R (("LEFT")); (
+			("lvalue"; "left")));
+
+		.FOut (.R (("RIGHT")); (
+			("rvalue"; "right")));
+
+		.Go (.E ("ENV"; ("this")))
+	))
+)
