@@ -16,6 +16,7 @@
 // 	2014-02-05 13:03:53
 // 	2014-02-13 14:40:18
 // 	2014-02-28 09:07:52
+//	2014-03-29 23:03:44
 
 typedef struct
 {
@@ -58,7 +59,6 @@ static int registerone(List *const l, void *const ptr)
 	// скопировать bindkey ключ из l->ref внутрь, в случае необходимости.
 	// После привязывания исходный l->ref нам уже не нужен
 
-// 	DL(inkey, RS(decoatom(st->U, DIN), markext(l->ref)));
 	DL(inkey, RS(decoatom(st->U, DIN), l->ref));
 	Binding *const in
 		= (Binding *)bindingat(st->reactor,
@@ -100,17 +100,16 @@ static Ref reform(const Ref keys, const Ref body)
 
 extern void intakeform(
 	Array *const U, Array *const R, const Ref keys, const Ref body)
-// 	Array *const U, Array *const area, const unsigned rid, const Ref form)
 {
+	assert(R);
+
 	// Дальше нам надо создать форму со своим счётчиком, которая будет
 	// добавлена во всевозможные списки. Для этого нужно скопировать
 	// исходные граф и ключи. newform копирует выражения, переданные через
 	// параметры. Клиент intakeform может регулировать объём копирования
 	// через external-биты
 
-// 	const Ref f = reform(form);
 	const Ref f = reform(keys, body);
-// 	Array *const R = areareactor(U, area, rid);
 
 	// Форму надо засунуть в список реактора. Корректность RF проверяется в
 	// самой reactorforms. Забываем о RF сразу после использования, чтобы
@@ -213,6 +212,8 @@ unsigned intakeout(
 	Array *const U,
 	Array *const area, const unsigned rid, const List *const outs)
 {
+	assert(isactive(U, area));
+
 	// Сперва надо проверить, не конфликтуют ли сигнатуры
 
 	RState st = 
@@ -233,17 +234,19 @@ unsigned intakeout(
 	return 0;
 }
 
-#define FNODE 0
-#define FPUT 1
-#define FENV 2
-#define FOUT 3
+#define FNODE	0
+#define FPUT	1
+#define FENV	2
+#define FOUT	3
+#define RNODE	4
 
 static const char *const verbs[] =
 {
-	[FNODE] = "F",
-	[FPUT] = "FPut",
-	[FENV] = "FEnv",
-	[FOUT] = "FOut",
+	[FNODE]	= "F",
+	[FPUT]	= "FPut",
+	[FENV]	= "FEnv",
+	[FOUT]	= "FOut",
+	[RNODE]	= "R",
 	NULL
 };
 
@@ -251,15 +254,16 @@ typedef struct
 {
 	Array *const U;
 	Array *const area;
+	Array *const activity;
 
 	const Array *const escape;
 
 	const Array *const typemarks;
 	const Array *const envmarks;
+	const Array *const areamarks;
 
 	const Array *const verbs;
 	const Array *const typeverbs;
-
 	const Array *const sysverbs;
 
 	Array *const formmarks;
@@ -274,11 +278,6 @@ static int evalone(List *const l, void *const ptr)
 	eval(l->ref, ptr);
 	return 0;
 }
-
-// static const unsigned char *nodename(const Array *const U, const Ref N)
-// {
-// 	return atombytes(atomat(U, nodeverb(N, NULL)));
-// }
 
 static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 {
@@ -298,7 +297,6 @@ static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 
 	if(b)
 	{
-// 		assert(b->ref.code == FORM);
 		assert(b->ref.code == DAG);
 
 		// Здесь нам нужна только ссылка на форму, которая уже сохранена
@@ -323,7 +321,6 @@ static Ref setnew(
 	Binding *const b = (Binding *)bindingat(env, mapreadin(env, K));
 	if(!b)
 	{
-// 		freeform(form);
 		freeref(body);
 		freeref(K);
 		return reffree();
@@ -334,63 +331,11 @@ static Ref setnew(
 	// Рассчитываем на то, что форма уже сформирована нужным образом. Но
 	// вернуть в любом случае нужно ссылку
 
-// 	b->ref = form;
 	b->ref = body;
 	return markext(b->ref);
 }
 
-// static Ref extractform(const Ref A, FEState *const E)
-// {
-// 	if(A.code == NODE)
-// 	{
-// 		// Имеем дело с узлом. Пока это может быть только FEnv. Который
-// 		// оценивается в форму из окружения. Её и возвращаем в виде
-// 		// ссылки
-// 
-// 		switch(nodeverb(A, E->verbs))
-// 		{
-// 		case FENV:
-// 			return markext(refmap(E->formmarks, A));
-// 
-// 		default:
-// 			return reffree();
-// 		}
-// 	}
-// 
-// 	// В противном случае мы имеем дело с парой (ключи (тело формы)). Надо
-// 	// её реконструировать
-// 
-// 	const Ref R[2];
-// 	if(!splitpair(A, (Ref *)R))
-// 	{
-// 		return reffree();
-// 	}
-// 
-// 	// Проверяем, что пара имеет вид (ключи; .F (...))
-// 
-// 	if(!isnode(R[1]) || nodeverb(R[1], E->verbs) != FNODE)
-// 	{
-// 		return reffree();
-// 	}
-// 
-// 	// Проверяем, что ключи подходят под определение списка сигнатур формы.
-// 	// Но сначала в них надо пересчитать типы
-// 
-// 	const Ref key = exprewrite(R[0], E->typemarks, E->typeverbs);
-// 
-// 	if(key.code != LIST || !issignaturekey(key))
-// 	{
-// 		freeref(key);
-// 		return reffree();
-// 	}
-// 
-// 	// Если всё хорошо, создаём новую форму. Граф при этом копируем. Ключ и
-// 	// без того уже является преобразованной копией
-// 
-// 	return newform(forkdag(nodeattribute(R[1])), key);
-// }
-
-static Ref extractbody(const Ref A, FEState *const E)
+static Ref extractbody(const Ref A, const unsigned copy, FEState *const E)
 {
 	if(A.code == NODE)
 	{
@@ -403,24 +348,32 @@ static Ref extractbody(const Ref A, FEState *const E)
 		switch(nodeverb(A, E->verbs))
 		{
 		case FENV:
-			return markext(refmap(E->formmarks, A));
+		{
+			const Ref dag = refmap(E->formmarks, A);
+			assert(dag.external);
+			return !copy ? dag : forkdag(cleanext(dag));
+
+// 			return markext(refmap(E->formmarks, A));
+		}
 
 		case FNODE:
 			return forkdag(nodeattribute(A));
+
+		case RNODE:
+		{
+			Array *const R = envmap(E->areamarks, A);
+			if(!R || isactive(E->U, R) || isareaconsumed(E->U, R))
+			{
+				return reffree();
+			}
+
+			return ripareaform(E->U, R);
+		}
 
 		default:
 			return reffree();
 		}
 	}
-
-// 	// В противном случае имеем дело с формой, заданной F-выражением
-// 
-// 	if(!isnode(A) || nodeverb(A, E->verbs) != FNODE)
-// 	{
-// 		return reffree();
-// 	}
-// 
-// 	return forkdag(nodeattribute(A));
 
 	return reffree();
 }
@@ -478,10 +431,7 @@ static void fenv(const Ref N, FEState *const E)
 		return;
 	}
 
-// Здесь нужно только тело формы
-// 	const Ref form = extractform(R[1], E);
-
-	const Ref body = len == 2 ? extractbody(R[1], E) : reffree();
+	const Ref body = len == 2 ? extractbody(R[1], 0, E) : reffree();
 
 	if(len == 2 && body.code == FREE)
 	{
@@ -495,14 +445,12 @@ static void fenv(const Ref N, FEState *const E)
 	// Если два, то это запрос на регистрацию формы. Форму надо при этом
 	// извлечь из второго параметра
 
-// 	const Ref fref
 	const Ref bref
 		= (len == 1) ? getexisting(env, E->U, key)
-// 		: (len == 2) ? setnew(env, E->U, key, form)
 		: (len == 2) ? setnew(env, E->U, key, body)
 		: reffree();
 	
-	// WARNING: key и form будут освобождены в getexisting или setnew по
+	// WARNING: key и body будут освобождены в getexisting или setnew по
 	// необходимости
 
 	if(bref.code == FREE)
@@ -522,9 +470,6 @@ static void fenv(const Ref N, FEState *const E)
 
 	// Назначаем значение узлу. В form должен быть установлен external-бит
 
-// 	assert(isform(fref) && fref.external);
-// 	tunerefmap(E->formmarks, N, fref);
-
 	assert(isdag(bref) && bref.external);
 	tunerefmap(E->formmarks, N, bref);
 }
@@ -535,9 +480,11 @@ typedef struct
 	const Array *const typemarks;
 	const Array *const typeverbs;
 	const Array *const sysverbs;
+	const unsigned allownodes;
 } TState;
 
-static unsigned isvalidlink(const Ref, const Array *const);
+// static unsigned isvalidlink(const Ref, const Array *const);
+static unsigned isvalidlink(const Ref, const TState *const ptr);
 
 static int isvalidone(List *const l, void *const ptr)
 {
@@ -546,7 +493,8 @@ static int isvalidone(List *const l, void *const ptr)
 	return isvalidlink(l->ref, ptr);
 }
 
-static unsigned isvalidlink(const Ref r, const Array *const forbidden)
+// static unsigned isvalidlink(const Ref r, const Array *const forbidden)
+static unsigned isvalidlink(const Ref r, const TState *const st)
 {
 	switch(r.code)
 	{
@@ -557,20 +505,25 @@ static unsigned isvalidlink(const Ref r, const Array *const forbidden)
 		return !0;
 	
 	case NODE:
+		if(!st->allownodes)
+		{
+			// Узлы нельзя передавать
+			return 0;
+		}
+
 		if(!r.external)
 		{
 			// В описании связи между кусочками графов не может быть
 			// определения узла
-
 			return 0;
 		}
 
-		if(knownverb(r, forbidden))
+// 		if(knownverb(r, st->forbidden))
+		if(knownverb(r, st->sysverbs))
 		{
 			// Ссылаться на эти узлы нельзя. Основная причина - они
 			// системные и будут удалены из текущего кусочка графа
 			// ходе его трансформаций
-
 			return 0;
 		}
 
@@ -580,7 +533,8 @@ static unsigned isvalidlink(const Ref r, const Array *const forbidden)
 		return !0;
 	
 	case LIST:
-		return forlist(r.u.list, isvalidone, (Array *)forbidden, !0);
+// 		return forlist(r.u.list, isvalidone, (Array *)forbidden, !0);
+		return forlist(r.u.list, isvalidone, (TState *)st, !0);
 	
 	default:
 		// Всё остальное недопустимо
@@ -607,7 +561,8 @@ static int translateone(List *const l, void *const ptr)
 		return !0;
 	}
 
-	if(!isvalidlink(R[0], st->sysverbs))
+// 	if(!isvalidlink(R[1], st->sysverbs))
+	if(!isvalidlink(R[1], st))
 	{
 		freeref(key);
 		return !0;
@@ -618,8 +573,54 @@ static int translateone(List *const l, void *const ptr)
 	return 0;
 }
 
+typedef struct
+{
+	Array *const area;
+	const unsigned rid;
+} Target;
+
+static Target notarget()
+{
+	return (Target) { .area = NULL, .rid = -1 };
+}
+
+static Target aim(const Ref R, FEState *const E)
+{
+	switch(R.code)
+	{
+	case NUMBER:
+		if(R.u.number > 1)
+		{
+			return notarget();
+		}
+
+		return (Target) { .area = E->area, .rid = R.u.number };
+	
+	case NODE:
+	{
+		Array *const area = envmap(E->areamarks, R);
+		if(!area)
+		{
+			return notarget();
+		}
+
+		return (Target) { .area = area, .rid = 0 };
+	}
+	}
+
+	return notarget();
+}
+
 static void fout(const Ref N, FEState *const E)
 {
+	if(!E->activity || !E->area)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't evaluate in init mode",
+			nodename(E->U, N));
+		return;
+	}
+
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
 	{
@@ -628,17 +629,20 @@ static void fout(const Ref N, FEState *const E)
 		return;
 	}
 
-	const unsigned len = listlen(r.u.list);
-	if(len != 2)
-	{
-		item = nodeline(N);
-		ERR("node \"%s\": expecting 2 attributes", nodename(E->U, N));
-		return;
-	}
+// 	const unsigned len = listlen(r.u.list);
+// 	if(len != 2)
+// 	{
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": expecting 2 attributes", nodename(E->U, N));
+// 		return;
+// 	}
 
+	const unsigned len = listlen(r.u.list);
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
-	if(R[0].code != NUMBER || R[0].u.number > 1 || R[1].code != LIST)
+	if(len != 2
+		|| (R[0].code != NUMBER && R[0].code != NODE)
+		|| R[1].code != LIST)
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": wrong attribute structure",
@@ -646,7 +650,26 @@ static void fout(const Ref N, FEState *const E)
 		return;
 	}
 
-	const unsigned rid = R[0].u.number;
+	const Target T = aim(R[0], E);
+	if(!T.area)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't detect reactor with 1st attribute",
+			nodename(E->U, N));
+
+		return;
+	}
+
+	if(!isactive(E->U, T.area))
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": inactive area is specified",
+			nodename(E->U, N));
+
+		return;
+	}
+
+// 	const unsigned rid = R[0].u.number;
 
 	// Теперь нужно превратить исходный список пар в новый список пар с
 	// преобразованными с учётом типов и проверенными на корректность
@@ -657,7 +680,8 @@ static void fout(const Ref N, FEState *const E)
 		.out = NULL,
 		.typeverbs = E->typeverbs,
 		.typemarks = E->typemarks,
-		.sysverbs = E->sysverbs
+		.sysverbs = E->sysverbs,
+		.allownodes = T.area == E->area
 	};
 
 	if(forlist(R[1].u.list, translateone, &st, 0))
@@ -677,7 +701,8 @@ static void fout(const Ref N, FEState *const E)
 		free(ostr);
 	}
 
-	if(intakeout(E->U, E->area, rid, st.out))
+// 	if(intakeout(E->U, E->area, rid, st.out))
+	if(intakeout(E->U, T.area, T.rid, st.out))
 	{
 		freelist(st.out);
 
@@ -688,11 +713,27 @@ static void fout(const Ref N, FEState *const E)
 	}
 
 	freelist(st.out);
+
+	// Добавляем информацию об активности в области, если она отличается от
+	// текущей
+
+	if(T.area != E->area && !setmap(E->activity, refkeymap(T.area)))
+	{
+		tunesetmap(E->activity, refkeymap(T.area));
+	}
 }
 
 static void fput(const Ref N, FEState *const E)
 {
 	DBG(DBGFPUT, "%s", "here");
+
+	if(!E->activity || !E->area)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't evaluate in init mode",
+			nodename(E->U, N));
+		return;
+	}
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
@@ -702,18 +743,32 @@ static void fput(const Ref N, FEState *const E)
 		return;
 	}
 
+// 	if(len != 3)
+// 	{
+// 		item = nodeline(N);
+// 		ERR("noe \"%s\": expecting 3 attributes", nodename(E->U, N));
+// 		return;
+// 	}
+
 	const unsigned len = listlen(r.u.list);
-	if(len != 3)
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+	if(len != 3
+		|| (R[0].code != NUMBER && R[0].code != NODE)
+		|| R[1].code != LIST
+		|| R[2].code != NODE)
 	{
 		item = nodeline(N);
-		ERR("noe \"%s\": expecting 3 attributes", nodename(E->U, N));
+		ERR("node \"%s\": wrong attribute structure",
+			nodename(E->U, N));
 		return;
 	}
 
-	const Ref R[len];
-	assert(writerefs(r.u.list, (Ref *)R, len) == len);
-	if(R[0].code != NUMBER || R[0].u.number > 1
-		|| R[1].code != LIST || R[2].code != NODE)
+// 	if(R[0].code != NUMBER || R[0].u.number > 1
+// 		|| R[1].code != LIST || R[2].code != NODE)
+
+	const Target T = aim(R[0], E);
+	if(!T.area)
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": can't detect reactor with 1st attribute",
@@ -722,7 +777,17 @@ static void fput(const Ref N, FEState *const E)
 		return;
 	}
 
-	const unsigned rid = R[0].u.number;
+	if(!isactive(E->U, T.area))
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": inactive area is specified",
+			nodename(E->U, N));
+
+		return;
+	}
+
+// 	const unsigned rid = R[0].u.number;
+
 	const Ref K = exprewrite(R[1], E->typemarks, E->typeverbs);
 	if(!issignaturekey(K))
 	{
@@ -734,7 +799,8 @@ static void fput(const Ref N, FEState *const E)
 		return;
 	}
 
-	const Ref body = extractbody(R[2], E);
+	// Если отправляем форму не в локальный R.0, то надо её скопировать
+	const Ref body = extractbody(R[2], T.area != E->area || T.rid != 0, E);
 	if(body.code == FREE)
 	{
 		item = nodeline(N);
@@ -752,7 +818,16 @@ static void fput(const Ref N, FEState *const E)
 		free(kstr);
 	}
 
-	intakeform(E->U, areareactor(E->U, E->area, rid), K, body);
+// 	intakeform(E->U, areareactor(E->U, E->area, rid), K, body);
+	intakeform(E->U, areareactor(E->U, T.area, T.rid), K, body);
+
+	// Добавляем информацию об активности в области, если она отличается от
+	// текущей
+
+	if(T.area != E->area && !setmap(E->activity, refkeymap(T.area)))
+	{
+		tunesetmap(E->activity, refkeymap(T.area));
+	}
 }
 
 static void eval(const Ref r, FEState *const st)
@@ -818,6 +893,7 @@ static const char *const sysverbs[] =
 void formeval(
 	Array *const U,
 	Array *const area,
+	Array *const activity,
 	const Ref dag, const Array *const escape,
 	const Array *const envmarks,
 	const Array *const areamarks,
@@ -833,7 +909,9 @@ void formeval(
 		.formmarks = newkeymap(),
 		.typemarks = typemarks,
 		.envmarks = envmarks,
-		.sysverbs = newverbmap(U, 0, sysverbs)
+		.sysverbs = newverbmap(U, 0, sysverbs),
+		.areamarks = areamarks,
+		.activity = activity
 	};
 
 	eval(dag, &st);

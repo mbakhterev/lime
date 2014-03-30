@@ -761,6 +761,10 @@ extern Ref *reactorforms(Array *const U, const Array *const reactor);
 
 // extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
+extern Ref ripareaform(Array *const U, Array *const area);
+extern Ref ripareadag(Array *const U, Array *const area);
+extern unsigned isareaconsumed(Array *const U, const Array *const area);
+
 extern Array *arealinks(Array *const U, const Array *const area);
 extern unsigned unlinkarealinks(Array *const U, Array *const area);
 
@@ -814,6 +818,7 @@ extern unsigned intakeout(
 extern void formeval(
 	Array *const U,
 	Array *const area,
+	Array *const activity,
 	const Ref dag, const Array *const escape,
 	const Array *const envmarks,
 	const Array *const areamarks, 

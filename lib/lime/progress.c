@@ -180,6 +180,13 @@ static void activate(
 			"R", "Go", "Done",
 			"F", "FEnv", "FPut", "FOut"));
 
+	if(C->dumpinfopath)
+	{
+		fprintf(stderr, "\nnext active form. Original body\n");
+		dumpdag(0, stderr, 0, C->U, formdag(form));
+		assert(fputc('\n', stderr) == '\n');
+	}
+
 	const Ref rawbody
 		= ntheval(
 			C->U, formdag(form), escape,
@@ -198,7 +205,7 @@ static void activate(
 
 	if(C->dumpinfopath)
 	{
-		fprintf(stderr, "\nnext active form. Expanded body\n");
+		fprintf(stderr, "\nexpanded\n");
 		dumpdag(0, stderr, 0, C->U, body);
 		assert(fputc('\n', stderr) == '\n');
 	}
@@ -220,7 +227,8 @@ static void activate(
 	symeval(C->U, C->symbols, C->symmarks,
 		body, escape, envmarks, C->typemarks);
 
-	formeval(C->U, area, body, escape, envmarks, NULL, C->typemarks);
+	formeval(C->U, area, C->activity,
+		body, escape, envmarks, areamarks, C->typemarks);
 
 	const Array *const etg
 		= goeval(C->U, area, body, escape, envmarks, C->envtogo);
@@ -582,7 +590,12 @@ void progress(Core *const C)
 	// Повторяем пока не встретилось Go (условие (!C->envtogo)) или пока
 	// есть какая-то активность (условие (active->count > 0))
 	
-	while(!C->envtogo && active->count > 0)
+// 	while(!C->envtogo && active->count > 0)
+
+	// Просто крутим активности до исчерпания. Всё-равно Go может быть
+	// корректно исполнена только с вершины стека и один раз
+	
+	while(active->count > 0)
 	{
 		// Заряжаем новое отображение для описание накопленной
 		// активности

@@ -5,10 +5,13 @@
 
 #define DBGAR	1
 #define DBGAE	(1 << 1)
+#define DBGOUT	(1 << 2)
 
 // #define DBGFLAGS (DBGAR | DBGAE)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGOUT)
+
+// #define DBGFLAGS 0
 
 unsigned isarea(const Ref r)
 {
@@ -50,7 +53,8 @@ Ref *reactorforms(Array *const U, const Array *const reactor)
 	return (Ref *)&b->ref;
 }
 
-Array *areareactor(Array *const U, const Array *const area, const unsigned id)
+static Array *areareactorcore(
+	Array *const U, const Array *const area, const unsigned id)
 {
 	DL(rkey, RS(readtoken(U, "R"), refnum(id)));
 
@@ -66,6 +70,13 @@ Array *areareactor(Array *const U, const Array *const area, const unsigned id)
 	Array *const R
 		= linkmap(U, (Array *)area, 
 			readtoken(U, "CTX"), rkey, reffree());
+// 	assert(R);
+	return R;
+}
+
+Array *areareactor(Array *const U, const Array *const area, const unsigned id)
+{
+	Array *const R = areareactorcore(U, area, id);
 	assert(R);
 	return R;
 }
@@ -238,4 +249,117 @@ unsigned isontop(Array *const U, const Array *const map)
 	assert(!b || b->ref.code == NUMBER);
 
 	return b != NULL && b->ref.u.number != 0;
+}
+
+
+static Ref ripdag(Array *const U, const Array *const area)
+{
+	Ref *const dptr = areadag(U, area);
+	const Ref d = *dptr; 
+
+	// У процедур rip разрушительная семантика. После их завершения R.0
+	// будет уничтожен. Чтобы вместе с ним не был уничтожен граф, стираем в
+	// R.0 ссылку на него
+	*dptr = reffree();
+
+	return d;
+}
+
+Ref ripareadag(Array *const U, Array *const area)
+{
+	assert(!isactive(U, area));
+	const Ref d = ripdag(U, area);
+	unlinkareareactor(U, area, 1);
+
+	assert(isdag(d));
+	return d;
+}
+
+typedef struct
+{
+	Array *const U;
+	const Ref pattern;
+	List *nodes;
+} RState;
+
+static int onout(const Binding *const b, void *const ptr)
+{
+	assert(b);
+	assert(ptr);
+	RState *const st = ptr;
+
+	const Ref *const R[1];
+	unsigned matched = 0;
+	if(keymatch(st->pattern, &b->key, (const Ref **)R, 1, &matched))
+	{
+		assert(matched == 1);
+
+		if(DBGFLAGS & DBGOUT)
+		{
+			char *const skey = strref(st->U, NULL, b->key);
+			char *const sref = strref(st->U, NULL, b->ref);
+			DBG(DBGOUT, "(key(%u): %s) (val(%u): %s)",
+				b->key.external, skey,
+				b->ref.external, sref);
+			free(skey);
+			free(sref);
+		}
+
+		assert(!b->key.external
+			&& (b->ref.code == NODE || !b->ref.external));
+
+		// Нашли выход. Нужно добавить в список узлов графа конструкцию
+		// .FOut ((*R[0]; b->ref)). Семантика у процедур разрушительная,
+		// но содержимое ключа может понадобится для реконструкции форм,
+		// поэтому его копируем. Содержимое же выхода забираем и
+		// вычёркиваем из R.0
+
+		const unsigned verb = readtoken(st->U, "FOut").u.number;
+		const Ref pair = reflist(RL(forkref(*R[0], NULL), b->ref));
+		((Binding *)b)->ref = reffree();
+		const Ref attr = reflist(RL(refnum(0), reflist(RL(pair))));
+
+		st->nodes = append(st->nodes, RL(newnode(verb, attr, 0)));
+	}
+
+	// Никуда глубже проходить не нужно
+	return 0;
+}
+
+static Ref ripouts(Array *const U, Array *const area, const Ref dag)
+{
+	assert(isdag(dag));
+
+	DL(outpattern, RS(decoatom(U, DOUT), reffree()));
+	RState st =
+	{
+		.U = U,
+		.pattern = markext(outpattern),
+		.nodes = NULL
+	};
+
+	walkbindings(U, areareactor(U, area, 1), NULL, onout, &st);
+
+	return refdag(append(dag.u.list, st.nodes));
+}
+
+static Ref ripforms(Array *const U, Array *const area, const Ref dag)
+{
+	assert(isdag(dag));
+	return dag;
+}
+
+Ref ripareaform(Array *const U, Array *const area)
+{
+	assert(!isactive(U, area));
+	const Ref f = ripforms(U, area, ripouts(U, area, ripdag(U, area)));
+	unlinkareareactor(U, area, 1);
+
+	assert(isdag(f));
+	return f;
+}
+
+unsigned isareaconsumed(Array *const U, const Array *const area)
+{
+	return areareactorcore(U, area, 1) == NULL;
 }
