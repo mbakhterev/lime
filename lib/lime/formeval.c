@@ -87,29 +87,33 @@ static int registerone(List *const l, void *const ptr)
 	return 0;
 }
 
-static Ref reform(const Ref keys, const Ref body)
-{
-	// Считаем, что ключи сформированы в decorate или exprewrite. И мы
-	// забираем ключи без fork. Само тело формы может быть из окружения или
-	// из текущего графа. В обоих случаях ожидаем, что всё уже сформировано
-	// (см. extractbody)
+// static Ref reform(const Ref keys, const Ref body, const Ref trace)
+// {
+// 	// Считаем, что ключи сформированы в decorate или exprewrite. И мы
+// 	// забираем ключи без fork. Само тело формы может быть из окружения или
+// 	// из текущего графа. В обоих случаях ожидаем, что всё уже сформировано
+// 	// (см. extractbody)
+// 
+// 	assert(!keys.external);
+// 	return newform(body, trace, keys);
+// }
 
-	assert(!keys.external);
-	return newform(body, keys);
-}
+// extern void intakeform(
+// 	Array *const U, Array *const R,
+// 	const Ref keys, const Ref body, const Ref trace)
 
-extern void intakeform(
-	Array *const U, Array *const R, const Ref keys, const Ref body)
+void intakeform(Array *const U, Array *const R, const Ref f)
 {
 	assert(R);
+	assert(isform(f));
 
-	// Дальше нам надо создать форму со своим счётчиком, которая будет
-	// добавлена во всевозможные списки. Для этого нужно скопировать
-	// исходные граф и ключи. newform копирует выражения, переданные через
-	// параметры. Клиент intakeform может регулировать объём копирования
-	// через external-биты
-
-	const Ref f = reform(keys, body);
+// 	// Дальше нам надо создать форму со своим счётчиком, которая будет
+// 	// добавлена во всевозможные списки. Для этого нужно скопировать
+// 	// исходные граф и ключи. newform копирует выражения, переданные через
+// 	// параметры. Клиент intakeform может регулировать объём копирования
+// 	// через external-биты
+// 
+// 	const Ref f = reform(keys, body, trace);
 
 	// Форму надо засунуть в список реактора. Корректность RF проверяется в
 	// самой reactorforms. Забываем о RF сразу после использования, чтобы
@@ -335,44 +339,93 @@ static Ref setnew(
 	return markext(b->ref);
 }
 
-static Ref extractbody(const Ref A, const unsigned copy, FEState *const E)
+// static Ref extractbody(const Ref A, const unsigned copy, FEState *const E)
+// {
+// 	if(A.code == NODE)
+// 	{
+// 		// Имеем дело с узлом. Это может быть либо FEnv, который
+// 		// оценивается в тело формы из окружения. Её и возвращаем в виде
+// 		// ссылки. Либо F, который защищает тело формы. Её надо
+// 		// скопировать в этом случае, потому что граф с этим телом будет
+// 		// трансформироваться
+// 
+// 		switch(nodeverb(A, E->verbs))
+// 		{
+// 		case FENV:
+// 		{
+// 			const Ref dag = refmap(E->formmarks, A);
+// 			assert(dag.external);
+// 			return !copy ? dag : forkdag(cleanext(dag));
+// 
+// // 			return markext(refmap(E->formmarks, A));
+// 		}
+// 
+// 		case FNODE:
+// 			return forkdag(nodeattribute(A));
+// 
+// 		case RNODE:
+// 		{
+// 			Array *const R = envmap(E->areamarks, A);
+// 			if(!R || isactive(E->U, R) || isareaconsumed(E->U, R))
+// 			{
+// 				return reffree();
+// 			}
+// 
+// 			return ripareaform(E->U, R);
+// 		}
+// 
+// 		default:
+// 			return reffree();
+// 		}
+// 	}
+// 
+// 	return reffree();
+// }
+
+static Ref extractform(
+	const Ref A, const Ref keys, const unsigned copy, FEState *const E)
 {
-	if(A.code == NODE)
+	if(A.code != NODE)
 	{
-		// Имеем дело с узлом. Это может быть либо FEnv, который
-		// оценивается в тело формы из окружения. Её и возвращаем в виде
-		// ссылки. Либо F, который защищает тело формы. Её надо
-		// скопировать в этом случае, потому что граф с этим телом будет
-		// трансформироваться
+		return reffree();
+	}
 
-		switch(nodeverb(A, E->verbs))
+	switch(nodeverb(A, E->verbs))
+	{
+	case FENV:
+	{
+		// Необходимо извлечь тело формы из окружения. Трассы в
+		// окружении нет, поэтому на её месте пустой граф. Следует или
+		// нет копировать тело формы зависит от флага. Ключ уже должен
+		// быть готов к использованию в форме
+
+		const Ref ref = refmap(E->formmarks, A);
+		assert(ref.external);
+		const Ref body = !copy ? ref : forkdag(cleanext(ref));
+
+		return newform(body, refdag(NULL), keys);
+	}
+
+	case FNODE:
+		// Здесь копирование графа в атрибуте узла .F должно быть
+		// безусловным, так как исходная форма подвергнется чистке
+
+		return newform(forkdag(nodeattribute(A)), refdag(NULL), keys);
+	
+	case RNODE:
+	{
+		Array *const R = envmap(E->areamarks, A);
+		if(!R || isactive(E->U, R) || isareaconsumed(E->U, R))
 		{
-		case FENV:
-		{
-			const Ref dag = refmap(E->formmarks, A);
-			assert(dag.external);
-			return !copy ? dag : forkdag(cleanext(dag));
-
-// 			return markext(refmap(E->formmarks, A));
-		}
-
-		case FNODE:
-			return forkdag(nodeattribute(A));
-
-		case RNODE:
-		{
-			Array *const R = envmap(E->areamarks, A);
-			if(!R || isactive(E->U, R) || isareaconsumed(E->U, R))
-			{
-				return reffree();
-			}
-
-			return ripareaform(E->U, R);
-		}
-
-		default:
 			return reffree();
 		}
+
+		const Ref body;
+		const Ref trace;	
+		riparea(E->U, R, (Ref *)&body, (Ref *)&trace);
+
+		return newform(body, trace, keys);
+	}
 	}
 
 	return reffree();
@@ -431,13 +484,38 @@ static void fenv(const Ref N, FEState *const E)
 		return;
 	}
 
-	const Ref body = len == 2 ? extractbody(R[1], 0, E) : reffree();
+// 	const Ref body = len == 2 ? extractbody(R[1], 0, E) : reffree();
+	const Ref form
+		= len == 2 ? extractform(R[1], reflist(NULL), 0, E) : reffree();
 
-	if(len == 2 && body.code == FREE)
+	if(len == 2 && form.code == FREE)
 	{
 		item = nodeline(N);
-		ERR("node \"%s\": can't read form from 2nd attribute structure",
+		ERR("node \"%s\": can't reconstruct form with 2nd attribute",
 			nodename(E->U, N));
+	}
+
+	assert(len != 2 || formkeys(form).u.list == NULL);
+
+	if(len == 2 && formtrace(form).u.list != NULL)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": environment forms should be without trace",
+			nodename(E->U, N));
+	}
+
+	// Забираем из формы body, а саму форму освобождаем, почистив поле DAG.
+	// Это всё по условию, что у нас есть form
+
+	const Ref body = form.code != FREE ? formdag(form) : reffree();
+
+	if(form.code != FREE)
+	{
+		Ref *const R[FORMLEN];
+		splitlist(form.u.list, (const Ref **const)R, FORMLEN);
+		*R[BODY] = refdag(NULL);
+
+		freeform(form);
 	}
 
 	// Теперь надо понять, с каким видом .FEnv мы имеем дело мы имеем дело.
@@ -800,8 +878,14 @@ static void fput(const Ref N, FEState *const E)
 	}
 
 	// Если отправляем форму не в локальный R.0, то надо её скопировать
-	const Ref body = extractbody(R[2], T.area != E->area || T.rid != 0, E);
-	if(body.code == FREE)
+// 	const Ref body = extractbody(R[2], T.area != E->area || T.rid != 0, E);
+	const Ref form
+		= extractform(R[2], K, T.area != E->area || T.rid != 0, E);
+
+	assert(formkeys(form).u.list == K.u.list);
+
+// 	if(body.code == FREE)
+	if(form.code == FREE)
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": can't extract form body from 3rd attribute",
@@ -819,7 +903,9 @@ static void fput(const Ref N, FEState *const E)
 	}
 
 // 	intakeform(E->U, areareactor(E->U, E->area, rid), K, body);
-	intakeform(E->U, areareactor(E->U, T.area, T.rid), K, body);
+// 	intakeform(E->U, areareactor(E->U, T.area, T.rid), K, body);
+	
+	intakeform(E->U, areareactor(E->U, T.area, T.rid), form);
 
 	// Добавляем информацию об активности в области, если она отличается от
 	// текущей

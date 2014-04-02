@@ -73,12 +73,12 @@ static Ref totypekey(const Ref r, EState *const st)
 
 static void tnode(const Ref r, EState *const st)
 {
-	// EXPERIMENTAL:
-
-	if(refmap(st->typemarks, r).code != FREE)
-	{
-		return;
-	}
+// 	// EXPERIMENTAL:
+// 
+// 	if(refmap(st->typemarks, r).code != FREE)
+// 	{
+// 		return;
+// 	}
 
 	// Смотрим, во что превращается атрибут узла, в текущем рабочем
 	// контексте

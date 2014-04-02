@@ -153,7 +153,23 @@ static void activate(
 	const Ref form, const Array *const reactor,
 	Array *const area, Core *const C)
 {
-	// Сначала надо составить список входов для формы
+	// Сначала надо прицепить трассу формы к текущему графу и удалить эту
+	// трассу из формы, чтобы сохранить её при освобождении формы в
+	// synthesize
+
+	{
+		assert(isform(form));
+		Ref *const R[FORMLEN];
+		assert(splitlist(form.u.list, (const Ref **)R, FORMLEN));
+		Ref *const AD = areadag(C->U, area);
+
+		assert(isdag(*R[TRACE]) && isdag(*AD));
+		AD->u.list = append(AD->u.list, R[TRACE]->u.list);
+
+		*R[TRACE] = refdag(NULL);
+	}
+
+	// Надо составить список входов для основного тела формы
 
 	AState st =
 	{
@@ -570,7 +586,10 @@ void ignite(Core *const C, const SyntaxNode op)
 
 	freelist((List *)out);
 
-	intakeform(C->U, areareactor(C->U, area, 0), reflist(RL(key)), body);
+// 	intakeform(C->U, areareactor(C->U, area, 0), reflist(RL(key)), body);
+	
+	const Ref form = newform(body, refdag(NULL), reflist(RL(key)));
+	intakeform(C->U, areareactor(C->U, area, 0), form);
 
 	// Осталось добавить область в список активных областей
 	if(!setmap(C->activity, refkeymap(area)))

@@ -722,21 +722,22 @@ extern Ref ntheval(
 // имеет смысл сделать дополнительный интерфейс, так как он становится
 // актуальным только при попадании формы в область вывода.
 
-extern Ref newform(const Ref dag, const Ref keys);
+extern Ref newform(const Ref dag, const Ref trace, const Ref keys);
 extern Ref forkform(const Ref form);
 extern void freeform(const Ref form);
 
 extern Ref formdag(const Ref form);
+extern Ref formtrace(const Ref form);
 extern Ref formkeys(const Ref form);
-
 extern unsigned formcounter(const Ref form);
+
 // extern unsigned countdown(const Ref *const form);
 extern void countdown(const Ref form);
 
 extern unsigned isformlist(const List *const);
 extern unsigned isform(const Ref);
 
-enum { BODY = 0, KEYS, COUNT, FORMLEN };
+enum { BODY = 0, TRACE, KEYS, COUNT, FORMLEN };
 extern unsigned splitform(const Ref form, const Ref *R[]);
 
 // Области вывода. Они являются keymap-ами особой структуры. Потому что надо
@@ -761,8 +762,12 @@ extern Ref *reactorforms(Array *const U, const Array *const reactor);
 
 // extern void dumparea(FILE *const, const Array *const, const List *const ctx);
 
-extern Ref ripareaform(Array *const U, Array *const area);
-extern Ref ripareadag(Array *const U, Array *const area);
+// extern Ref ripareaform(Array *const U, Array *const area);
+// extern Ref ripareadag(Array *const U, Array *const area);
+
+extern void riparea(
+	Array *const, Array *const area, Ref *const body, Ref *const trace);
+
 extern unsigned isareaconsumed(Array *const U, const Array *const area);
 
 extern Array *arealinks(Array *const U, const Array *const area);
@@ -797,8 +802,11 @@ extern void dumpareastack(
 // 	Array *const U, Array *const area, const unsigned R, const Ref form);
 // // 	const Ref dag, const Ref keys);
 
-extern void intakeform(
-	Array *const U, Array *const R, const Ref key, const Ref body);
+// extern void intakeform(
+// 	Array *const U, Array *const R,
+// 	const Ref key, const Ref body, const Ref trace);
+
+extern void intakeform(Array *const U, Array *const R, const Ref form);
 
 // Двойственная к intakeform процедура. Список outs должен состоять из пар (ключ
 // значение). Обе компоненты будут скопированы в реактор при помощи forkref, так

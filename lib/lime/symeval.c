@@ -114,13 +114,13 @@ static Ref setnew(
 
 static void snode(const Ref N, EState *const E)
 {
-	// Если мы этот узел уже обработали, то не обращаем на него внимания.
-	// Так? В качестве эксперимента пробуем
-
-	if(refmap(E->symmarks, N).code == FREE)
-	{
-		return;
-	}
+// 	// Если мы этот узел уже обработали, то не обращаем на него внимания.
+// 	// Так? В качестве эксперимента пробуем
+// 
+// 	if(refmap(E->symmarks, N).code == FREE)
+// 	{
+// 		return;
+// 	}
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)

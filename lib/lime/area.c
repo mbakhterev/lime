@@ -8,10 +8,9 @@
 #define DBGOUT	(1 << 2)
 
 // #define DBGFLAGS (DBGAR | DBGAE)
+// #define DBGFLAGS (DBGOUT)
 
-#define DBGFLAGS (DBGOUT)
-
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 unsigned isarea(const Ref r)
 {
@@ -265,15 +264,15 @@ static Ref ripdag(Array *const U, const Array *const area)
 	return d;
 }
 
-Ref ripareadag(Array *const U, Array *const area)
-{
-	assert(!isactive(U, area));
-	const Ref d = ripdag(U, area);
-	unlinkareareactor(U, area, 1);
-
-	assert(isdag(d));
-	return d;
-}
+// Ref ripareadag(Array *const U, Array *const area)
+// {
+// 	assert(!isactive(U, area));
+// 	const Ref d = ripdag(U, area);
+// 	unlinkareareactor(U, area, 1);
+// 
+// 	assert(isdag(d));
+// 	return d;
+// }
 
 typedef struct
 {
@@ -349,14 +348,23 @@ static Ref ripforms(Array *const U, Array *const area, const Ref dag)
 	return dag;
 }
 
-Ref ripareaform(Array *const U, Array *const area)
-{
-	assert(!isactive(U, area));
-	const Ref f = ripforms(U, area, ripouts(U, area, ripdag(U, area)));
-	unlinkareareactor(U, area, 1);
+// Ref ripareaform(Array *const U, Array *const area)
+// {
+// 	assert(!isactive(U, area));
+// 	const Ref f = ripforms(U, area, ripouts(U, area, ripdag(U, area)));
+// 	unlinkareareactor(U, area, 1);
+// 
+// 	assert(isdag(f));
+// 	return f;
+// }
 
-	assert(isdag(f));
-	return f;
+void riparea(
+	Array *const U, Array *const area, Ref *const body, Ref *const trace)
+{
+	assert(!isactive(U, area) && !isareaconsumed(U, area));
+	*body = ripforms(U, area, ripouts(U, area, refdag(NULL)));
+	*trace = ripdag(U, area);
+	unlinkareareactor(U, area, 1);
 }
 
 unsigned isareaconsumed(Array *const U, const Array *const area)
