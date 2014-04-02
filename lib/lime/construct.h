@@ -835,6 +835,7 @@ extern void formeval(
 // Обработка областей вывода
 
 // Обработка R-узлов. По образу и подобию обработки окружений. 
+
 extern void reval(
 	Array *const U,
 	Array *const area, Array *const areamarks,
@@ -845,6 +846,13 @@ extern const Array *goeval(
 	Array *const area,
 	const Ref dag, const Array *const escape, const Array *const envmarks,
 	const Array *const envtogo);
+
+// Без escape-ов, потому что эта обработка после сборки мусора. Все escape-ы уже
+// обработаны и вычищены
+
+extern void ripeval(
+	Array *const U, Ref *const dag,
+	const Array *const escape, const Array *const areamarks);
 
 // Ядерная функциональность
 

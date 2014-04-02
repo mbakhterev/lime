@@ -324,3 +324,70 @@ const Array *goeval(
 
 	return st.envtogo;
 }
+
+static List *rip(Array *const U, const Ref N, const Array *const marks)
+{
+	return NULL;
+}
+
+static void ripevalcore(
+	Array *const U,
+	Ref *const dag, const Array *const escape,
+	const Array *const areamarks, const Array *const verbs)
+{
+	// Попробуем использовать разделение на DAG и LIST это должно дать
+	// некоторый прирост производительности
+
+	isdag(*dag);
+
+	// Переменная, отслеживающая пересобранный граф
+	List *D = NULL;
+
+	while(dag->u.list)
+	{
+		List *const n = tipoff(&dag->u.list);
+		assert(!n->ref.external && isnode(n->ref));
+
+		switch(nodeverb(n->ref, verbs))
+		{
+		case RNODE:
+			// R-узлы просто выкидываем
+			freelist(n);
+			break;
+
+		case RIP:
+			D = append(D, rip(U, n->ref, areamarks));
+			freelist(n);
+			break; 
+
+		default:
+			// Имеем дело с некоторым узлом. Если не запрещено, и
+			// если он содержит в атрибуте граф, то обработаем и
+			// его. В любом случае узел надо добавить в
+			// результирующий список
+
+			if(!knownverb(n->ref, escape))
+			{
+				Ref *const attr = nodeattributecell(n->ref);
+				if(attr->code == DAG)
+				{
+					ripevalcore(U,
+						attr, escape, areamarks, verbs);
+				}
+			}
+
+			D = append(D, n);
+		}
+	}
+
+	dag->u.list = D;
+}
+
+void ripeval(
+	Array *const U,
+	Ref *const dag, const Array *const escape, const Array *const areamarks)
+{
+	const Array *const verbs = newverbmap(U, 0, verbs);
+	ripevalcore(U, dag, escape, areamarks, verbs);
+	freekeymap((Array *)verbs);
+}
