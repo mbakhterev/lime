@@ -437,11 +437,23 @@ static Array *stackarea(Core *const C, const SyntaxNode op)
 	case LOP:
 	{
 		// В этом случае нужно быть уверенными, что на вершине стека
-		// что-то есть
-		if(!top)
+		// что-то есть. И в этом чём-то, если оно активно, не должно
+		// быть ссылки UP
+
+		const unsigned ok = top
+			&& (!isactive(U, top)
+				|| NULL == linkmap(U, arealinks(U, top),
+					path, readtoken(U, "UP"), reffree()));
+
+		if(!ok)
 		{
 			return NULL;
 		}
+
+// 		if(!top)
+// 		{
+// 			return NULL;
+// 		}
 
 		Array *const area = newarea(U, key, C->envtogo);
 		assert(area);
@@ -495,6 +507,21 @@ static Array *stackarea(Core *const C, const SyntaxNode op)
 
 		Array *const area = S[1].u.array;
 		if(!isactive(U, area) || !syntaxmatch(U, op, area))
+		{
+			return NULL;
+		}
+
+		// Нужно проверить, что нет ссылки RIGHT в area и ссылки UP в
+		// top, если top активна
+
+		const unsigned ok
+			 = NULL == linkmap(U, arealinks(U, area),
+			 	path, readtoken(U, "RIGHT"), reffree())
+			&& (!isactive(U, top)
+				|| NULL == linkmap(U, arealinks(U, top),
+					path, readtoken(U, "UP"), reffree()));
+
+		if(!ok)
 		{
 			return NULL;
 		}

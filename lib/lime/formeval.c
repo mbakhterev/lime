@@ -22,6 +22,7 @@ typedef struct
 {
 	Array *const U;
 	Array *const reactor;
+	Array *const selfcheck;
 	const Ref form;
 } RState;
 
@@ -131,7 +132,8 @@ void intakeform(Array *const U, Array *const R, const Ref f)
 	{
 		.U = U,
 		.reactor = R,
-		.form = f
+		.form = f,
+		.selfcheck = NULL
 	};
 
 	forlist(formkeys(f).u.list, registerone, &st, 0);
@@ -150,6 +152,15 @@ static int checkone(List *const l, void *const ptr)
 	assert(ptr);
 	RState *const st = ptr;
 
+	// Сначала проверка на самопересечения
+
+	if(setmap(st->selfcheck, R[KEY]))
+	{
+		return !0;
+	}
+
+	tunesetmap(st->selfcheck, R[KEY]);
+	
 	DL(key, RS(decoatom(st->U, DOUT), R[KEY]));
 	const Binding *const b
 		= bindingat(st->reactor, maplookup(st->reactor, key));
@@ -224,10 +235,19 @@ unsigned intakeout(
 	{
 		.U = U,
 		.reactor = areareactor(U, area, rid),
-		.form = reffree()
+		.form = reffree(),
+		.selfcheck = newkeymap()
 	};
 
-	if(forlist((List *)outs, checkone, &st, 0))
+	const unsigned fail = forlist((List *)outs, checkone, &st, 0);
+	freekeymap(st.selfcheck);
+
+// 	if(forlist((List *)outs, checkone, &st, 0))
+// 	{
+// 		return !0;
+// 	}
+
+	if(fail)
 	{
 		return !0;
 	}
