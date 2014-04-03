@@ -659,14 +659,19 @@ static int translateone(List *const l, void *const ptr)
 		return !0;
 	}
 
+	const Ref links = exprewrite(R[1], st->typemarks, st->typeverbs);
+
 // 	if(!isvalidlink(R[1], st->sysverbs))
-	if(!isvalidlink(R[1], st))
+// 	if(!isvalidlink(R[1], st))
+	if(!isvalidlink(links, st))
 	{
+		freeref(links);
 		freeref(key);
 		return !0;
 	}
 
-	st->out = append(st->out, RL(reflist(RL(key, forkref(R[1], NULL)))));
+// 	st->out = append(st->out, RL(reflist(RL(key, forkref(R[1], NULL)))));
+	st->out = append(st->out, RL(reflist(RL(key, links))));
 
 	return 0;
 }
