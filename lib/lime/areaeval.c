@@ -327,7 +327,40 @@ const Array *goeval(
 
 static List *rip(Array *const U, const Ref N, const Array *const marks)
 {
-	return NULL;
+	const Ref r = nodeattribute(N);
+	if(r.code != LIST)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting attribute list", nodename(U, N));
+		return NULL;
+	}
+
+	const unsigned len = listlen(r.u.list);
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+	if(len != 1 || R[0].code != NODE)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+		return NULL;
+	}
+
+	Array *const area = envmap(marks, R[0]);
+	if(!area)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": can't detect area with 1st attribute",
+			nodename(U, N));
+		return NULL;
+	}
+
+	const Ref trace;
+	const Ref form;
+	riparea(U, area, (Ref *)&form, (Ref *)&trace);
+	assert(isdag(form) && isdag(trace));
+	freeref(form);
+
+	return trace.u.list;
 }
 
 static void ripevalcore(
@@ -368,7 +401,9 @@ static void ripevalcore(
 
 			if(!knownverb(n->ref, escape))
 			{
-				Ref *const attr = nodeattributecell(n->ref);
+				Ref *const attr
+					= (Ref *)nodeattributecell(n->ref);
+
 				if(attr->code == DAG)
 				{
 					ripevalcore(U,
@@ -387,7 +422,7 @@ void ripeval(
 	Array *const U,
 	Ref *const dag, const Array *const escape, const Array *const areamarks)
 {
-	const Array *const verbs = newverbmap(U, 0, verbs);
-	ripevalcore(U, dag, escape, areamarks, verbs);
-	freekeymap((Array *)verbs);
+	const Array *const V = newverbmap(U, 0, verbs);
+	ripevalcore(U, dag, escape, areamarks, V);
+	freekeymap((Array *)V);
 }

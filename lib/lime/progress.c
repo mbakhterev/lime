@@ -260,7 +260,7 @@ static void activate(
 		C->envtogo = etg;
 	}
 
-	freekeymap(areamarks);
+// 	freekeymap(areamarks);
 	freekeymap(envmarks);
 
 	// FIXME: ещё несколько стадий
@@ -269,6 +269,12 @@ static void activate(
 	gcnodes((Ref *)&body, escape, nonroots, NULL);
 
 	freekeymap((Array *)nonroots);
+
+	// Подстановка графов из других окружений заменой Rip и удалением
+	// оставшихся R
+	ripeval(C->U, (Ref *)&body, escape, areamarks);
+
+	freekeymap(areamarks);
 	freekeymap((Array *)escape);
 
 	// Будут удалены все части списка:
