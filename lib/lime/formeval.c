@@ -902,8 +902,6 @@ static void fput(const Ref N, FEState *const E)
 	const Ref form
 		= extractform(R[2], K, T.area != E->area || T.rid != 0, E);
 
-	assert(formkeys(form).u.list == K.u.list);
-
 // 	if(body.code == FREE)
 	if(form.code == FREE)
 	{
@@ -914,6 +912,8 @@ static void fput(const Ref N, FEState *const E)
 		freeref(K);
 		return;
 	}
+
+	assert(formkeys(form).u.list == K.u.list);
 
 	if(DBGFLAGS & DBGFPUT)
 	{
