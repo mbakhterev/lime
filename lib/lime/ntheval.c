@@ -173,7 +173,9 @@ static Ref reftolist(const Ref r, const DCState *const st)
 		// биты полезны только для оптимизации
 
 		const Binding *const b = typeat(st->types, r.u.number);
-		return reflist(RL(markext(b->key), markext(b->ref)));
+// 		return reflist(RL(markext(b->key), markext(b->ref)));
+		return reflist(RL(markext(b->key),
+			b->ref.code != FREE ? markext(b->ref) : reflist(NULL)));
 	}
 		
 	case NODE:
@@ -372,6 +374,7 @@ static void eval(const Ref N, NState *const S)
 	{
 	case NUMBER:
 	case ATOM:
+	case TYPE:
 		return;
 
 	// Пока алгоритмы таковы, что не делаем здесь различий
