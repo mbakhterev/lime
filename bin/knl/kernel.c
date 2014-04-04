@@ -163,7 +163,7 @@ static unsigned opdecode(int c)
 	case 'A': return AOP;
 	case 'U': return UOP;
 	case 'L': return LOP;
-	case 'B': return BOP;
+// 	case 'B': return BOP;
 	case 'E': return EOP;
 	}
 

@@ -26,6 +26,10 @@
 !tst/gnu.mk
 !tst/forms
 !tst/forms/*.lk
+!tst/simple
+!tst/simple/*.lk
+!tst/in-syntax
+!tst/in-syntax/*.txt
 
 !sketch
 !sketch/*.c
