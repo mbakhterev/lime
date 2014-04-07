@@ -31,10 +31,24 @@ const char *const stdmap[] =
 	"F", "LB", NULL
 };
 
-static void initone(
-	const char *const optarg,
-	Array *const U, Array *const env, Array *const types)
+const char *const initgarbage[] =
 {
+	"L", "FIn", "Nth",
+	"E",
+	"T",
+	"R", "Go", "Done",
+	"F", "FEnv", "FPut", "FOut",
+	NULL
+};
+
+static Ref initone(
+	const char *const optarg,
+	Array *const U, Array *const R, Array *const T, Array *const typemarks, 
+// 	Array *const symmarks,
+	const Ref D)
+{
+	assert(isdag(D));
+
 	unitname = optarg;
 	item = 1;
 	FILE *const f = fopen(unitname, "r");
@@ -60,10 +74,10 @@ static void initone(
 	freeref(rawdag);
 
 	Array *const envmarks = newkeymap();
-	Array *const typemarks = newkeymap();
+// 	Array *const typemarks = newkeymap();
 
 	Array *const tomark = newverbmap(U, 0, ES("FEnv", "TEnv"));
-	enveval(U, env, envmarks, dag, escape, tomark);
+	enveval(U, R, envmarks, dag, escape, tomark);
 	freekeymap(tomark);
 
 	if(DBGFLAGS & DBGINIT)
@@ -72,26 +86,41 @@ static void initone(
 		assert(fputc('\n', stderr) == '\n');
 	}
 
-	typeeval(U, types, typemarks, dag, escape, envmarks);
+	typeeval(U, T, typemarks, dag, escape, envmarks);
 	formeval(U, NULL, NULL, dag, escape, envmarks, NULL, typemarks);
 
 	if(DBGFLAGS & DBGINIT)
 	{
-		dumptable(stderr, 0, U, types);
+		dumptable(stderr, 0, U, T);
 		assert(fputc('\n', stderr) == '\n');
 	}
 
-	freekeymap(escape);
-	freekeymap(typemarks);
+// 	freekeymap(escape);
+// 	freekeymap(typemarks);
 	freekeymap(envmarks);
 
-	freeref(dag);
+// 	freeref(dag);
+
+	const Array *const nonroots = newverbmap(U, 0, initgarbage);
+	gcnodes((Ref *)&dag, escape, nonroots, NULL);
+	freekeymap((Array *)nonroots);
+
+	freekeymap(escape);
+
+	assert(isdag(dag));
+
+// 	return D;
+	return refdag(append(D.u.list, dag.u.list));
 }
 
-static void initforms(
-	int argc, char *const argv[],
-	Array *const U, Array *const env, Array *const types)
+static Ref initforms(
+	const int argc, char *const argv[],
+	Array *const U, Array *const R, Array *const T,
+	Array *const typemarks)
+// 	, Array *const symmarks)
 {
+	Ref D = refdag(NULL);
+
 	optind = 1;
 	int opt = 0;
 	while((opt = getopt(argc, argv, "df:")) != -1)
@@ -99,7 +128,8 @@ static void initforms(
 		switch(opt)
 		{
 		case 'f':
-			initone(optarg, U, env, types);
+// 			D = initone(optarg, U, R, T, typemarks, symmarks, D);
+			D = initone(optarg, U, R, T, typemarks, D);
 			break;
 
 		case 'd':
@@ -109,6 +139,8 @@ static void initforms(
 			ERR("%s", "usage: [-d] [-f form-source]+");
 		}
 	}
+
+	return D;
 }
 
 static unsigned initinfodump(const int argc, char *const argv[])
@@ -143,14 +175,24 @@ static unsigned initinfodump(const int argc, char *const argv[])
 	return dump;
 }
 
-const char *const syntaxops[] =
+// const char *const syntaxops[] =
+// {
+// 	[FOP] = "F",
+// 	[AOP] = "A",
+// 	[UOP] = "U",
+// 	[LOP] = "L",
+// 	[BOP] = "B",
+// 	[EOP] = "E",
+// 	NULL
+// };
+
+static char *const syntaxops[] =
 {
-	[FOP] = "F",
 	[AOP] = "A",
 	[UOP] = "U",
 	[LOP] = "L",
-	[BOP] = "B",
 	[EOP] = "E",
+	[FOP] = "F",
 	NULL
 };
 
@@ -342,20 +384,6 @@ int main(int argc, char *const argv[])
 	Array *const R = initroot(U);
 	Array *const T = inittypes(U);
 
-	initforms(argc, argv, U, R, T);
-	DBG(DBGMAIN, "%s", "forms loaded");
-
-	if(DBGFLAGS & DBGMAIN)
-	{
-		const Array *const esc = stdupstreams(U);
-		DBG(DBGMAIN, "env: count = %u", R->count);
-		dumpkeymap(1, stderr, 0, U, R, esc);
-		freekeymap((Array *)esc);
-
-		DBG(DBGMAIN, "%s", "types:");
-		dumptable(stderr, 0, U, T);
-	}
-
 	Core C =
 	{
 		.U = U,
@@ -369,6 +397,21 @@ int main(int argc, char *const argv[])
 		.activity = newkeymap(),
 		.dumpinfopath = dip
 	};
+
+	const Ref D = initforms(argc, argv, U, R, T, C.typemarks);
+// 	, C.symmarks);
+	DBG(DBGMAIN, "%s", "forms loaded");
+
+	if(DBGFLAGS & DBGMAIN)
+	{
+		const Array *const esc = stdupstreams(U);
+		DBG(DBGMAIN, "env: count = %u", R->count);
+		dumpkeymap(1, stderr, 0, U, R, esc);
+		freekeymap((Array *)esc);
+
+		DBG(DBGMAIN, "%s", "types:");
+		dumptable(stderr, 0, U, T);
+	}
 
 	// Основной цикл вывода графа программы. Чтение с stdin. Если вывод не
 	// удался, то, всё равно, выдаём накопленный в "придонном" контексте
@@ -391,7 +434,15 @@ int main(int argc, char *const argv[])
 
 	const Ref A = C.areastack->ref;
 	assert(isarea(A));
-	dumpdag(0, ok ? stdout : stderr, 0, U, *areadag(U, A.u.array));
+
+	// Прицепим накопленный в инициализации граф к накопленному во время
+	// вывода
+
+	Ref *const AD = areadag(U, A.u.array);
+	AD->u.list = append(D.u.list, AD->u.list);
+
+	dumpdag(0, ok ? stdout : stderr, 0, U, *AD);
+	// *areadag(U, A.u.array));
 	assert(fputc('\n', ok ? stdout : stderr) == '\n');
 
 	freekeymap(C.activity);

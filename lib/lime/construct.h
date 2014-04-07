@@ -859,12 +859,18 @@ extern void ripeval(
 // Синтаксические команды. Тут и дальше получается некий свободный поток
 // примитивов, не сгруппированный и не упорядоченный
 
-#define FOP 0
-#define AOP 1
-#define UOP 2
-#define LOP 3
-#define BOP 4
-#define EOP 5
+// #define FOP 0
+// #define AOP 1
+// #define UOP 2
+// #define LOP 3
+// #define BOP 4
+// #define EOP 5
+
+#define AOP 0
+#define UOP 1
+#define LOP 2
+#define EOP 3
+#define FOP 4
 
 // О Position заметка 2013-08-27 18:24:10
 
