@@ -18,8 +18,7 @@ int main(const int ac, const char *const av[])
 	free(c);
 
 	printf("dag:\n");
-	dumpdag(1, stdout, 0, U, l);
-// 	, NULL);
+	dumpdag(1, stdout, 0, U, l, NULL, NULL);
 
 	return 0;
 }

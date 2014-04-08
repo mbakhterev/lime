@@ -199,7 +199,7 @@ static void activate(
 	if(C->dumpinfopath)
 	{
 		fprintf(stderr, "\nnext active form. Original body\n");
-		dumpdag(0, stderr, 0, C->U, formdag(form));
+		dumpdag(0, stderr, 0, C->U, formdag(form), NULL, NULL);
 		assert(fputc('\n', stderr) == '\n');
 	}
 
@@ -212,17 +212,10 @@ static void activate(
 	const Ref body = leval(C->U, rawbody, escape);
 	freeref(rawbody);
 
-// 	if(DBGFLAGS & DBGACTSUBST)
-// 	{
-// 		DBG(DBGACTSUBST, "%s", "ntheval");
-// 		dumpdag(0, stderr, 0, C->U, body);
-// 		assert(fputc('\n', stderr) == '\n');
-// 	}
-
 	if(C->dumpinfopath)
 	{
 		fprintf(stderr, "\nexpanded\n");
-		dumpdag(0, stderr, 0, C->U, body);
+		dumpdag(0, stderr, 0, C->U, body, NULL, NULL);
 		assert(fputc('\n', stderr) == '\n');
 	}
 

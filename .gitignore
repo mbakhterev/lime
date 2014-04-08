@@ -9,15 +9,9 @@
 !date
 !sign
 
-!bin
-!bin/dp
-!bin/dp/*.[ch]
-!bin/dp/gnu.mk
-
 !lib
-!lib/lime
-!lib/lime/*.[ch]
-!lib/lime/gnu.mk
+!lib/*.[ch]
+!lib/gnu.mk
 
 !tst
 !tst/*.c
@@ -38,9 +32,8 @@
 !tcn/*.mk
 
 !bin
-!bin/knl
-!bin/knl/*.[ch]
-!bin/knl/gnu.mk
+!bin/*.[ch]
+!bin/gnu.mk
 
 !txt
 !txt/*.txt

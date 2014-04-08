@@ -26,11 +26,14 @@ typedef struct
 	List *F;
 	List *D;
 
-	const Array *const map;
+// 	const Array *const map;
 	Array *const nodes;
 
 	const Array *const escape;
 	Array *const visited;
+
+	const Array *const typemarks;
+	const Array *const types;
 
 	const char *const tabstr;
 	const unsigned tabs;
@@ -254,8 +257,7 @@ static void dumpsubdag(const DState *const st, const Ref dag)
 	assert(f);
 
 	assert(fputc('\n', f) == '\n');
-	dumpdag(st->dbg, f, st->tabs + 1, st->U, dag);
-// 	, st->map);
+	dumpdag(st->dbg, f, st->tabs + 1, st->U, dag, st->typemarks, st->types);
 }
 
 static int dumpone(List *const l, void *const ptr)
@@ -271,8 +273,6 @@ static int dumpone(List *const l, void *const ptr)
 	const Array *const U = st->U;
 	assert(f);
 	assert(U);
-
-// 	const Array *const map = st->map;
 
 	const Ref i = refmap(st->nodes, n);
 
@@ -290,12 +290,6 @@ static int dumpone(List *const l, void *const ptr)
 			atombytes(atomat(U, nodeverb(n, NULL))), i.u.number));
 	}
 
-// 	const unsigned k = knownverb(n, map);
-// 
-// 	DBG(DBGDAG, "map = %p; k = %u", (void *)map, k);
-// 
-// 	(!k ?  dumpattr : dumpsubdag)(st, nodeattribute(n));
-
 	const Ref attr = nodeattribute(n);
 	(attr.code != DAG ? dumpattr : dumpsubdag)(st, attr);
 
@@ -309,13 +303,19 @@ static int dumpone(List *const l, void *const ptr)
 
 void dumpdag(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
-	const Array *const U, const Ref dag)
-// 	, const Array *const map)
+	const Array *const U, const Ref dag,
+	const Array *const typemarks, const Array *const types)
 {
 	assert(f);
 	// FIXME: требовать ли Universe для работы dumpdag?
 	assert(U);
 	assert(isdag(dag));
+
+	// typemarks может служить для указания на необходимость восстановить
+	// типы. Может быть NULL. Если не NULL, то types тоже не может быть
+	// NULL.
+
+	assert((typemarks != NULL) == (types != NULL));
 
 	DBG(DBGDAG, "f: %p", (void *)f);
 
@@ -326,10 +326,10 @@ void dumpdag(
 	{
 		.f = f,
 		.U = U,
-//		.map = map,
-		.map = NULL,
 		.dbg = dbg,
 		.nodes = nodes,
+		.typemarks = typemarks,
+		.types = types,
 		.tabs = tabs,
 		.tabstr = tabstr(tabs),
 		.L = dag.u.list
@@ -345,8 +345,6 @@ void dumpdag(
 
 static unsigned islink(Array *const U, const Ref r)
 {
-// 	DL(pattern, RS(decoatom(U, DMAP), reffree()));
-// 	return keymatch(pattern, &r, NULL, 0, NULL);
 	return decomatch(r, U, DMAP);
 }
 
@@ -401,18 +399,7 @@ static int dumpbindingone(const Binding *const b, void *const ptr)
 		break;
 
 	case MAP:
-// 		if(!b->ref.external)
-// 		{
-// 			st->L = append(st->L, RL(markext(b->ref)));
-// 		}
-// 		break;
-
 		assert(b->ref.external);
-
-// 		if(!setmap(st->visited, b->ref) && !setmap(st->escape, b->key))
-// 		{
-// 			st->L = append(st->L, RL(markext(b->ref)));
-// 		}
 
 		if(islink((Array *)st->U, b->key)
 			&& !setmap(st->escape, b->key))
@@ -440,8 +427,7 @@ static int dumpformone(List *const l, void *const ptr)
 	assert(fprintf(
 		st->f, "\n%s\tform-dag(%u) %p:\n", st->tabstr,
 		dag.external, (void *)dag.u.list) > 0);
-	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, dag);
-// 	, NULL);
+	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, dag, NULL, NULL);
 
 	assert(fputc('\n', st->f) == '\n');
 
@@ -457,7 +443,7 @@ static int dumpdagone(List *const l, void *const ptr)
 
 	assert(fprintf(
 		st->f, "\n%s\tdag: %p\n", st->tabstr, (void *)D.u.list) > 0);
-	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, D);
+	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, D, NULL, NULL);
 	assert(fputc('\n', st->f) == '\n');
 
 	return 0;
@@ -601,13 +587,10 @@ void dumpareastack(
 		.L = NULL,
 		.F = NULL,
 		.D = NULL,
-// 		.tabs = tabs,
-// 		.tabstr = tabstr(tabs),
 		.tabs = tabs - 1,
 		.tabstr = NULL,
 		.dbg = dbg,
 		.visited = newkeymap(),
-// 		.escape = NULL
 		.escape = escape
 	};
 
@@ -616,5 +599,4 @@ void dumpareastack(
 	freelist(l);
 
 	freekeymap(st.visited);
-// 	free((char *)st.tabstr);
 }

@@ -593,8 +593,8 @@ extern unsigned isdag(const Ref N);
 
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
-	const Array *const U, const Ref dag);
-// 	const Array *const map);
+	const Array *const U, const Ref dag,
+	const Array *const typemarks, const Array *const types);
 
 extern Ref forkdag(const Ref dag);
 

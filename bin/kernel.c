@@ -64,7 +64,7 @@ static Ref initone(
 	
 	if(DBGFLAGS & DBGINIT)
 	{
-		dumpdag(1, stderr, 0, U, rawdag);
+		dumpdag(1, stderr, 0, U, rawdag, NULL, NULL);
 		assert(fputc('\n', stderr) == '\n');
 	}
 
@@ -441,7 +441,7 @@ int main(int argc, char *const argv[])
 	Ref *const AD = areadag(U, A.u.array);
 	AD->u.list = append(D.u.list, AD->u.list);
 
-	dumpdag(0, ok ? stdout : stderr, 0, U, *AD);
+	dumpdag(0, ok ? stdout : stderr, 0, U, *AD, C.typemarks, T);
 	// *areadag(U, A.u.array));
 	assert(fputc('\n', ok ? stdout : stderr) == '\n');
 
