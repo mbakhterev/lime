@@ -26,8 +26,8 @@ typedef struct
 	List *F;
 	List *D;
 
-// 	const Array *const map;
-	Array *const nodes;
+	const Array *const drop;
+	const Array *const nodes;
 
 	const Array *const escape;
 	Array *const visited;
@@ -44,10 +44,12 @@ typedef struct
 } DState;
 
 static void dumpreflist(
-	FILE *const, const Array *const, Array *const nodes, const List *const);
+	FILE *const,
+	const Array *const, const Array *const nodes, const List *const);
 
 void dumpref(
-	FILE *const f, const Array *const U, Array *const nodes, const Ref r)
+	FILE *const f,
+	const Array *const U, const Array *const nodes, const Ref r)
 {
 	switch(r.code)
 	{
@@ -75,8 +77,20 @@ void dumpref(
 	}
 
 	case TYPE:
-		assert(fprintf(f, "T:%u", r.u.number) > 0);
+	{
+		const Ref n = refmap(nodes, r);
+
+		if(n.code != FREE)
+		{
+			assert(fprintf(f, "n%u", n.u.number) > 0);
+		}
+		else
+		{
+			assert(fprintf(f, "T:%u", r.u.number) > 0);
+		}
+
 		break;
+	}
 
 	case LIST:
 		dumpreflist(f, U, nodes, r.u.list);
@@ -161,8 +175,8 @@ static int dumprefone(List *const l, void *const ptr)
 }
 
 static void dumpreflist(
-	FILE *const f, const Array *const U, Array *const nodes,
-	const List *const l)
+	FILE *const f,
+	const Array *const U, const Array *const nodes, const List *const l)
 {
 	assert(f);
 
@@ -225,19 +239,6 @@ static const char *tabstr(const unsigned tabs)
 	return s;
 }
 
-static int mapone(List *const l, void *const ptr)
-{
-	assert(l);
-	assert(l->ref.code == NODE);
-
-	Array *const nodes = ptr;
-	assert(nodes);
-
-	tunerefmap(nodes, l->ref, refnum(nodes->count));
-
-	return 0;
-}
-
 static void dumpattr(const DState *const st, const Ref attr)
 {
 	assert(st);
@@ -268,6 +269,12 @@ static int dumpone(List *const l, void *const ptr)
 	assert(l);
 	const Ref n = l->ref;
 	assert(isnode(n));
+
+	if(setmap(st->drop, n))
+	{
+		// Узел не нужен. Продолжаем
+		return 0;
+	}
 
 	FILE *const f = st->f;
 	const Array *const U = st->U;
@@ -301,6 +308,74 @@ static int dumpone(List *const l, void *const ptr)
 	return 0;
 }
 
+typedef struct
+{
+	const Array *const T;
+	const Array *const typemarks;
+	const Array *const typeverbs;
+
+	Array *const drop;
+	Array *const nodes;
+	Ref *const typedag;
+
+	unsigned N;
+} MState;
+
+static int mapone(List *const l, void *const ptr)
+{
+	// Здесь должны быть только определения узлов
+	assert(l);
+	assert(l->ref.code == NODE && !l->ref.external);
+
+// 	Array *const nodes = ptr;
+// 	assert(nodes);
+
+	assert(ptr);
+	MState *const st = ptr;
+
+// 	Array *const nodes = st->nodes;
+// 	tunerefmap(nodes, l->ref, refnum(nodes->count));
+
+	if(!knownverb(l->ref, st->typeverbs))
+	{
+		// Имеем дело с обычным узлом. Пока без дополнительного анализа,
+		// просто считаем:
+
+		tunerefmap(st->nodes, l->ref, refnum(st->N));
+		st->N += 1;
+		return 0;
+	}
+
+	// Имеем дело с задающим тип узлом
+
+	const Ref t = refmap(st->typemarks, l->ref);
+	assert(t.code == TYPE);
+
+	const Ref n = refmap(st->nodes, t);
+	if(n.code != FREE)
+	{
+		// Если о типе уже известно, то надо отождествить ссылку l.ref с
+		// уже существующим узлом, а текущий узел добавить в список
+		// ненужных
+
+		assert(n.code == NUMBER);
+		tunerefmap(st->nodes, l->ref, n);
+		tunesetmap(st->drop, l->ref);
+
+		return 0;
+	}
+
+	// Если о типе не известно, то ссылку на узел надо отождествить
+	// с новым номером и с ним же отождествить ссылку на тип
+
+	const Ref m = refnum(st->N);
+	st->N += 1;
+	tunerefmap(st->nodes, l->ref, m);
+	tunerefmap(st->nodes, t, m);
+
+	return 0;
+}
+
 void dumpdag(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
 	const Array *const U, const Ref dag,
@@ -313,20 +388,46 @@ void dumpdag(
 
 	// typemarks может служить для указания на необходимость восстановить
 	// типы. Может быть NULL. Если не NULL, то types тоже не может быть
-	// NULL.
+	// NULL
 
 	assert((typemarks != NULL) == (types != NULL));
 
 	DBG(DBGDAG, "f: %p", (void *)f);
 
-	Array *const nodes = newkeymap();
-	forlist(dag.u.list, mapone, nodes, 0);
+// 	Array *const nodes = newkeymap();
+// 	forlist(dag.u.list, mapone, nodes, 0);
 
-	DState st =
+	Array *const drop = newkeymap();
+	Array *const nodes = newkeymap();
+	const Ref typedag = refdag(NULL);
+
+	MState mapst =
+	{
+		.T = types,
+		.typemarks = typemarks,
+		.drop = drop,
+		.nodes = nodes,
+		.typedag = (Ref *)&typedag,
+		.typeverbs
+			= typemarks ?
+				  newverbmap((Array *)U, 0, ES("T", "TEnv"))
+				: NULL,
+		.N = 0
+	};
+
+	forlist(dag.u.list, mapone, &mapst, 0);
+
+	if(mapst.typeverbs != NULL)
+	{
+		freekeymap((Array *)mapst.typeverbs);
+	}
+
+	DState dumpst =
 	{
 		.f = f,
 		.U = U,
 		.dbg = dbg,
+		.drop = drop,
 		.nodes = nodes,
 		.typemarks = typemarks,
 		.types = types,
@@ -335,12 +436,13 @@ void dumpdag(
 		.L = dag.u.list
 	};
 
-	assert(fprintf(f, "%s(", st.tabstr) > 0);
-	forlist(dag.u.list, dumpone, &st, 0);
-	assert(fprintf(f, "\n%s)", st.tabstr) > 0);
+	assert(fprintf(f, "%s(", dumpst.tabstr) > 0);
+	forlist(dag.u.list, dumpone, &dumpst, 0);
+	assert(fprintf(f, "\n%s)", dumpst.tabstr) > 0);
 
-	free((void *)st.tabstr);
+	free((void *)dumpst.tabstr);
 	freekeymap(nodes);
+	freekeymap(drop);
 }
 
 static unsigned islink(Array *const U, const Ref r)

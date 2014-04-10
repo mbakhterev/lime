@@ -109,7 +109,8 @@ extern Ref forkref(const Ref, Array *const map);
 // Распечатка разных Ref-ов
 
 extern void dumpref(
-	FILE *const, const Array *const U, Array *const nodemap, const Ref);
+	FILE *const,
+	const Array *const U, const Array *const nodemap, const Ref);
 
 extern char *strref(const Array *const U, Array *const nodemap, const Ref);
 
