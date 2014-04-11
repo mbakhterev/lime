@@ -321,6 +321,28 @@ typedef struct
 	unsigned N;
 } MState;
 
+#define TNODE	0
+#define TENV	1
+static const char *const typeverbs[] =
+{
+	[TNODE] = "T",
+	[TENV] = "TEnv",
+	NULL
+};
+
+static unsigned droppable(const Array *const verbs, const Ref n)
+{
+	if(nodeverb(n, verbs) != TENV)
+	{
+		return 0;
+	}
+
+	const Ref r = nodeattribute(n);
+	assert(r.code == LIST);
+
+	return listlen(r.u.list) != 2;
+}
+
 static int mapone(List *const l, void *const ptr)
 {
 	// Здесь должны быть только определения узлов
@@ -356,11 +378,16 @@ static int mapone(List *const l, void *const ptr)
 	{
 		// Если о типе уже известно, то надо отождествить ссылку l.ref с
 		// уже существующим узлом, а текущий узел добавить в список
-		// ненужных
+		// ненужных. Последние с условием, что узел не описывает
+		// регистрацию типа в окружении
 
 		assert(n.code == NUMBER);
 		tunerefmap(st->nodes, l->ref, n);
-		tunesetmap(st->drop, l->ref);
+
+		if(droppable(st->typeverbs, l->ref))
+		{
+			tunesetmap(st->drop, l->ref);
+		}
 
 		return 0;
 	}
@@ -408,10 +435,13 @@ void dumpdag(
 		.drop = drop,
 		.nodes = nodes,
 		.typedag = (Ref *)&typedag,
+// 		.typeverbs
+// 			= typemarks ?
+// 				  newverbmap((Array *)U, 0, ES("T", "TEnv"))
+// 				: NULL,
 		.typeverbs
 			= typemarks ?
-				  newverbmap((Array *)U, 0, ES("T", "TEnv"))
-				: NULL,
+				newverbmap((Array *)U, 0, typeverbs) : NULL,
 		.N = 0
 	};
 
