@@ -376,17 +376,23 @@ static int mapone(List *const l, void *const ptr)
 	const Ref n = refmap(st->nodes, t);
 	if(n.code != FREE)
 	{
-		// Если о типе уже известно, то надо отождествить ссылку l.ref с
-		// уже существующим узлом, а текущий узел добавить в список
-		// ненужных. Последние с условием, что узел не описывает
-		// регистрацию типа в окружении
+		// Если о типе уже известно, и это не регистрация нового типа в
+		// окружении, то надо отождествить l->ref с существующим номером
 
 		assert(n.code == NUMBER);
-		tunerefmap(st->nodes, l->ref, n);
 
 		if(droppable(st->typeverbs, l->ref))
 		{
+			tunerefmap(st->nodes, l->ref, n);
 			tunesetmap(st->drop, l->ref);
+		}
+		else
+		{
+			// Если речь о регистрации и узел нужен, то для него
+			// нужно выделить новый номер
+
+			tunerefmap(st->nodes, l->ref, refnum(st->N));
+			st->N += 1;
 		}
 
 		return 0;
