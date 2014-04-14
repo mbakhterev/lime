@@ -81,6 +81,20 @@ Ref newnode(const unsigned verb, const Ref attribute, const unsigned line)
 	return cleanext(refnode(RL(refatom(verb), attribute, refnum(line))));
 }
 
+void freenode(const Ref n)
+{
+	assert(isnode(n));
+	
+	if(!n.external)
+	{
+// FIXME: Полное освобождение узлов отключено, но список атрибутов имеет смысл
+// чистить
+// 		freelist(n.u.list);
+
+		freeref(nodeattribute(n));
+	}
+}
+
 unsigned nodeline(const Ref n)
 {
 // 	assert(n.code == NODE);

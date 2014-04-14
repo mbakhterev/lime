@@ -226,10 +226,17 @@ void freeref(const Ref r)
 	case FREE:
 		break;
 
-	case LIST:
 	case NODE:
-	case DAG:
+		freenode(r);
+		break;
+
 	case FORM:
+		freeform(r);
+		break;
+
+	case LIST:
+	case DAG:
+// 	case FORM:
 		if(!r.external)
 		{
 			freelist(r.u.list);

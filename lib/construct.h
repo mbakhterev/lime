@@ -559,6 +559,8 @@ extern unsigned knownverb(const Ref exp, const Array *const verbs);
 extern Ref newnode(
 	const unsigned verb, const Ref attribute, const unsigned line);
 
+extern void freenode(const Ref);
+
 // Проверка структуры списка на то, что она действительно задаёт выражение
 
 extern unsigned isnode(const Ref);
