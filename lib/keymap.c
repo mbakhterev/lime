@@ -207,7 +207,8 @@ static const char *const codestr[] =
 	[DIN]	= "-",
 	[DOUT]	= "+",
 	[DAREA]	= "*",
-	[DUTIL]	= "^"
+	[DUTIL]	= "^",
+	[DUNIQ]	= "!"
 };
 
 static const char *codetostr(const unsigned code)

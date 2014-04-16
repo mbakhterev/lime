@@ -25,6 +25,7 @@ lmsrc = \
 	leval.c		\
 	area.c		\
 	areaeval.c	\
+	exeqeval.c
 
 lminc = \
 	$(I)/lime/construct.h	\

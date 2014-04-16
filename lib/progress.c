@@ -194,7 +194,8 @@ static void activate(
 			"L", "FIn", "Nth",
 			"E",
 			"R", "Go", "Done",
-			"F", "FEnv", "FPut", "FOut"));
+			"F", "FEnv", "FPut", "FOut",
+			"Ex", "Uniq"));
 
 	if(C->dumpinfopath)
 	{
@@ -221,7 +222,7 @@ static void activate(
 
 	Array *const envmarks = newkeymap();
 	const Array *const tomark
-		= newverbmap(C->U, 0, ES("FEnv", "TEnv", "S"));
+		= newverbmap(C->U, 0, ES("FEnv", "TEnv", "S", "Ex", "Uniq"));
 	
 	Array *const env = areaenv(C->U, area);
 
@@ -235,6 +236,8 @@ static void activate(
 
 	symeval(C->U, C->symbols, C->symmarks,
 		body, escape, envmarks, C->typemarks);
+	
+	exeqeval(C->U, C->typemarks, body, escape, envmarks);
 
 	formeval(C->U, area, C->activity,
 		body, escape, envmarks, areamarks, C->typemarks);

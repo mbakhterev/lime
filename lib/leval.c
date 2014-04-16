@@ -21,6 +21,7 @@ typedef struct
 } LState;
 
 static void eval(const Ref, LState *const);
+
 static int evalone(List *const l, void *const ptr)
 {
 	assert(l);

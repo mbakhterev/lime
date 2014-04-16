@@ -356,7 +356,12 @@ extern const Binding *bindingat(const Array *const map, const unsigned id);
 // если code ей поддерживается: (deco-atom key). Бит external в Ref-е установлен
 // не будет. В противном случае вылетит с assert-ом
 
-enum { DSYM = ATOM, DTYPE = TYPE, DMAP = MAP, DFORM, DIN, DOUT, DAREA, DUTIL };
+enum
+{
+	DSYM = ATOM, DTYPE = TYPE, DMAP = MAP, 
+	DFORM, DIN, DOUT, DAREA,
+	DUTIL, DUNIQ
+};
 
 extern Ref decorate(const Ref key, Array *const U, const unsigned code);
 
@@ -645,6 +650,11 @@ extern void enveval(
 	Array *const env,
 	Array *const envmarks,
 	const Ref dag, const Array *const escape, const Array *const markit);
+
+extern void exeqeval(
+	Array *const U,
+	Array *const marks,
+	const Ref dag, const Array *const escape, const Array *const envmarks);
 
 // Процедура переписи выражения в другое с учётом накопленной информации о
 // значениях узлов. Ссылки на узлы подменяются на значения для них в map.
