@@ -22,23 +22,23 @@ enum
 	// отмечают и соответствующие Array-и. Из этих значений состоят
 	// выражения.
 	// 
-	// NUMBER, ATOM, TYPE: числа и номера значений в таблицах атомов и типов
-	// соответственно.
+	// NUMBER и ATOM, TYPE, SYM, ENV: числа и номера значений в таблицах 
+	// атомов, типов, символов, окружений соответственно.
 	// 
 	// NODE: выражения, которые представлены списками. Списки выражений
 	// должны иметь формат ("some-verb" (attributes)). Они моделируют узлы в
 	// DAG-е программы.
-	// 
-	// MAP: метка для обозначения окружений. MAP перечислена перед LIST,
-	// значит, ссылки на MAP можно использовать в качестве элементов ключей
-	// поиска по окружениям. Необходимо для определения типов в стиле Си
 	// 
 	// PTR: void-указатели, для различных служебных нужд
 	// 
 	// LIST: списки из разнообразных Ref-ов. Могут содержать Ref-ы на другие
 	// списки. Поэтому используются для представления S-выражений.
 
-	NUMBER, ATOM, TYPE, MAP, NODE, PTR, LIST,
+	NUMBER, ATOM, TYPE, SYM, ENV, NODE, PTR, LIST,
+
+	// MAP: метка для обозначения окружений 
+
+	MAP, 
 	
 	// FORM говорит об указателе на форму - кусочек DAG-а программы,
 	// открытый для подстановки в него некоторых значений. DAG - это
@@ -78,6 +78,8 @@ extern Ref refnat(const unsigned code, const unsigned);
 extern Ref refnum(const unsigned);
 extern Ref refatom(const unsigned);
 extern Ref reftype(const unsigned);
+extern Ref refsym(const unsigned);
+extern Ref refenv(const unsigned);
 extern Ref refptr(void *const);
 // Особенность refnode в том, что она УСТАНАВЛИВАЕТ external-бит
 extern Ref refnode(List *const);
@@ -902,28 +904,105 @@ typedef struct
 	const Position pos;
 } SyntaxNode;
 
+// typedef struct
+// {
+// 	Array *const U;
+// 
+// 	Array *const types;
+// 	Array *const typemarks;
+// 
+// 	Array *const symbols;
+// 	Array *const symmarks;
+// 
+// 	Array *const root;
+// 	const Array *envtogo;
+// 
+// 	List *areastack;
+// 	Array *activity;
+// 
+// 	// Флаг для включения вывода промежуточной отладочной информации
+// 	const unsigned dumpinfopath:1;
+// } Core;
+
 typedef struct
 {
 	Array *const U;
-
-	Array *const types;
-	Array *const typemarks;
-
-	Array *const symbols;
-	Array *const symmarks;
-
-	Array *const root;
-	const Array *envtogo;
+	Array *const T;
+	Array *const E;
+	Array *const S;
 
 	List *areastack;
 	Array *activity;
 
-	// Флаг для включения вывода промежуточной отладочной информации
-	const unsigned dumpinfopath:1;
+	unsigned envtogo;
+
+	const Array *const limeverbs;
+
+	struct
+	{
+		const Array *const system;
+		const Array *const generic;
+	} verbs;
+
+	unsigned dumpinfopath:1;
 } Core;
 
+extern Core makecore(void);
+extern void freecore(Core *const);
+
+// #define SUCC(x) ((x) + 1)
+// 
+// #define LNODE	0
+// #define FIN	SUCC(LNODE) 
+// #define NTH	SUCC(FIN)
+// 
+// #define FNODE	SUCC(NTH)
+// #define FENV	SUCC(FNODE)
+// #define FOUT	SUCC(FENV)
+// 
+// #define TNODE	SUCC(FOUT)
+// #define TENV	SUCC(TNODE)
+// 
+// #define ENODE	SUCC(TENV)
+// #define ENV	SUCC(ENODE)
+// 
+// #define SNODE	SUCC(ENV)
+// 
+// #define RNODE	SUCC(SNODE)
+// #define RIP	SUCC(RNODE)
+// #define DONE	SUCC(RIP)
+// #define GO	SUCC(DONE)
+// 
+// #undef SUCC
+
+enum
+{
+	LNODE = 0, FIN, NTH,
+	FNODE, FENV, FOUT,
+	TNODE, TENV,
+	ENODE, ENV,
+	SNODE,
+	RNODE, RIP, DONE, GO
+};
+
+extern unsigned isnodeitem(const List *const node);
+
+// Общая логика в аргументах функций, которые вызываются для обработки узлов:
+// сначала указывается список изменяемых объектов, потом Ref-а с узлом, которая
+// не будет изменяться, за ней список неизменяемых объектов
+
+extern void doenv(
+	Array *const envmarks, Array *const tokeep, const Ref, const Core *const);
+
+extern void doenode(Core *const, Array *const marks, const List *const node);
+
+enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
+
+extern Ref eval(
+	const Ref dag, const unsigned mode,
+	Core *const, Array *const env, Array *const area);
+
 extern void ignite(Core *const, const SyntaxNode);
-// extern void progress(Core *const, const SyntaxNode);
 extern void progress(Core *const);
 
 #endif

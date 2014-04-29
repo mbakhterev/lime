@@ -22,11 +22,15 @@ Ref refnat(const unsigned code, const unsigned n)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+	case SYM:
+	case ENV:
 		break;
 	
 	default:
 		assert(0);
 	}
+
+	assert(n < MAXLEN);
 
 	return (Ref) { .code = code, .u.number = n, .external = 0 };
 }
@@ -44,6 +48,16 @@ Ref refatom(const unsigned n)
 Ref reftype(const unsigned n)
 {
 	return refnat(TYPE, n);
+}
+
+Ref refsym(const unsigned n)
+{
+	return refnat(SYM, n);
+}
+
+Ref refenv(const unsigned n)
+{
+	return refnat(ENV, n);
 }
 
 Ref refptr(void *const p)
@@ -171,6 +185,8 @@ Ref forkref(const Ref r, Array *const nodemap)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+	case SYM:
+	case ENV:
 		return r;
 	
 	case MAP:
@@ -222,6 +238,8 @@ void freeref(const Ref r)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+	case SYM:
+	case ENV:
 	case PTR:
 	case FREE:
 		break;

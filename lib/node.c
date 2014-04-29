@@ -48,6 +48,11 @@ unsigned isnode(const Ref node)
 	return node.code == NODE && isnodelist(node.u.list);
 }
 
+unsigned issinglenode(const List *const l)
+{
+	return l->next == l && && !l->ref.external && isnode(l->ref);
+}
+
 unsigned nodeverb(const Ref n, const Array *const map)
 {
 // 	assert(n.code == NODE);

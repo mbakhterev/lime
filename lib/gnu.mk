@@ -14,18 +14,20 @@ lmsrc = \
 	dump.c		\
 	dag.c		\
 	loaddag.c	\
-	enveval.c	\
-	typeeval.c	\
 	exprewrite.c	\
-	symeval.c	\
 	form.c		\
-	ntheval.c	\
-	formeval.c	\
-	progress.c	\
-	leval.c		\
 	area.c		\
-	areaeval.c	\
-	exeqeval.c
+	eval.c
+
+# 	enveval.c	\
+# 	typeeval.c	\
+# 	symeval.c	\
+# 	ntheval.c	\
+# 	areaeval.c	\
+# 	exeqeval.c	\
+# 	formeval.c	\
+# 	leval.c		\
+# 	progress.c	\
 
 lminc = \
 	$(I)/lime/construct.h	\

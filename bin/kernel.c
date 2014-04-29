@@ -367,15 +367,15 @@ static Array *const inittypes(Array *const U)
 	return T;
 }
 
-static Array *const initroot(Array *const U)
-{
-	Array *const R = newkeymap();
-
-	assert(linkmap(U, R,
-		readtoken(U, "ENV"), readtoken(U, "this"), refkeymap(R)) == R);
-
-	return R;
-}
+// static Array *const initroot(Array *const U)
+// {
+// 	Array *const R = newkeymap();
+// 
+// 	assert(linkmap(U, R,
+// 		readtoken(U, "ENV"), readtoken(U, "this"), refkeymap(R)) == R);
+// 
+// 	return R;
+// }
 
 int main(int argc, char *const argv[])
 {
