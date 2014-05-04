@@ -68,6 +68,7 @@ Core *newcore(
 		.areastack = NULL,
 		.activity = newkeymap(),
 		.envtogo = 0,
+		.envmarks = envmarks,
 		.verbs.system = newverbmap(U, 0, limeverbs),
 		.verbs.envmarks = tomark,
 		.verbs.escape = newverbmap(U, 0, escape),
@@ -83,7 +84,7 @@ Core *newcore(
 
 void freecore(Core *const C)
 {
-	freeatomtab(C->U);
+// 	freeatomtab(C->U);
 	freekeymap(C->T);
 	freekeymap(C->S);
 
@@ -126,8 +127,8 @@ static int stageone(List *const l, void *const ptr)
 
 	switch(nodeverb(l->ref, C->verbs.system))
 	{
-	case ENV:
-		doenv(E->envdefs, E->envkeep, l->ref, C);
+	case EDEF:
+		doedef(E->envdefs, E->envkeep, l->ref, C);
 		break;
 	}
 
@@ -137,12 +138,13 @@ static int stageone(List *const l, void *const ptr)
 static List *dogeneric(
 	Core *const, Array *const area,
 	Array *const marks,
-	const Ref, const unsigned env, const List *const inputs);
+	const Ref, const unsigned env, const List *const inputs,
+	const unsigned mode);
 
-static unsigned envfornode(
-	const Ref N, const Array *const U,
-	const unsigned env,
-	const Array *const marks, const Array *const envmarks);
+// static unsigned envfornode(
+// 	const Ref N, const Array *const U,
+// 	const unsigned env,
+// 	const Array *const marks, const Array *const envmarks);
 
 static int stagetwo(List *const l, void *const ptr)
 {
@@ -153,33 +155,38 @@ static int stagetwo(List *const l, void *const ptr)
 	EState *const E = ptr;
 
 	Core *const C = E->C;
-	const Array *const U = C->U;
+// 	const Array *const U = C->U;
 
 	Array *const area = E->area;
 	Array *const marks = E->marks;
-	Array *const envdefs = E->envdefs;
+// 	Array *const envdefs = E->envdefs;
 	Array *const envkeep = E->envkeep;
 	const unsigned env = E->env;
+	const unsigned mode = E->mode;
 	const List *const inputs = E->inputs;
 
 	switch(nodeverb(l->ref, C->verbs.system))
 	{
-	case ENV:
-		if(setmap(envkeep, N))
+	case EDEF:
+		if(!setmap(envkeep, N))
 		{
-			List *const l
-				= dogeneric(C, area, marks, N, env, inputs);
-
-			E->L = append(E->L, l);
+			break;
 		}
+		
+		List *const l
+			= dogeneric(C, area, marks, N, env, inputs, mode);
+		E->L = append(E->L, l);
+
 		break;
 
 	default:
 	{
-		const unsigned nenv = envfornode(N, U, env, marks, envdefs);
-		List *const l = dogeneric(C, area, marks, N, nenv, inputs);
-
+// FIXME:	const unsigned nenv = envfornode(N, U, env, marks, envdefs);
+		const unsigned nenv = env;
+		List *const l
+			= dogeneric(C, area, marks, N, nenv, inputs, mode);
 		E->L = append(E->L, l);
+
 		break;
 	}
 	}
@@ -187,36 +194,37 @@ static int stagetwo(List *const l, void *const ptr)
 	return 0;
 }
 
-static unsigned envfornode(
-	const Ref N,
-	const Array *const U,
-	const unsigned env,
-	const Array *const marks, const Array *const envdefs)
-{
-	const Ref enode = refmap(envdefs, N);
-	if(enode.code == FREE)
-	{
-		return env;
-	}
-
-	assert(isnode(enode));
-
-	const Ref eref = refmap(marks, enode);
-	if(eref.code == FREE)
-	{
-		item = nodeline(N);
-		ERR("node \"%s\": environment isn't evaluated", nodename(U, N));
-		return -1;
-	}
-
-	assert(eref.code == ENV);
-	return eref.u.number;
-}
+// static unsigned envfornode(
+// 	const Ref N,
+// 	const Array *const U,
+// 	const unsigned env,
+// 	const Array *const marks, const Array *const envdefs)
+// {
+// 	const Ref enode = refmap(envdefs, N);
+// 	if(enode.code == FREE)
+// 	{
+// 		return env;
+// 	}
+// 
+// 	assert(isnode(enode));
+// 
+// 	const Ref eref = refmap(marks, enode);
+// 	if(eref.code == FREE)
+// 	{
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": environment isn't evaluated", nodename(U, N));
+// 		return -1;
+// 	}
+// 
+// 	assert(eref.code == ENV);
+// 	return eref.u.number;
+// }
 
 static List *dogeneric(
 	Core *const C, Array *const area,
 	Array *const marks,
-	const Ref N, const unsigned env, const List *const inputs)
+	const Ref N, const unsigned env, const List *const inputs,
+	const unsigned mode)
 {
 	const Array *const U = C->U;
 
@@ -225,10 +233,12 @@ static List *dogeneric(
 
 	const Ref r = nodeattribute(N);
 
+	const unsigned dagmode = mode < EMDAG ? mode : EMDAG;
+
 	const Ref attr
 		= r.code == DAG ?
-			  eval(C, area, r, env, inputs, EMDAG)
-			: totalrewrite(r, marks);
+			  eval(C, area, r, env, inputs, dagmode)
+			: simplerewrite(r, marks);
 
 	if(attr.code == FREE)
 	{

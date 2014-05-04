@@ -17,9 +17,9 @@ lmsrc = \
 	exprewrite.c	\
 	form.c		\
 	area.c		\
+	enveval.c	\
 	eval.c
 
-# 	enveval.c	\
 # 	typeeval.c	\
 # 	symeval.c	\
 # 	ntheval.c	\

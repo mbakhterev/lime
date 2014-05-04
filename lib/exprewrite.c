@@ -210,3 +210,67 @@ Ref exprewrite(const Ref r, const Array *const map, const Array *const verbs)
 	freekeymap(nodemap);
 	return q;
 }
+
+static int simplerewriteone(List *const l, void *const ptr);
+
+typedef struct
+{
+	List *L;
+	const Array *const map;
+} SRState;
+
+Ref simplerewrite(const Ref r, const Array *const map)
+{
+	switch(r.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+	case SYM:
+	case ENV:
+		return r;
+	
+	case NODE:
+		assert(r.external);
+		return refmap(map, r);
+	
+	case LIST:
+	{
+		SRState st =
+		{
+			.L = NULL,
+			.map = map
+		};
+
+		if(forlist(r.u.list, simplerewriteone, &st, 0))
+		{
+			freelist(st.L);
+			return reffree();
+		}
+
+		return reflist(st.L);
+	}
+	
+	default:
+		assert(0);
+	}
+
+	return reffree();
+}
+
+int simplerewriteone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	SRState *const S = ptr;
+
+	const Ref r = simplerewrite(l->ref, S->map);
+	if(r.code != FREE)
+	{
+		S->L = append(S->L, RL(r));
+		return 0;
+	}
+
+	return !0;
+}
+

@@ -85,4 +85,6 @@ $(T)/%.lk: $(lmtstnode)/%.lk
 $(lmtstobj) $(call o2d,$(lmtstobj)): cflags += -I $(I)
 $(call o2d,$(lmtstobj)): $(lminc)
 
+$(lmtstbin): lflags += -L $(L) -llime
+
 -include $(call o2d,$(lmtstobj))

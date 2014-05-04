@@ -681,7 +681,7 @@ extern void exeqeval(
 extern Ref exprewrite(
 	const Ref exp, const Array *const map, const Array *const verbs);
 
-extern Ref totalrewrite(const Ref exp, const Array *const map);
+extern Ref simplerewrite(const Ref exp, const Array *const map);
 
 extern void typeeval(
 	Array *const U,
@@ -977,7 +977,7 @@ enum
 // сначала указывается список изменяемых объектов, потом Ref-а с узлом, которая
 // не будет изменяться, за ней список неизменяемых объектов
 
-extern void doenv(
+extern void doedef(
 	Array *const envdefs, Array *const keep, const Ref, const Core *const);
 
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };

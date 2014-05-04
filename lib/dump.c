@@ -92,6 +92,14 @@ void dumpref(
 		break;
 	}
 
+	case SYM:
+		assert(fprintf(f, "S:%u", r.u.number) > 0);
+		break;
+	
+	case ENV:
+		assert(fprintf(f, "E:%u", r.u.number) > 0);
+		break;
+
 	case LIST:
 		dumpreflist(f, U, nodes, r.u.list);
 		break;
