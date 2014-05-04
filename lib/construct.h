@@ -681,6 +681,8 @@ extern void exeqeval(
 extern Ref exprewrite(
 	const Ref exp, const Array *const map, const Array *const verbs);
 
+extern Ref totalrewrite(const Ref exp, const Array *const map);
+
 extern void typeeval(
 	Array *const U,
 	Array *const types,
@@ -904,26 +906,6 @@ typedef struct
 	const Position pos;
 } SyntaxNode;
 
-// typedef struct
-// {
-// 	Array *const U;
-// 
-// 	Array *const types;
-// 	Array *const typemarks;
-// 
-// 	Array *const symbols;
-// 	Array *const symmarks;
-// 
-// 	Array *const root;
-// 	const Array *envtogo;
-// 
-// 	List *areastack;
-// 	Array *activity;
-// 
-// 	// Флаг для включения вывода промежуточной отладочной информации
-// 	const unsigned dumpinfopath:1;
-// } Core;
-
 typedef struct
 {
 	Array *const U;
@@ -936,18 +918,22 @@ typedef struct
 
 	unsigned envtogo;
 
-	const Array *const limeverbs;
+	Array *const envmarks;
 
 	struct
 	{
 		const Array *const system;
-		const Array *const generic;
+		const Array *const envmarks;
+		const Array *const escape;
 	} verbs;
 
 	unsigned dumpinfopath:1;
 } Core;
 
-extern Core makecore(void);
+extern Core *newcore(
+	Array *const U, Array *const envmarks, const Array *const tomark,
+	const unsigned dip);
+
 extern void freecore(Core *const);
 
 // #define SUCC(x) ((x) + 1)
@@ -979,28 +965,27 @@ enum
 {
 	LNODE = 0, FIN, NTH,
 	FNODE, FENV, FOUT,
-	TNODE, TENV,
-	ENODE, ENV,
+	TNODE, TENV, TDEF,
+	ENODE, EDEF,
 	SNODE,
 	RNODE, RIP, DONE, GO
 };
 
-extern unsigned isnodeitem(const List *const node);
+// extern unsigned isnodeitem(const List *const node);
 
 // Общая логика в аргументах функций, которые вызываются для обработки узлов:
 // сначала указывается список изменяемых объектов, потом Ref-а с узлом, которая
 // не будет изменяться, за ней список неизменяемых объектов
 
 extern void doenv(
-	Array *const envmarks, Array *const tokeep, const Ref, const Core *const);
-
-extern void doenode(Core *const, Array *const marks, const List *const node);
+	Array *const envdefs, Array *const keep, const Ref, const Core *const);
 
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 
 extern Ref eval(
-	const Ref dag, const unsigned mode,
-	Core *const, Array *const env, Array *const area);
+	Core *const C, Array *const area,
+	const Ref dag, const unsigned env, const List *const inputs,
+	const unsigned mode);
 
 extern void ignite(Core *const, const SyntaxNode);
 extern void progress(Core *const);

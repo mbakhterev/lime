@@ -1,10 +1,12 @@
 #include "util.h"
-#include "core.h"
 #include "construct.h"
+
+#include <assert.h>
+#include <string.h>
 
 static const char *const limeverbs[] =
 {
-	[LNODE]	= "LNODE",
+	[LNODE]	= "L",
 	[FIN]	= "FIn",
 	[NTH]	= "Nth",
 	[FNODE]	= "F",
@@ -12,8 +14,9 @@ static const char *const limeverbs[] =
 	[FOUT]	= "FOut",
 	[TNODE]	= "T",
 	[TENV]	= "TEnv",
+	[TDEF]	= "TDef",
 	[ENODE]	= "E",
-	[ENV]	= "Env",
+	[EDEF]	= "EDef",
 	[SNODE]	= "S",
 	[RNODE]	= "R",
 	[RIP]	= "Rip",
@@ -22,10 +25,10 @@ static const char *const limeverbs[] =
 	NULL
 };
 
-static const char *const rvgeneric[] = 
-{
-	"L", "FIn", "Nth", "T", "TEnv", "E", "S", NULL
-};
+// static const char *const rvgeneric[] = 
+// {
+// 	"L", "FIn", "Nth", "T", "TEnv", "E", "S", NULL
+// };
 
 static const char *const escape[] =
 {
@@ -44,15 +47,16 @@ static void initroot(Array *const U, Array *const E)
 	assert(bid == 0);
 	
 	Binding *const B = (Binding *)bindingat(E, bid);
-	assert(b->ref.code == FREE);
+	assert(B->ref.code == FREE);
 	B->ref = refkeymap(R);
 }
 
-Core *newcore(const unsigned dip)
+Core *newcore(
+	Array *const U,
+	Array *const envmarks, const Array *const tomark,
+	const unsigned dip)
 {
-	Array *const U = newatomtab();
 	Array *const E = newkeymap();
-
 	initroot(U, E);
 
 	const Core C =
@@ -64,9 +68,9 @@ Core *newcore(const unsigned dip)
 		.areastack = NULL,
 		.activity = newkeymap(),
 		.envtogo = 0,
-		.limeverbs = newverbmap(U, 0, limeverbs),
-		.escape = newverbmap(U, 0, escape),
-		.reverbs.generic = newverbmap(U, 0, rvgeneric),
+		.verbs.system = newverbmap(U, 0, limeverbs),
+		.verbs.envmarks = tomark,
+		.verbs.escape = newverbmap(U, 0, escape),
 		.dumpinfopath = dip
 	};
 
@@ -91,24 +95,24 @@ void freecore(Core *const C)
 
 	freekeymap(C->activity);
 
-	freekeymap((Array *)C->limeverbs);
-	freekeymap((Array *)C->escape);
-	freekeymap((Array *)C->reverbs.generic);
+	freekeymap((Array *)C->verbs.system);
+	freekeymap((Array *)C->verbs.escape);
 }
 
 typedef struct
 {
-	Array *const envmarks;
-	Array *const envtokeep;
+	Array *const envdefs;
+	Array *const envkeep;
 	Array *const marks;
 	
-	Array *const env,
-	Array *const area,
+	Array *const area;
 
 	Core *const C;
 
 	List *L;
 
+	const List *const inputs;
+	const unsigned env;
 	const unsigned mode;
 } EState;
 
@@ -123,23 +127,76 @@ static int stageone(List *const l, void *const ptr)
 	switch(nodeverb(l->ref, C->verbs.system))
 	{
 	case ENV:
-		doenv(E->envmarks, E->envtokeep, l->ref, C);
+		doenv(E->envdefs, E->envkeep, l->ref, C);
 		break;
 	}
 
 	return 0;
 }
 
-static Array *envfornode(
-	const Ref N,
-	const Array *const env,
-	const Array *const marks, const Array *const envmarks,
-	const Array *const environments)
+static List *dogeneric(
+	Core *const, Array *const area,
+	Array *const marks,
+	const Ref, const unsigned env, const List *const inputs);
+
+static unsigned envfornode(
+	const Ref N, const Array *const U,
+	const unsigned env,
+	const Array *const marks, const Array *const envmarks);
+
+static int stagetwo(List *const l, void *const ptr)
 {
-	const Ref enode = refmap(envmarks, N);
+	assert(l && isnode(l->ref) && !l->ref.external);
+	const Ref N = l->ref;
+
+	assert(ptr);
+	EState *const E = ptr;
+
+	Core *const C = E->C;
+	const Array *const U = C->U;
+
+	Array *const area = E->area;
+	Array *const marks = E->marks;
+	Array *const envdefs = E->envdefs;
+	Array *const envkeep = E->envkeep;
+	const unsigned env = E->env;
+	const List *const inputs = E->inputs;
+
+	switch(nodeverb(l->ref, C->verbs.system))
+	{
+	case ENV:
+		if(setmap(envkeep, N))
+		{
+			List *const l
+				= dogeneric(C, area, marks, N, env, inputs);
+
+			E->L = append(E->L, l);
+		}
+		break;
+
+	default:
+	{
+		const unsigned nenv = envfornode(N, U, env, marks, envdefs);
+		List *const l = dogeneric(C, area, marks, N, nenv, inputs);
+
+		E->L = append(E->L, l);
+		break;
+	}
+	}
+
+	return 0;
+}
+
+static unsigned envfornode(
+	const Ref N,
+	const Array *const U,
+	const unsigned env,
+	const Array *const marks, const Array *const envdefs)
+{
+	const Ref enode = refmap(envdefs, N);
 	if(enode.code == FREE)
 	{
-		return (Array *)env;
+		return env;
 	}
 
 	assert(isnode(enode));
@@ -149,28 +206,30 @@ static Array *envfornode(
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": environment isn't evaluated", nodename(U, N));
-		return NULL;
+		return -1;
 	}
 
-	return envat(environments, eref);
+	assert(eref.code == ENV);
+	return eref.u.number;
 }
 
 static List *dogeneric(
-	Array *const env, Array *const area, Core *const C,
-	const Ref N, const Array *const marks)
+	Core *const C, Array *const area,
+	Array *const marks,
+	const Ref N, const unsigned env, const List *const inputs)
 {
-	const unsigned verb = nodeverb(N);
+	const Array *const U = C->U;
+
+	const unsigned verb = nodeverb(N, NULL);
 	const unsigned line = nodeline(N);
 
 	const Ref r = nodeattribute(N);
-	if(r.code == DAG)
-	{
-		const Ref M = newnode(verb, eval(env, area, C, r, EMDAG), line);
-		tunerefmap(marks, N, M);
-		return RL(M);
-	}
 
-	const Ref attr = exprewrite(r, marks);
+	const Ref attr
+		= r.code == DAG ?
+			  eval(C, area, r, env, inputs, EMDAG)
+			: totalrewrite(r, marks);
+
 	if(attr.code == FREE)
 	{
 		item = nodeline(N);
@@ -180,26 +239,41 @@ static List *dogeneric(
 
 	const Ref M = newnode(verb, attr, line);
 	tunerefmap(marks, N, M);
+
+	if(knownverb(M, C->verbs.envmarks))
+	{
+		tunerefmap(C->envmarks, M, refenv(env));
+	}
+
 	return RL(M);
 }
 
-static int stagetwo(List *const l, void *const ptr)
+Ref eval(
+	Core *const C, Array *const area,
+	const Ref dag, const unsigned env, const List *const inputs,
+	const unsigned mode)
 {
-	assert(l && isnode(l->ref) && !l->ref.external);
+	assert(isdag(dag));
 
-	assert(ptr);
-	EState *const E = ptr;
-	const Core *const C = E->C;
-
-	switch(nodeverb(l->ref, C->verbs.system))
+	EState st =
 	{
-	case ENV:
-		if(setmap(E->envtokeep, l->ref))
-		{
-			List *const l
-				= dogeneric(l->ref, C, E->marks, E->envmarks);
+		.envdefs = newkeymap(),
+		.envkeep = newkeymap(),
+		.marks = newkeymap(),
+		.area = area,
+		.C = C,
+		.L = NULL,
+		.inputs = inputs,
+		.env = env,
+		.mode = mode
+	};
 
-			E->L = append(E->L, l);
-		}
-	}
+	forlist(dag.u.list, stageone, &st, 0);
+	forlist(dag.u.list, stagetwo, &st, 0);
+
+	freekeymap(st.marks);
+	freekeymap(st.envkeep);
+	freekeymap(st.envdefs);
+
+	return refdag(st.L);
 }

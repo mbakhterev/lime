@@ -9,13 +9,14 @@ lmtstsrc = \
 	tst-loadtoken.c	\
 	tst-heapsort.c	\
 	tst-list.c	\
-	tst-env.c	\
-	tst-loaddag.c	\
-	tst-gcnodes.c	\
-	tst-forkdag.c	\
-	tst-ntheval.c	\
-	tst-evalforms.c \
 	tst-eval.c
+
+# 	tst-env.c	\
+# 	tst-loaddag.c	\
+# 	tst-gcnodes.c	\
+# 	tst-forkdag.c	\
+# 	tst-ntheval.c	\
+# 	tst-evalforms.c \
 
 lmtstobj = $(call c2o,$(lmtstbits),$(lmtstsrc))
 
@@ -28,16 +29,16 @@ lmtstbin = \
 	$(T)/tst-loadtoken	\
 	$(T)/gen-atomtab	\
 	$(T)/tst-atomtab.sh	\
-	$(T)/tst-env		\
 	$(T)/tst-list		\
-	$(T)/tst-loaddag	\
-	$(T)/tst-gcnodes	\
 	$(T)/tst-eval		\
-	$(T)/tst-ntheval	\
 
+#	$(T)/tst-env		\
+# 	$(T)/tst-loaddag	\
+# 	$(T)/tst-gcnodes	\
 # 	$(T)/tst-forkdag	\
 # 	$(T)/tst-evalforms	\
-# 	$(T)/tst-knl.sh
+# 	$(T)/tst-knl.sh		\
+#	$(T)/tst-ntheval	\
 
 lmlib = $(L)/liblime.a
 

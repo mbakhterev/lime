@@ -1,3 +1,6 @@
+#	Hello \
+	World
+
 root := $(patsubst %/,%,$(dir $(firstword $(MAKEFILE_LIST))))
 
 include $(root)/general.mk

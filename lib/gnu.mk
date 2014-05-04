@@ -43,8 +43,8 @@ lmlib: $(L)/liblime.a $(lminc)
 
 cleanlmlib:
 	@ rm -r $(lmbits) \
-	&& rm $(L)/liblime.a \
-	&& rm -r $(I)/lime
+	&& rm -r $(I)/lime \
+	&& rm $(L)/liblime.a
 
 $(L)/liblime.a: $(lmobj)
 

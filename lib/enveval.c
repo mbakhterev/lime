@@ -434,7 +434,7 @@ static unsigned isenode(const Ref N, const Array *const limeverbs)
 	return N.code == NODE || nodeverb(N, limeverbs) == ENODE;
 }
 
-static unsigned isallowedtarget(const Ref N, const Array *const limeverbs)
+static unsigned isvalidtarget(const Ref N, const Array *const limeverbs)
 {
 	if(N.code != NODE)
 	{
@@ -458,7 +458,9 @@ static unsigned isallowedtarget(const Ref N, const Array *const limeverbs)
 	return 0;
 }
 
-List *env(Core *const C, Array *const envmarks, const List *const l)
+void doenv(
+	Array *const envdefs, Array *const envkeep,
+	const Ref N, const Core *const C)
 {
 	Array *const U = C->U;
 
@@ -477,8 +479,8 @@ List *env(Core *const C, Array *const envmarks, const List *const l)
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
 	if(len != 2
-		|| !isenoderef(R[0], C->limeverbs)
-		|| !isallowedtarget(R[1], C->limeverbs))
+		|| !isenode(R[0], C->verbs.system)
+		|| !isvalidtarget(R[1], C->verbs.system))
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
@@ -486,19 +488,14 @@ List *env(Core *const C, Array *const envmarks, const List *const l)
 	}
 
 	// Запоминаем, что для узла R[1] окружение переопределяется узлом R[0]
-	tunerefmap(envmarks, R[1], R[0]);
+	tunerefmap(envdefs, R[1], R[0]);
 
 	// Если Env помечал не системный узел, то его надо оставить в графе.
 	// Если системный, то нужно стереть, так как и системный узел будет
 	// стёрт
 
-	if(nodeverb(R[1], C->limeverbs) != -1)
+	if(!knownverb(R[1], C->verbs.system))
 	{
-		freelist((List *)l);
-		return NULL;
-	}
-	else
-	{
-		return l;
+		tunesetmap(envkeep, N);
 	}
 }
