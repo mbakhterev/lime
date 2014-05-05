@@ -313,6 +313,7 @@ typedef struct
 	MayPass *const maypass;
 	NewTarget *const newtarget;
 	NextPoint *const nextpoint;
+	void *const state;
 	const Ref M;
 } PState;
 
@@ -373,23 +374,14 @@ static int makeone(List *const n, void *const ptr)
 		// или мы находимся не в конце списка имён. В обоих случаях надо
 		// отыскать отображение с подходящим именем или создать новое 
 
-// 		st->current = linkmap(st->U, curr, st->path, n->ref, reffree());
-// 		if(st->current)
-// 		{
-// 			return 0;
-// 		}
-// 
-// 		const Ref m = refkeymap(st->newtarget(st->U, st->current));
-// 		st->current = linkmap(st->U, curr, st->path, n->ref, m);
-// 		assert(st->current == m.u.array);
-
 		const Array *next
 			= linkmap(st->U, curr, st->path, n->ref, reffree());
 		
 		if(!next)
 		{
 			const Ref m
-				= refkeymap(st->newtarget(st->U, st->current));
+				= refkeymap(st->newtarget(
+					st->U, st->current, n->ref, st->state));
 
 			next = linkmap(st->U, curr, st->path, n->ref, m);
 			assert(m.u.array == next);
@@ -418,7 +410,8 @@ Array *makepath(
 	Array *const U,
 	const Ref path,
 	const List *const names, const Ref M,
-	MayPass maypass, NewTarget newtarget, NextPoint nextpoint)
+	MayPass maypass, NewTarget newtarget, NextPoint nextpoint,
+	void *const state)
 {
 	assert(map && map->code == MAP);
 	assert(maypass && newtarget && nextpoint);
@@ -434,6 +427,7 @@ Array *makepath(
 		.M = M,
 		.current = map,
 		.path = path,
+		.state = state
 	};
 
 	return forlist((List *)names, makeone, &st, 0) ? NULL : st.current;

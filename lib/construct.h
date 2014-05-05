@@ -397,7 +397,9 @@ extern unsigned decomatch(const Ref, Array *const U, const unsigned);
 // Вернёт makepath ссылку на последние из заданных списком имён окружений, если
 // map и последнее имя согласованы. В случае несогласованности NULL
 
-typedef Array *NewTarget(Array *const U, const Array *const map);
+typedef Array *NewTarget(
+	Array *const U, const Array *const map, const Ref id, void *const state);
+
 typedef Array *NextPoint(Array *const U, const Array *const map);
 typedef unsigned MayPass(Array *const U, const Array *const map);
 
@@ -405,7 +407,8 @@ extern Array *makepath(
 	Array *const env,
 	Array *const U,
 	const Ref path, const List *const names, const Ref map,
-	MayPass, NewTarget, NextPoint);
+	MayPass, NewTarget, NextPoint,
+	void *const state);
 
 extern Array *stdupstreams(Array *const U);
 extern Array *stdareaupstreams(Array *const U);
@@ -977,8 +980,20 @@ enum
 // сначала указывается список изменяемых объектов, потом Ref-а с узлом, которая
 // не будет изменяться, за ней список неизменяемых объектов
 
+
 extern void doedef(
 	Array *const envdefs, Array *const keep, const Ref, const Core *const);
+
+extern void doenode(
+	Core *const, Array *const marks, const Ref, const unsigned env);
+
+// Вспомогательные функции для работы с окружениями
+
+extern void setenvid(Array *const U, Array *const env, const unsigned id);
+extern Ref envid(Array *const U, const Array *const env);
+
+extern Array *envkeymap(const Array *const E, const Ref id);
+extern Ref envrootpath(const Array *const E, const Ref id);
 
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 

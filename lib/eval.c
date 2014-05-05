@@ -42,6 +42,12 @@ static void initroot(Array *const U, Array *const E)
 	assert(linkmap(U, R,
 		readtoken(U, "ENV"), readtoken(U, "this"), refkeymap(R)) == R);
 	
+	// FIXME: небольшой хак, чтобы не менять интерфейс makepath, но иметь
+	// возможность всегда обращаться к корневому окружению по имени "/"
+
+	assert(linkmap(U, R,
+		readtoken(U, "ENV"), readtoken(U, "/"), refkeymap(R)) == R);
+	
 	DL(rootname, RS(readtoken(U, "/")));
 	const unsigned bid = bindkey(E, rootname);
 	assert(bid == 0);
@@ -49,6 +55,8 @@ static void initroot(Array *const U, Array *const E)
 	Binding *const B = (Binding *)bindingat(E, bid);
 	assert(B->ref.code == FREE);
 	B->ref = refkeymap(R);
+
+	setenvid(U, R, 0);
 }
 
 Core *newcore(
@@ -141,10 +149,10 @@ static List *dogeneric(
 	const Ref, const unsigned env, const List *const inputs,
 	const unsigned mode);
 
-// static unsigned envfornode(
-// 	const Ref N, const Array *const U,
-// 	const unsigned env,
-// 	const Array *const marks, const Array *const envmarks);
+static unsigned envfornode(
+	const Ref N, const Array *const U,
+	const unsigned env,
+	const Array *const marks, const Array *const envmarks);
 
 static int stagetwo(List *const l, void *const ptr)
 {
@@ -155,11 +163,11 @@ static int stagetwo(List *const l, void *const ptr)
 	EState *const E = ptr;
 
 	Core *const C = E->C;
-// 	const Array *const U = C->U;
+	const Array *const U = C->U;
 
 	Array *const area = E->area;
 	Array *const marks = E->marks;
-// 	Array *const envdefs = E->envdefs;
+	Array *const envdefs = E->envdefs;
 	Array *const envkeep = E->envkeep;
 	const unsigned env = E->env;
 	const unsigned mode = E->mode;
@@ -178,11 +186,15 @@ static int stagetwo(List *const l, void *const ptr)
 		E->L = append(E->L, l);
 
 		break;
+	
+	case ENODE:
+		doenode(C, marks, N, env);
+		break;
 
 	default:
 	{
-// FIXME:	const unsigned nenv = envfornode(N, U, env, marks, envdefs);
-		const unsigned nenv = env;
+		const unsigned nenv = envfornode(N, U, env, marks, envdefs);
+// 		const unsigned nenv = env;
 		List *const l
 			= dogeneric(C, area, marks, N, nenv, inputs, mode);
 		E->L = append(E->L, l);
@@ -194,31 +206,31 @@ static int stagetwo(List *const l, void *const ptr)
 	return 0;
 }
 
-// static unsigned envfornode(
-// 	const Ref N,
-// 	const Array *const U,
-// 	const unsigned env,
-// 	const Array *const marks, const Array *const envdefs)
-// {
-// 	const Ref enode = refmap(envdefs, N);
-// 	if(enode.code == FREE)
-// 	{
-// 		return env;
-// 	}
-// 
-// 	assert(isnode(enode));
-// 
-// 	const Ref eref = refmap(marks, enode);
-// 	if(eref.code == FREE)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": environment isn't evaluated", nodename(U, N));
-// 		return -1;
-// 	}
-// 
-// 	assert(eref.code == ENV);
-// 	return eref.u.number;
-// }
+static unsigned envfornode(
+	const Ref N,
+	const Array *const U,
+	const unsigned env,
+	const Array *const marks, const Array *const envdefs)
+{
+	const Ref enode = refmap(envdefs, N);
+	if(enode.code == FREE)
+	{
+		return env;
+	}
+
+	assert(isnode(enode));
+
+	const Ref eref = refmap(marks, enode);
+	if(eref.code == FREE)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": environment isn't evaluated", nodename(U, N));
+		return -1;
+	}
+
+	assert(eref.code == ENV);
+	return eref.u.number;
+}
 
 static List *dogeneric(
 	Core *const C, Array *const area,

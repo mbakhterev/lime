@@ -63,6 +63,8 @@ static List *newlist(const Ref r)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+	case SYM:
+	case ENV:
 	case NODE:
 	case PTR:
 	case LIST:
