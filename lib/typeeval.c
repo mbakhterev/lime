@@ -153,15 +153,14 @@ static unsigned getexisting(Array *const env, Array *const U, const Ref key)
 		free(strpath);
 	}
 
-	const Ref K = decorate(markext(key), U, TYPE); 
+	const Ref K = decorate(markext(key), U, DTYPE); 
 	const Binding *const b = pathlookup(l, K, NULL);
-
 	freeref(K);
+
 	freelist(l);
 
-	if(b)
+	if(b && b->ref.code == TYPE)
 	{
-		assert(b->ref.code == TYPE);
 		return b->ref.u.number;
 	}
 
@@ -288,7 +287,7 @@ void dotenv(
 	DBG(DBGTENV, "len = %u", len);
 
 	const Ref key = len > 0 ? simplerewrite(R[0], marks) : reffree();
-	const Ref T = len == 2 ? refmap(marks, R[1]) : reffree();
+	const Ref T = len > 1 ? refmap(marks, R[1]) : reffree();
 
 	if(len < 1 || 2 < len
 		|| !isbasickey(key)
@@ -303,6 +302,9 @@ void dotenv(
 
 	Array *const env = envkeymap(E, refenv(envid));
 	DBG(DBGTENV, "env = %p", (void *)env);
+
+	// Считаем, что в случае успешного завершения процедур key будет
+	// оприходован, и его можно будет не освобождать
 
 	const unsigned typeid
 		= len == 1 ? getexisting(env, U, key)
@@ -325,6 +327,7 @@ void dotenv(
 		return;
 	}
 
+	freeref(key);
 	tunerefmap(marks, N, reftype(typeid));
 }
 

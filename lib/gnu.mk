@@ -19,15 +19,15 @@ lmsrc = \
 	area.c		\
 	enveval.c	\
 	typeeval.c	\
+	symeval.c	\
 	eval.c
 
-# 	symeval.c	\
 # 	ntheval.c	\
-# 	areaeval.c	\
-# 	exeqeval.c	\
-# 	formeval.c	\
-# 	leval.c		\
-# 	progress.c	\
+	areaeval.c	\
+	exeqeval.c	\
+	formeval.c	\
+	leval.c		\
+	progress.c	\
 
 lminc = \
 	$(I)/lime/construct.h	\

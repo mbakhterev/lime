@@ -42,6 +42,10 @@ int main(int argc, char *argv[])
 	dumptable(stdout, 0, U, C->T);
 	fputc('\n', stdout);
 
+	printf("symbols ");
+	dumptable(stdout, 0, U, C->S);
+	fputc('\n', stdout);
+
 	freecore(C);
 	freekeymap((Array *)tomark);
 	freekeymap(envmarks);

@@ -1007,6 +1007,11 @@ extern void dotdef(
 	Array *const T,
 	const Ref, const Array *const U, const Array *const marks);
 
+// Обработка символов
+
+extern void dosnode(
+	Core *const, Array *const marks, const Ref, const unsigned env);
+
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 
 extern Ref eval(

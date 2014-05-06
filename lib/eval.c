@@ -198,6 +198,10 @@ static int stagetwo(List *const l, void *const ptr)
 	case TENV:
 		dotenv(C, marks, N, envfornode(N, U, env, marks, envdefs));
 		break;
+	
+	case SNODE:
+		dosnode(C, marks, N, envfornode(N, U, env, marks, envdefs));
+		break;
 
 	default:
 	{

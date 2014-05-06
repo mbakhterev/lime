@@ -1,6 +1,6 @@
 (
 	.A (.B (.C ()); .D ());
-	.EDef (.E (("A")); .S ());
+	.EDef (.E (("A")); .S ("Y"; .T ("A")));
 	.EDef (.E (("B")); .Q ());
 
 	.E (("A"));
@@ -10,7 +10,7 @@
 	.EDef (.E (('0.1."/"; "A")); .LB
 	(
 		.A (.B (.C ()); .D ());
-		.EDef (.E (("B")); .S ());
+		.EDef (.E (("B")); .S ("X"; .T ("I"; 4)));
 		.EDef (
 			.E (("C");
 				.E (("B")));
@@ -31,6 +31,8 @@
 		.E (("A"; "this"); .E (("A")));
 		.E (("A"; "parent"); .E (("this")));
 
+		.X (.S ("X"; .T ("I"; 4)));
+
 		.EDef (e; .TEnv ("F"; .T ("F"; 4)));
 		.EDef (e; .LB
 		(
@@ -43,9 +45,10 @@
 					(.T ("I"; 4); .T ("F"; 4));
 					.E (('0.1."/")));
 				(("hello"; .T ("I"; 4)); ("world"; .T ("F"; 4)))			)
-		))
+		));
 
-// 		.TDef (.TEnv (("struct"; "s1")); ("hello"; "universe"))
+// 		.TDef (.TEnv (("struct"; "s1")); ("hello"; "universe"));
 
+		.X (.S ("X"))
 	))
 )
