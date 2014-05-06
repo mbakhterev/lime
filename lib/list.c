@@ -181,6 +181,8 @@ static int forkitem(List *const k, void *const ptr)
 	case NUMBER:
 	case ATOM:
 	case TYPE:
+	case ENV:
+	case SYM:
 		assert(!k->ref.external);
 		break;
 	

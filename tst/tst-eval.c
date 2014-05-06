@@ -30,8 +30,17 @@ int main(int argc, char *argv[])
 	fputc('\n', stdout);
 	fflush(stdout);
 
+	printf("envmarks ");
 	dumpkeymap(1, stdout, 0, U, envmarks, NULL);
+	fputc('\n', stdout);
+
+	printf("environments ");
 	dumptable(stdout, 0, U, C->E);
+	fputc('\n', stdout);
+
+	printf("types ");
+	dumptable(stdout, 0, U, C->T);
+	fputc('\n', stdout);
 
 	freecore(C);
 	freekeymap((Array *)tomark);

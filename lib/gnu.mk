@@ -18,9 +18,9 @@ lmsrc = \
 	form.c		\
 	area.c		\
 	enveval.c	\
+	typeeval.c	\
 	eval.c
 
-# 	typeeval.c	\
 # 	symeval.c	\
 # 	ntheval.c	\
 # 	areaeval.c	\

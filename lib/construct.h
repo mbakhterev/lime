@@ -34,7 +34,7 @@ enum
 	// LIST: списки из разнообразных Ref-ов. Могут содержать Ref-ы на другие
 	// списки. Поэтому используются для представления S-выражений.
 
-	NUMBER, ATOM, TYPE, SYM, ENV, NODE, PTR, LIST,
+	NUMBER, ATOM, TYPE, ENV, SYM, NODE, PTR, LIST,
 
 	// MAP: метка для обозначения окружений 
 
@@ -994,6 +994,11 @@ extern Ref envid(Array *const U, const Array *const env);
 
 extern Array *envkeymap(const Array *const E, const Ref id);
 extern Ref envrootpath(const Array *const E, const Ref id);
+
+// Обработка типов
+
+extern void dotnode(
+	const Array *const U, Array *const T, Array *const marks, const Ref);
 
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 

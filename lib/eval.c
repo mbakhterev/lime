@@ -25,11 +25,6 @@ static const char *const limeverbs[] =
 	NULL
 };
 
-// static const char *const rvgeneric[] = 
-// {
-// 	"L", "FIn", "Nth", "T", "TEnv", "E", "S", NULL
-// };
-
 static const char *const escape[] =
 {
 	"F", NULL
@@ -164,6 +159,7 @@ static int stagetwo(List *const l, void *const ptr)
 
 	Core *const C = E->C;
 	const Array *const U = C->U;
+	Array *const types = C->T;
 
 	Array *const area = E->area;
 	Array *const marks = E->marks;
@@ -173,7 +169,7 @@ static int stagetwo(List *const l, void *const ptr)
 	const unsigned mode = E->mode;
 	const List *const inputs = E->inputs;
 
-	switch(nodeverb(l->ref, C->verbs.system))
+	switch(nodeverb(N, C->verbs.system))
 	{
 	case EDEF:
 		if(!setmap(envkeep, N))
@@ -190,11 +186,20 @@ static int stagetwo(List *const l, void *const ptr)
 	case ENODE:
 		doenode(C, marks, N, env);
 		break;
+	
+	case TNODE:
+		dotnode(U, types, marks, N);
+		break;
+	
+	case TDEF:
+		break;
+	
+	case TENV:
+		break;
 
 	default:
 	{
 		const unsigned nenv = envfornode(N, U, env, marks, envdefs);
-// 		const unsigned nenv = env;
 		List *const l
 			= dogeneric(C, area, marks, N, nenv, inputs, mode);
 		E->L = append(E->L, l);

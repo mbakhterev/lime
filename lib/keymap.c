@@ -69,7 +69,7 @@ unsigned issignaturekey(const Ref r)
 
 unsigned istypekey(const Ref r)
 {
-	return iskey(r, MAP);
+	return iskey(r, ENV);
 }
 
 static int cmplists(const List *const, const List *const);
@@ -96,7 +96,8 @@ static int cmpkeys(const Ref k, const Ref l)
 		return r;
 	}
 
-	if(k.code <= TYPE)
+// 	if(k.code <= TYPE)
+	if(k.code <= SYM)
 	{
 		return cmpui(k.u.number, l.u.number);
 	}
