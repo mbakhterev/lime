@@ -1000,6 +1000,9 @@ extern Ref envrootpath(const Array *const E, const Ref id);
 extern void dotnode(
 	const Array *const U, Array *const T, Array *const marks, const Ref);
 
+extern void dotenv(
+	Core *const C, Array *const marks, const Ref, const unsigned env);
+
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 
 extern Ref eval(

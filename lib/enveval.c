@@ -512,6 +512,7 @@ static Array *newtarget(
 void doenode(Core *const C, Array *const marks, const Ref N, const unsigned env)
 {
 	Array *const U = C->U;
+	Array *const E = C->E;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
@@ -525,8 +526,9 @@ void doenode(Core *const C, Array *const marks, const Ref N, const unsigned env)
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
-	if(len < 1 || len > 2
-		|| (len == 2 && !isenode(R[1], C->verbs.system)))
+	const Ref t = len == 2 ? refmap(marks, R[1]): reffree();
+
+	if(len < 1 || len > 2 || (len == 2 && t.code != ENV))
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
@@ -544,17 +546,15 @@ void doenode(Core *const C, Array *const marks, const Ref N, const unsigned env)
 		return;
 	}
 
-	const Ref t = len == 2 ? refmap(marks, R[1]): reffree();
 	const Ref tmap
-		= t.code == ENV ? refkeymap(envkeymap(C->E, t)) : reffree();
+		= t.code == ENV ? refkeymap(envkeymap(E, t)) : reffree();
 
 	if(len == 2 && tmap.code == FREE)
 	{
 		freeref(K);
 
 		item = nodeline(N);
-		ERR("node \"%s\": environments isn't evaluated",
-			nodename(U, N));
+		ERR("node \"%s\": environment isn't evaluated", nodename(U, N));
 		return;
 	}
 
@@ -562,14 +562,28 @@ void doenode(Core *const C, Array *const marks, const Ref N, const unsigned env)
 	// (Ref.code == FREE) в случае его отсутсвия). Нужно раздобыть ещё
 	// текущий root. Все проверки внутри envkeymap
 
-	Array *const root = envkeymap(C->E, refenv(env));
+	Array *const root = envkeymap(E, refenv(env));
 
 	// Остаётся запустить makepath
 
 	const Array *const target
 		= makepath(
 			root, U, readtoken(U, "ENV"), K.u.list, tmap,
-			maypass, newtarget, nextpoint, C->E);
+			maypass, newtarget, nextpoint, E);
+
+	if(!target)
+	{
+		char *const kstr = strref(U, NULL, K);
+		freeref(K);
+
+		ERR("node \"%s\": can't %s environment with key: %s",
+			nodename(U, N),
+			len == 1 ? "trace" : "bind",
+			kstr);
+
+		free(kstr);
+		return;
+	}
 
 	assert(tmap.code == FREE || target == tmap.u.array);
 

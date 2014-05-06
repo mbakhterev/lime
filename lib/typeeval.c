@@ -3,15 +3,15 @@
 
 #include <assert.h>
 
-// #define DBGNMT 1
-// #define DBGTENV 2
-// #define DBGGE 4
-// 
-// // #define DBGFLAGS (DBGNMT)
-// // #define DBGFLAGS (DBGTENV | DBGGE)
-// 
+#define DBGNMT 1
+#define DBGTENV 2
+#define DBGGE 4
+
+// #define DBGFLAGS (DBGNMT)
+#define DBGFLAGS (DBGTENV | DBGGE)
+
 // #define DBGFLAGS 0
-// 
+
 // typedef struct
 // {
 // 	Array *const U;
@@ -135,62 +135,62 @@ void dotnode(
 
 	tunerefmap(marks, N, reftype(typeid));
 }
-// 
-// static unsigned getexisting(Array *const env, Array *const U, const Ref key)
-// {
-// 	DBG(DBGGE, "%s", "entering");
-// 
-// 	List *const l
-// 		= tracepath(
-// 			env, U,
-// 			readpack(U, strpack(0, "ENV")),
-// 			readpack(U, strpack(0, "parent")));
-// 	
-// 	if(DBGFLAGS & DBGGE)
-// 	{
-// 		char *const strpath = strlist(U, l);
-// 		DBG(DBGGE, "path trace = %s", strpath);
-// 		free(strpath);
-// 	}
-// 
-// 	const Ref K = decorate(markext(key), U, TYPE); 
-// 	const Binding *const b = pathlookup(l, K, NULL);
-// 
-// 	freeref(K);
-// 	freelist(l);
-// 
-// 	if(b)
-// 	{
-// 		assert(b->ref.code == TYPE);
-// 		return b->ref.u.number;
-// 	}
-// 
-// 	return -1;
-// }
-// 
-// static unsigned setnew(
-// 	Array *const env, Array *const U, const Ref key, const Ref typeref)
-// {
-// 	if(typeref.code != TYPE)
-// 	{
-// 		return -1;
-// 	}
-// 
-// 	const Ref K = decorate(forkref(key, NULL), U, TYPE);
-// 	Binding *const b = (Binding *)bindingat(env, mapreadin(env, K));
-// 
-// 	if(!b)
-// 	{
-// 		freeref(K);
-// 		return -1;
-// 	}
-// 
-// 	assert(b->ref.code == FREE);
-// 
-// 	b->ref = typeref;
-// 	return typeref.u.number;
-// }
-// 
+
+static unsigned getexisting(Array *const env, Array *const U, const Ref key)
+{
+	DBG(DBGGE, "%s", "entering");
+
+	List *const l
+		= tracepath(
+			env, U,
+			readpack(U, strpack(0, "ENV")),
+			readpack(U, strpack(0, "parent")));
+	
+	if(DBGFLAGS & DBGGE)
+	{
+		char *const strpath = strlist(U, l);
+		DBG(DBGGE, "path trace = %s", strpath);
+		free(strpath);
+	}
+
+	const Ref K = decorate(markext(key), U, TYPE); 
+	const Binding *const b = pathlookup(l, K, NULL);
+
+	freeref(K);
+	freelist(l);
+
+	if(b)
+	{
+		assert(b->ref.code == TYPE);
+		return b->ref.u.number;
+	}
+
+	return -1;
+}
+
+static unsigned setnew(
+	Array *const env, Array *const U, const Ref key, const Ref typeref)
+{
+	if(typeref.code != TYPE)
+	{
+		return -1;
+	}
+
+	const Ref K = decorate(forkref(key, NULL), U, TYPE);
+	Binding *const b = (Binding *)bindingat(env, mapreadin(env, K));
+
+	if(!b)
+	{
+		freeref(K);
+		return -1;
+	}
+
+	assert(b->ref.code == FREE);
+
+	b->ref = typeref;
+	return typeref.u.number;
+}
+
 // static void tenv(const Ref r, EState *const E)
 // {
 // 	const Ref attr = nodeattribute(r);
@@ -266,6 +266,69 @@ void dotnode(
 // 	tunerefmap(E->typemarks, r, reftype(typeid));
 // }
 // 
+
+void dotenv(
+	Core *const C, Array *const marks, const Ref N, const unsigned envid)
+{
+	Array *const U = C->U;
+	Array *const E = C->E;
+
+	const Ref r = nodeattribute(N);
+	if(r.code != LIST)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting attribute list", nodename(U, N));
+		return;
+	}
+
+	const unsigned len = listlen(r.u.list);
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+
+	DBG(DBGTENV, "len = %u", len);
+
+	const Ref key = len > 0 ? simplerewrite(R[0], marks) : reffree();
+	const Ref T = len == 2 ? refmap(marks, R[1]) : reffree();
+
+	if(len < 1 || 2 < len
+		|| !isbasickey(key)
+		|| (len == 2 && T.code != TYPE))
+	{
+		freeref(key);
+
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+		return;
+	}
+
+	Array *const env = envkeymap(E, refenv(envid));
+	DBG(DBGTENV, "env = %p", (void *)env);
+
+	const unsigned typeid
+		= len == 1 ? getexisting(env, U, key)
+		: len == 2 ? setnew(env, U, key, T)
+		: -1;
+	
+	if(typeid == -1)
+	{
+		char *const strkey = strref(U, NULL, key);
+		freeref(key);
+
+		item = nodeline(N);
+		ERR("node \"%s\": can't %s type for key: %s",
+			nodename(U, N),
+			len == 1 ? "locate" : "allocate",
+			strkey);
+
+		free(strkey);
+
+		return;
+	}
+
+	tunerefmap(marks, N, reftype(typeid));
+}
+
+
 // static void tdef(const Ref N, EState *const E)
 // {
 // 	const Ref r = nodeattribute(N);

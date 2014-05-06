@@ -195,6 +195,7 @@ static int stagetwo(List *const l, void *const ptr)
 		break;
 	
 	case TENV:
+		dotenv(C, marks, N, envfornode(N, U, env, marks, envdefs));
 		break;
 
 	default:
