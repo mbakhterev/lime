@@ -692,7 +692,7 @@ extern void typeeval(
 	Array *const typemarks,
 	const Ref dag, const Array *const escape, const Array *const envmarks);
 
-extern const Binding *typeat(const Array *const, const unsigned);
+extern const Binding *typeat(const Array *const, const Ref);
 extern unsigned typelookup(const Array *const, const Ref key);
 
 // FIXME:
@@ -1002,6 +1002,10 @@ extern void dotnode(
 
 extern void dotenv(
 	Core *const C, Array *const marks, const Ref, const unsigned env);
+
+extern void dotdef(
+	Array *const T,
+	const Ref, const Array *const U, const Array *const marks);
 
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 

@@ -265,12 +265,22 @@ int simplerewriteone(List *const l, void *const ptr)
 	SRState *const S = ptr;
 
 	const Ref r = simplerewrite(l->ref, S->map);
-	if(r.code != FREE)
+	if(r.code == FREE)
 	{
-		S->L = append(S->L, RL(r));
+		return !0;
+	}
+
+	if(l->ref.code == NODE && r.code == LIST)
+	{
+		// Если исходная ссылка была ссылкой на узел, а результат
+		// является ссылкой на список, то приписываем этот список к
+		// результату
+
+		S->L = append(S->L, forklist(r.u.list));
 		return 0;
 	}
 
-	return !0;
+	S->L = append(S->L, RL(r));
+	return 0;
 }
 

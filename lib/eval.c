@@ -192,6 +192,7 @@ static int stagetwo(List *const l, void *const ptr)
 		break;
 	
 	case TDEF:
+		dotdef(types, N, U, marks);
 		break;
 	
 	case TENV:

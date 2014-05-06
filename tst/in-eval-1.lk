@@ -18,9 +18,10 @@
 
 		.T ("I"; 4);
 		.T ("F"; 4);
-		.T ("struct"; (.T ("I"; 4); .T ("F"; 4)); .E (('0.1."/")));
+		.T s1 ("struct"; (.T ("I"; 4); .T ("F"; 4)); .E (('0.1."/")));
 		.T ("struct"; (.T ("I"; 4); .T ("F"; 4)); .E (('0.1."/"; "A"; "C")));
 
+		.TEnv (("struct"; "s1"); s1);
 		.TEnv ("A"; .T ("I"; 4));
 // 		.TEnv ("A"; .T ("I"; 4));
 
@@ -34,8 +35,17 @@
 		.EDef (e; .LB
 		(
 			.X (.TEnv ("F"));
-			.Y (.TEnv ("A"))
+			.Y (.TEnv ("A"));
+
+			.TDef
+			(
+				.T ("struct";
+					(.T ("I"; 4); .T ("F"; 4));
+					.E (('0.1."/")));
+				(("hello"; .T ("I"; 4)); ("world"; .T ("F"; 4)))			)
 		))
+
+// 		.TDef (.TEnv (("struct"; "s1")); ("hello"; "universe"))
 
 	))
 )

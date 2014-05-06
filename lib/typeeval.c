@@ -8,9 +8,9 @@
 #define DBGGE 4
 
 // #define DBGFLAGS (DBGNMT)
-#define DBGFLAGS (DBGTENV | DBGGE)
+// #define DBGFLAGS (DBGTENV | DBGGE)
 
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 // typedef struct
 // {
@@ -328,7 +328,6 @@ void dotenv(
 	tunerefmap(marks, N, reftype(typeid));
 }
 
-
 // static void tdef(const Ref N, EState *const E)
 // {
 // 	const Ref r = nodeattribute(N);
@@ -380,6 +379,51 @@ void dotenv(
 // 	b->ref = def;
 // }
 // 
+
+void dotdef(
+	Array *const T,
+	const Ref N, const Array *const U, const Array *const marks)
+{
+// 	Array *const U = C->U;
+// 	Array *const E = C->E;
+
+	const Ref r = nodeattribute(N);
+	if(r.code != LIST)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting attribute list", nodename(U, N));
+		return;
+	}
+
+	const unsigned len = listlen(r.u.list);
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+
+	const Ref type = len > 0 ? refmap(marks, R[0]) : reffree();
+	const Ref def = len > 1 ? simplerewrite(R[1], marks) : reffree();
+
+	if(len != 2 || type.code != TYPE || !issignaturekey(def))
+	{
+		freeref(def);
+
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+		return;
+	}
+
+	Binding *const b = (Binding *)typeat(T, type);
+	if(b->ref.code != FREE)
+	{
+		freeref(def);
+
+		item = nodeline(N);
+		ERR("node \"%s\": can't redefine type", nodename(U, N));
+		return;
+	}
+
+	b->ref = def;
+}
+
 // static void nominatenode(const Ref r, EState *const st)
 // {
 // 	switch(nodeverb(r, st->verbs))
@@ -479,9 +523,9 @@ void dotenv(
 // 	freekeymap((Array *)st.envverbs);
 // 	freekeymap((Array *)st.verbs);
 // }
-// 
-// const Binding *typeat(const Array *const types, const unsigned n)
-// {
-// 	assert(n < types->count);
-// 	return (Binding *)types->u.data + n;
-// }
+
+const Binding *typeat(const Array *const types, const Ref id)
+{
+	assert(id.code == TYPE && id.u.number < types->count);
+	return (Binding *)types->u.data + id.u.number;
+}
