@@ -22,10 +22,10 @@ lmsrc = \
 	symeval.c	\
 	leval.c		\
 	ntheval.c	\
+	exeqeval.c	\
 	eval.c
 
 # 	areaeval.c	\
-	exeqeval.c	\
 	formeval.c	\
 	progress.c	\
 

@@ -18,6 +18,9 @@ static const char *const limeverbs[] =
 	[ENODE]	= "E",
 	[EDEF]	= "EDef",
 	[SNODE]	= "S",
+	[EX]	= "Ex",
+	[EQ]	= "Eq",
+	[UNIQ]	= "Uniq",
 	[RNODE]	= "R",
 	[RIP]	= "Rip",
 	[DONE]	= "Done",
@@ -168,6 +171,7 @@ static int stagetwo(List *const l, void *const ptr)
 	Core *const C = E->C;
 	const Array *const U = C->U;
 	Array *const types = C->T;
+	Array *const environments = C->E;
 
 	Array *const area = E->area;
 	Array *const marks = E->marks;
@@ -229,16 +233,26 @@ static int stagetwo(List *const l, void *const ptr)
 		break;
 	
 	case NTH:
-		if(mode == EMGEN)
-		{
-			ERR("node \"%s\": can't eval in %s mode",
-				nodename(U, N),
-				modenames[mode]);
-
-			return !0;
-		}
+// 		if(mode == EMGEN)
+// 		{
+// 			ERR("node \"%s\": can't eval in %s mode",
+// 				nodename(U, N),
+// 				modenames[mode]);
+// 
+// 			return !0;
+// 		}
 
 		donth(marks, N, C);
+		break;
+	
+	case UNIQ:
+		douniq(C->U, marks, N,
+			environments, envfornode(N, U, env, marks, envdefs));
+
+		break;
+	
+	case EX:
+		doex(C, marks, N, envfornode(N, U, env, marks, envdefs));
 		break;
 
 	default:

@@ -939,31 +939,6 @@ extern Core *newcore(
 
 extern void freecore(Core *const);
 
-// #define SUCC(x) ((x) + 1)
-// 
-// #define LNODE	0
-// #define FIN	SUCC(LNODE) 
-// #define NTH	SUCC(FIN)
-// 
-// #define FNODE	SUCC(NTH)
-// #define FENV	SUCC(FNODE)
-// #define FOUT	SUCC(FENV)
-// 
-// #define TNODE	SUCC(FOUT)
-// #define TENV	SUCC(TNODE)
-// 
-// #define ENODE	SUCC(TENV)
-// #define ENV	SUCC(ENODE)
-// 
-// #define SNODE	SUCC(ENV)
-// 
-// #define RNODE	SUCC(SNODE)
-// #define RIP	SUCC(RNODE)
-// #define DONE	SUCC(RIP)
-// #define GO	SUCC(DONE)
-// 
-// #undef SUCC
-
 enum
 {
 	LNODE = 0, FIN, NTH,
@@ -971,6 +946,7 @@ enum
 	TNODE, TENV, TDEF,
 	ENODE, EDEF,
 	SNODE,
+	EX, EQ, UNIQ,
 	RNODE, RIP, DONE, GO
 };
 
@@ -1022,6 +998,13 @@ extern void dofin(
 	const Ref, const Array *const U, const List *const inputs);
 
 extern void donth(Array *const marks, const Ref, const Core *const);
+
+extern void douniq(
+	Array *const U, Array *const marks,
+	const Ref, const Array *const environments, const unsigned envnum);
+
+extern void doex(
+	Core *const, Array *const marks, const Ref, const unsigned envnum);
 
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 

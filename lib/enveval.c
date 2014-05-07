@@ -451,6 +451,7 @@ static unsigned isvalidtarget(const Ref N, const Array *const limeverbs)
 	case SNODE:
 	case TENV:
 	case FENV:
+	case UNIQ:
 		return !0;
 	
 	default:

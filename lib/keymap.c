@@ -230,6 +230,7 @@ Ref decoatom(Array *const U, const unsigned code)
 	case DOUT:
 	case DAREA:
 	case DUTIL:
+	case DUNIQ:
 		return readpack(U, strpack(0, codetostr(code)));
 
 	default:

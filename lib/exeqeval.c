@@ -3,88 +3,88 @@
 
 #include <assert.h>
 
-#define EX	0
-#define EQ	1
-#define UNIQ	2
-#define TENV	3
-#define FENV	4
-#define SNODE	5
-
-static const char *const verbs[] =
-{
-	[EX] = "Ex",
-	[EQ] = "Eq",
-	[UNIQ] = "Uniq",
-	[TENV] = "TEnv",
-	[FENV] = "FEnv",
-	[SNODE] = "S",
-	NULL
-};
-
-typedef struct
-{
-	Array *const U;
-	const Array *const envmarks;
-	const Array *const escape;
-
-	Array *const marks;
-	const Array *const verbs;
-} EState;
-
-static void eval(const Ref, EState *const);
-
-static int evalone(List *const l, void *const ptr)
-{
-	assert(l);
-	assert(ptr);
-	eval(l->ref, ptr);
-	return 0;
-}
-
-static void exists(const Ref, EState *const);
-static void compare(const Ref, EState *const);
-static void makeuniq(const Ref, EState *const);
-
-static void eval(const Ref N, EState *const E)
-{
-	switch(N.code)
-	{
-	// Попробуем воспользоваться разделением на LIST и DAG
-	case NUMBER:
-	case ATOM:
-	case TYPE:
-	case LIST:
-		return;
-	
-	case DAG:
-		forlist(N.u.list, evalone, E, 0);
-		return;
-
-	case NODE:
-		assert(!N.external);
-
-		switch(nodeverb(N, E->verbs))
-		{
-		case EX:
-			exists(N, E);
-			return;
-
-		case EQ:
-			compare(N, E);
-			return;
-
-		case UNIQ:
-			makeuniq(N, E);
-			return;
-
-		default:
-			if(!knownverb(N, E->escape))
-			{
-				eval(nodeattribute(N), E);
-			}
-		}
-	}
-}
+// #define EX	0
+// #define EQ	1
+// #define UNIQ	2
+// #define TENV	3
+// #define FENV	4
+// #define SNODE	5
+// 
+// static const char *const verbs[] =
+// {
+// 	[EX] = "Ex",
+// 	[EQ] = "Eq",
+// 	[UNIQ] = "Uniq",
+// 	[TENV] = "TEnv",
+// 	[FENV] = "FEnv",
+// 	[SNODE] = "S",
+// 	NULL
+// };
+// 
+// typedef struct
+// {
+// 	Array *const U;
+// 	const Array *const envmarks;
+// 	const Array *const escape;
+// 
+// 	Array *const marks;
+// 	const Array *const verbs;
+// } EState;
+// 
+// static void eval(const Ref, EState *const);
+// 
+// static int evalone(List *const l, void *const ptr)
+// {
+// 	assert(l);
+// 	assert(ptr);
+// 	eval(l->ref, ptr);
+// 	return 0;
+// }
+// 
+// static void exists(const Ref, EState *const);
+// static void compare(const Ref, EState *const);
+// static void makeuniq(const Ref, EState *const);
+// 
+// static void eval(const Ref N, EState *const E)
+// {
+// 	switch(N.code)
+// 	{
+// 	// Попробуем воспользоваться разделением на LIST и DAG
+// 	case NUMBER:
+// 	case ATOM:
+// 	case TYPE:
+// 	case LIST:
+// 		return;
+// 	
+// 	case DAG:
+// 		forlist(N.u.list, evalone, E, 0);
+// 		return;
+// 
+// 	case NODE:
+// 		assert(!N.external);
+// 
+// 		switch(nodeverb(N, E->verbs))
+// 		{
+// 		case EX:
+// 			exists(N, E);
+// 			return;
+// 
+// 		case EQ:
+// 			compare(N, E);
+// 			return;
+// 
+// 		case UNIQ:
+// 			makeuniq(N, E);
+// 			return;
+// 
+// 		default:
+// 			if(!knownverb(N, E->escape))
+// 			{
+// 				eval(nodeattribute(N), E);
+// 			}
+// 		}
+// 	}
+// }
 
 static Ref searchspace(const Ref r, const Array *const V, Array *const U)
 {
@@ -125,12 +125,63 @@ static Ref decodesearch(
 	return readtoken(U, "SHADOW");
 }
 
-void exists(const Ref N, EState *const st)
+// void exists(const Ref N, EState *const st)
+// {
+// 	Array *const U = st->U;
+// 	const Array *const V = st->verbs;
+// // 	const Array *const E = st->env;
+// 	Array *const marks = st->marks;
+// 
+// 	const Ref r = nodeattribute(N);
+// 	if(r.code != LIST)
+// 	{
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": expecting attribute list", nodename(U, N));
+// 		return;
+// 	}
+// 
+// 	const unsigned len = listlen(r.u.list);
+// 	const Ref R[len];
+// 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+// 
+// 	const Ref space = len >= 1 ? searchspace(R[0], V, U) : reffree();
+// 
+// 	if(len != 2 || space.code == FREE || !isbasickey(R[1]))
+// 	{
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+// 		return;
+// 	}
+// 
+// 	const Array *const E = envmap(st->envmarks, N);
+// 	if(!E)
+// 	{
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": no environment evaluation", nodename(U, N));
+// 		return;
+// 	}
+// 
+// 	const List *const p
+// 		= tracepath(E, U, readtoken(U, "ENV"), readtoken(U, "parent"));
+// 	
+// 	DL(key, RS(space, markext(R[1])));
+// 	unsigned depth;
+// 	const Binding *const b = pathlookup(p, key, &depth);
+// 	freelist((List *)p);
+// 
+// 	tunerefmap(marks, N, decodesearch(U, b, depth));
+// }
+// 
+// void compare(const Ref N, EState *const st)
+// {
+// }
+
+void doex(
+	Core *const C, Array *const marks, const Ref N, const unsigned envnum)
 {
-	Array *const U = st->U;
-	const Array *const V = st->verbs;
-// 	const Array *const E = st->env;
-	Array *const marks = st->marks;
+	Array *const U = C->U;
+	const Array *const E = C->E;
+	const Array *const V = C->verbs.system;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
@@ -144,72 +195,93 @@ void exists(const Ref N, EState *const st)
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
-	const Ref space = len >= 1 ? searchspace(R[0], V, U) : reffree();
+	const Ref space = len > 0 ? searchspace(R[0], V, U) : reffree();
+	const Ref name = len > 1 ? simplerewrite(R[1], marks) : reffree();
 
-	if(len != 2 || space.code == FREE || !isbasickey(R[1]))
+	if(len != 2 || space.code != ATOM || !isbasickey(name))
 	{
+		freeref(name);
+
 		item = nodeline(N);
 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
 		return;
 	}
 
-	const Array *const E = envmap(st->envmarks, N);
-	if(!E)
-	{
-		item = nodeline(N);
-		ERR("node \"%s\": no environment evaluation", nodename(U, N));
-		return;
-	}
-
-	const List *const p
-		= tracepath(E, U, readtoken(U, "ENV"), readtoken(U, "parent"));
+	const List *const p 
+		= tracepath(envkeymap(E, refenv(envnum)), U,
+			readtoken(U, "ENV"), readtoken(U, "parent"));
 	
-	DL(key, RS(space, markext(R[1])));
+	DL(key, RS(space, markext(name)));
 	unsigned depth;
 	const Binding *const b = pathlookup(p, key, &depth);
 	freelist((List *)p);
+	freeref(name);
 
 	tunerefmap(marks, N, decodesearch(U, b, depth));
 }
 
-void compare(const Ref N, EState *const st)
-{
-}
-
 static Ref uniqatom(Array *const U, Array *const E, const Ref atom);
 
-void makeuniq(const Ref N, EState *const st)
+// void makeuniq(const Ref N, EState *const st)
+// {
+// 	const Ref r = nodeattribute(N);
+// 	const unsigned line = nodeline(N);
+// 	const unsigned char *const name = nodename(st->U, N);
+// 
+// 	if(r.code != LIST)
+// 	{
+// 		item = line;
+// 		ERR("node \"%s\": expecting attribute list", name);
+// 		return;
+// 	}
+// 
+// 	const unsigned len = listlen(r.u.list);
+// 	const Ref R[len];
+// 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+// 	if(len != 1 || R[0].code != ATOM)
+// 	{
+// 		item = line;
+// 		ERR("node \"%s\": wrong attribute structure", name);
+// 		return;
+// 	}
+// 
+// 	Array *const E = envmap(st->envmarks, N);
+// 	if(!E)
+// 	{
+// 		item = line;
+// 		ERR("node \"%s\": no environment mark", name);
+// 		return;
+// 	}
+// 	
+// 	tunerefmap(st->marks, N, uniqatom(st->U, E, R[0]));
+// }
+
+void douniq(
+	Array *const U, Array *const marks,
+	const Ref N, const Array *const E, const unsigned envnum)
 {
 	const Ref r = nodeattribute(N);
-	const unsigned line = nodeline(N);
-	const unsigned char *const name = nodename(st->U, N);
-
 	if(r.code != LIST)
 	{
-		item = line;
-		ERR("node \"%s\": expecting attribute list", name);
+		item = nodeline(N);
+		ERR("node \"%s\": expecting attribute list", nodename(U, N));
 		return;
 	}
 
 	const unsigned len = listlen(r.u.list);
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+
 	if(len != 1 || R[0].code != ATOM)
 	{
-		item = line;
-		ERR("node \"%s\": wrong attribute structure", name);
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
 		return;
 	}
 
-	Array *const E = envmap(st->envmarks, N);
-	if(!E)
-	{
-		item = line;
-		ERR("node \"%s\": no environment mark", name);
-		return;
-	}
-	
-	tunerefmap(st->marks, N, uniqatom(st->U, E, R[0]));
+	Array *const env = envkeymap(E, refenv(envnum));
+
+	tunerefmap(marks, N, uniqatom(U, env, R[0]));
 }
 
 Ref uniqatom(Array *const U, Array *const E, const Ref r)
@@ -237,21 +309,21 @@ Ref uniqatom(Array *const U, Array *const E, const Ref r)
 	return readpack(U, strpack(hint, buf));
 }
 
-void exeqeval(
-	Array *const U,
-	Array *const marks,
-	const Ref dag, const Array *const escape, const Array *const envmarks)
-{
-	EState st =
-	{
-		.U = U,
-		.marks = marks,
-		.escape = escape,
-		.envmarks = envmarks,
-		.verbs = newverbmap(U, 0, verbs)
-	};
-
-	eval(dag, &st);
-
-	freekeymap((Array *)st.verbs);
-}
+// void exeqeval(
+// 	Array *const U,
+// 	Array *const marks,
+// 	const Ref dag, const Array *const escape, const Array *const envmarks)
+// {
+// 	EState st =
+// 	{
+// 		.U = U,
+// 		.marks = marks,
+// 		.escape = escape,
+// 		.envmarks = envmarks,
+// 		.verbs = newverbmap(U, 0, verbs)
+// 	};
+// 
+// 	eval(dag, &st);
+// 
+// 	freekeymap((Array *)st.verbs);
+// }
