@@ -39,6 +39,8 @@
 			.X (.TEnv ("F"));
 			.Y (.TEnv ("A"));
 
+			.A (.Nth (.FIn (); (1; 2)));
+
 			.TDef
 			(
 				.T ("struct";
@@ -49,7 +51,8 @@
 
 // 		.TDef (.TEnv (("struct"; "s1")); ("hello"; "universe"));
 
-		.X (.S ("X"))
+		.X (.S ("X"); .Nth (.S ("X"); (0)); .T (.Nth (.S ("X"); (1;
+		0))))
 	));
 
 	.L x ("A"; "B"; "C"; .X ("D"; "E"));

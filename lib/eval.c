@@ -227,6 +227,19 @@ static int stagetwo(List *const l, void *const ptr)
 
 		dofin(marks, N, U, inputs);
 		break;
+	
+	case NTH:
+		if(mode == EMGEN)
+		{
+			ERR("node \"%s\": can't eval in %s mode",
+				nodename(U, N),
+				modenames[mode]);
+
+			return !0;
+		}
+
+		donth(marks, N, C);
+		break;
 
 	default:
 	{

@@ -1021,6 +1021,8 @@ extern void dofin(
 	Array *const marks,
 	const Ref, const Array *const U, const List *const inputs);
 
+extern void donth(Array *const marks, const Ref, const Core *const);
+
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 
 extern Ref eval(

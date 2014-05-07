@@ -358,7 +358,7 @@ void dosnode(
 Ref symname(const Array *const symbols, const Ref id)
 {
 	assert(symbols);
-	assert(id.code == NUMBER && id.u.number < symbols->count);
+	assert(id.code == SYM && id.u.number < symbols->count);
 
 	const Binding *const b = (Binding *)symbols->u.data + id.u.number;
 	assert(b->key.code == LIST && b->ref.code == TYPE);
@@ -367,7 +367,7 @@ Ref symname(const Array *const symbols, const Ref id)
 	const Ref R[len];
 	assert(len == 2
 		&& writerefs(b->key.u.list, (Ref *)R, len) == len
-		&& R[0].code == MAP);
+		&& R[0].code == ENV);
 
 	return markext(R[1]);
 }
@@ -375,7 +375,7 @@ Ref symname(const Array *const symbols, const Ref id)
 Ref symtype(const Array *const symbols, const Ref id)
 {
 	assert(symbols);
-	assert(id.code == NUMBER && id.u.number < symbols->count);
+	assert(id.code == SYM && id.u.number < symbols->count);
 
 	const Binding *const b = (Binding *)symbols->u.data + id.u.number;
 	assert(b->ref.code == TYPE);
