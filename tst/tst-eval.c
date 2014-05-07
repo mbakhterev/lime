@@ -24,7 +24,14 @@ int main(int argc, char *argv[])
 
 	Core *const C = newcore(U, envmarks, tomark, 1);
 
-	const Ref d = eval(C, NULL, D, 0, NULL, EMGEN);
+	List *const inputs = RL(
+		refnum(1),
+		reflist(RL(refnum(2), refnum(3), readtoken(U, "hello"))),
+		readtoken(U, "world"),
+		refnum(4));
+
+	const Ref d = eval(C, NULL, D, 0, inputs, EMDAG);
+	freelist(inputs);
 
 	dumpdag(1, stdout, 0, U, d, NULL, NULL);
 	fputc('\n', stdout);

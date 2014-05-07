@@ -3,91 +3,111 @@
 
 #include <assert.h>
 
-#define LNODE 0
+// #define LNODE 0
+// 
+// static const char *const verbs[] =
+// {
+// 	[LNODE] = "L",
+// 	NULL
+// };
+// 
+// typedef struct
+// {
+// 	Array *const U;
+// 	Array *const verbs;
+// 	Array *const lmarks;
+// 
+// 	const Array *const escape;
+// } LState;
+// 
+// static void eval(const Ref, LState *const);
+// 
+// static int evalone(List *const l, void *const ptr)
+// {
+// 	assert(l);
+// 	assert(ptr);
+// 	eval(l->ref, ptr);
+// 	return 0;
+// }
+// 
+// static void eval(const Ref N, LState *const S)
+// {
+// 	switch(N.code)
+// 	{
+// 	case NUMBER:
+// 	case ATOM:
+// 	case TYPE:
+// 		return;
+// 	
+// 	case LIST:
+// 	case DAG:
+// 		forlist(N.u.list, evalone, S, 0);
+// 		return;
+// 	
+// 	case NODE:
+// 		if(N.external)
+// 		{
+// 			return;
+// 		}
+// 
+// 		switch(nodeverb(N, S->verbs))
+// 		{
+// 		case LNODE:
+// 			tunerefmap(S->lmarks, N, nodeattribute(N));
+// 			return;
+// 
+// 		default:
+// 			if(!knownverb(N, S->escape))
+// 			{
+// 				eval(nodeattribute(N), S);
+// 			}
+// 		}
+// 		
+// 		return;
+// 
+// 	default:
+// 		assert(0);
+// 	}
+// }
+// 
+// Ref leval(Array *const U, const Ref dag, const Array *const escape)
+// {
+// 	LState st =
+// 	{
+// 		.U = U,
+// 		.verbs = newverbmap(U, 0, verbs),
+// 		.lmarks = newkeymap(),
+// 		.escape = escape
+// 	};
+// 
+// 	eval(dag, &st);
+// 
+// 	const Array *const torewrite = newverbmap(U, 0, ES("L"));
+// 	const Ref r = exprewrite(dag, st.lmarks, torewrite);
+// 
+// 	freekeymap((Array *)torewrite);
+// 	freekeymap(st.lmarks);
+// 	freekeymap((Array *)st.verbs);
+// 
+// 	return r;
+// }
 
-static const char *const verbs[] =
+void dolnode(Array *const marks, const Ref N, const Array *const U)
 {
-	[LNODE] = "L",
-	NULL
-};
-
-typedef struct
-{
-	Array *const U;
-	Array *const verbs;
-	Array *const lmarks;
-
-	const Array *const escape;
-} LState;
-
-static void eval(const Ref, LState *const);
-
-static int evalone(List *const l, void *const ptr)
-{
-	assert(l);
-	assert(ptr);
-	eval(l->ref, ptr);
-	return 0;
-}
-
-static void eval(const Ref N, LState *const S)
-{
-	switch(N.code)
+	const Ref val = simplerewrite(nodeattribute(N), marks);
+	if(val.code == FREE)
 	{
-	case NUMBER:
-	case ATOM:
-	case TYPE:
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
 		return;
-	
-	case LIST:
-	case DAG:
-		forlist(N.u.list, evalone, S, 0);
-		return;
-	
-	case NODE:
-		if(N.external)
-		{
-			return;
-		}
-
-		switch(nodeverb(N, S->verbs))
-		{
-		case LNODE:
-			tunerefmap(S->lmarks, N, nodeattribute(N));
-			return;
-
-		default:
-			if(!knownverb(N, S->escape))
-			{
-				eval(nodeattribute(N), S);
-			}
-		}
-		
-		return;
-
-	default:
-		assert(0);
 	}
-}
 
-Ref leval(Array *const U, const Ref dag, const Array *const escape)
-{
-	LState st =
-	{
-		.U = U,
-		.verbs = newverbmap(U, 0, verbs),
-		.lmarks = newkeymap(),
-		.escape = escape
-	};
+	// Сохраняем !external ссылку на полученное значение в marks. Чтобы
+	// стереть выражение вместе с marks
 
-	eval(dag, &st);
+	Binding *const b
+		= (Binding *)bindingat(marks, mapreadin(marks, markext(N)));
+	assert(b);
 
-	const Array *const torewrite = newverbmap(U, 0, ES("L"));
-	const Ref r = exprewrite(dag, st.lmarks, torewrite);
-
-	freekeymap((Array *)torewrite);
-	freekeymap(st.lmarks);
-	freekeymap((Array *)st.verbs);
-
-	return r;
+	b->ref = val;
 }

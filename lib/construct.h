@@ -1012,12 +1012,22 @@ extern void dotdef(
 extern void dosnode(
 	Core *const, Array *const marks, const Ref, const unsigned env);
 
+// Обработка различных подстановок
+
+extern void dolnode(
+	Array *const marks, const Ref, const Array *const U);
+
+extern void dofin(
+	Array *const marks,
+	const Ref, const Array *const U, const List *const inputs);
+
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 
 extern Ref eval(
 	Core *const C, Array *const area,
 	const Ref dag, const unsigned env, const List *const inputs,
 	const unsigned mode);
+
 
 extern void ignite(Core *const, const SyntaxNode);
 extern void progress(Core *const);

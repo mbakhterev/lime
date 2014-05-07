@@ -50,5 +50,11 @@
 // 		.TDef (.TEnv (("struct"; "s1")); ("hello"; "universe"));
 
 		.X (.S ("X"))
-	))
+	));
+
+	.L x ("A"; "B"; "C"; .X ("D"; "E"));
+	.L y ("X"; x; .Y ("x"));
+	.Z (y; (y; y); (y));
+
+	.W (.FIn ())
 )

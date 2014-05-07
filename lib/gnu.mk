@@ -20,13 +20,13 @@ lmsrc = \
 	enveval.c	\
 	typeeval.c	\
 	symeval.c	\
+	leval.c		\
+	ntheval.c	\
 	eval.c
 
-# 	ntheval.c	\
-	areaeval.c	\
+# 	areaeval.c	\
 	exeqeval.c	\
 	formeval.c	\
-	leval.c		\
 	progress.c	\
 
 lminc = \

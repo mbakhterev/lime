@@ -149,6 +149,14 @@ static unsigned envfornode(
 	const unsigned env,
 	const Array *const marks, const Array *const envmarks);
 
+static const char *const modenames[] =
+{
+	[EMGEN] = "codegen",
+	[EMDAG] = "subdag",
+	[EMINIT] = "init",
+	[EMFULL] = "full"
+};
+
 static int stagetwo(List *const l, void *const ptr)
 {
 	assert(l && isnode(l->ref) && !l->ref.external);
@@ -201,6 +209,23 @@ static int stagetwo(List *const l, void *const ptr)
 	
 	case SNODE:
 		dosnode(C, marks, N, envfornode(N, U, env, marks, envdefs));
+		break;
+	
+	case LNODE:
+		dolnode(marks, N, U);
+		break;
+	
+	case FIN:
+		if(mode == EMGEN || mode == EMINIT)
+		{
+			ERR("node \"%s\": can't eval in %s mode",
+				nodename(U, N),
+				modenames[mode]);
+
+			return !0;
+		}
+
+		dofin(marks, N, U, inputs);
 		break;
 
 	default:
@@ -287,6 +312,8 @@ Ref eval(
 	const unsigned mode)
 {
 	assert(isdag(dag));
+	assert(env < C->E->count);
+	assert(mode <= EMFULL);
 
 	EState st =
 	{
