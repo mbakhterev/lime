@@ -81,12 +81,8 @@ static Ref setnew(
 	}
 
 	const Ref name = forkref(key, NULL);
-// 	const Ref id = reflist(RL(markext(refkeymap(env)), name));
 	const Ref id = reflist(RL(envid(U, env), name));
 
-// 	Binding *const symb
-// 		= (Binding *)bindingat(symbols, mapreadin(symbols, id));
-	
 	const unsigned sid = mapreadin(symbols, id);
 	Binding *const symb = (Binding *)bindingat(symbols, sid);
 
@@ -235,6 +231,15 @@ void dosnode(
 
 	const Ref key = len > 0 ? simplerewrite(R[0], marks) : reffree();
 	const Ref type = len > 1 ? refmap(marks, R[1]) : reffree();
+
+	if(DBGFLAGS & DBGS)
+	{
+		char *const rstr = strref(U, NULL, R[0]);
+		char *const kstr = strref(U, NULL, key);
+		DBG(DBGS, "(R 0 = %s) (key = %s)", rstr, kstr);
+		free(kstr);
+		free(rstr);
+	}
 
 	if(len < 1 || 2 < len
 		|| !isbasickey(key)

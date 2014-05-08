@@ -219,6 +219,56 @@ typedef struct
 	const Array *const map;
 } SRState;
 
+static Ref reexpress(const Array *const map, const Ref key)
+{
+	const Ref r = refmap(map, key);
+
+	switch(r.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+	case SYM:
+	case ENV:
+	case FREE:
+		return r;
+	
+	case NODE:
+	case MAP:
+		assert(r.external);
+		return r;
+	
+	case LIST:
+	{
+		// Список из marks в любом случае надо скопировать. Он должен
+		// стать частью графа, но может быть очищен при освобождении
+		// marks или inputs (если речь о FIn-узлах)
+
+		List *const l = forklist(r.u.list);
+
+		if(listlen(l) == 0)
+		{
+			// Если список единичной длины, то нам нужно только его
+			// содержимое
+
+			const Ref r = l->ref;
+
+			l->ref = reffree();
+			freelist(l);
+
+			return r;
+		}
+
+		return reflist(l);
+	}	
+
+	default:
+		assert(0);
+	}
+
+	return reffree();
+}
+
 Ref simplerewrite(const Ref r, const Array *const map)
 {
 	switch(r.code)
@@ -232,7 +282,7 @@ Ref simplerewrite(const Ref r, const Array *const map)
 	
 	case NODE:
 		assert(r.external);
-		return refmap(map, r);
+		return reexpress(map, r);
 	
 	case LIST:
 	{
