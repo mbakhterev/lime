@@ -29,25 +29,20 @@ enum
 	// должны иметь формат ("some-verb" (attributes)). Они моделируют узлы в
 	// DAG-е программы.
 	// 
-	// PTR: void-указатели, для различных служебных нужд
+	// PTR: void-указатели, для различных служебных нужд.
 	// 
+	// MAP: метка для обозначения окружений.
+	//
 	// LIST: списки из разнообразных Ref-ов. Могут содержать Ref-ы на другие
-	// списки. Поэтому используются для представления S-выражений.
+	// списки. Поэтому используются для представления S-выражений
 
-	NUMBER, ATOM, TYPE, ENV, SYM, NODE, PTR, LIST,
+	NUMBER, ATOM, TYPE, ENV, SYM, NODE, PTR, MAP, LIST,
 
-	// MAP: метка для обозначения окружений 
-
-	MAP, 
-	
 	// FORM говорит об указателе на форму - кусочек DAG-а программы,
 	// открытый для подстановки в него некоторых значений. DAG - это
 	// замкнутый подграф
 
 	DAG, FORM,
-
-// 	// Отсылка к области вывода
-// 	AREA,
 
 	// Свободная ссылка, в которой ничего нет
 	FREE = -1
@@ -1005,6 +1000,10 @@ extern void douniq(
 
 extern void doex(
 	Core *const, Array *const marks, const Ref, const unsigned envnum);
+
+extern void dofenv(
+	Core *const, Array *const marks, Array *const areamarks,
+	const Ref N, const unsigned env);
 
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 

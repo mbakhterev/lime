@@ -111,6 +111,7 @@ typedef struct
 	Array *const envdefs;
 	Array *const envkeep;
 	Array *const marks;
+	Array *const formmarks;
 	
 	Array *const area;
 
@@ -175,6 +176,7 @@ static int stagetwo(List *const l, void *const ptr)
 
 	Array *const area = E->area;
 	Array *const marks = E->marks;
+	Array *const formmarks = E->formmarks;
 	Array *const envdefs = E->envdefs;
 	Array *const envkeep = E->envkeep;
 	const unsigned env = E->env;
@@ -248,11 +250,24 @@ static int stagetwo(List *const l, void *const ptr)
 	case UNIQ:
 		douniq(C->U, marks, N,
 			environments, envfornode(N, U, env, marks, envdefs));
-
 		break;
 	
 	case EX:
 		doex(C, marks, N, envfornode(N, U, env, marks, envdefs));
+		break;
+	
+	case FENV:
+		if(mode == EMGEN || mode == EMDAG)
+		{
+			ERR("node \"%s\": can't eval in %s mode",
+				nodename(U, N),
+				modenames[mode]);
+
+			return !0;
+		}
+
+		dofenv(C, marks, formmarks, N,
+			envfornode(N, U, env, marks, envdefs));
 		break;
 
 	default:
@@ -347,6 +362,7 @@ Ref eval(
 		.envdefs = newkeymap(),
 		.envkeep = newkeymap(),
 		.marks = newkeymap(),
+		.formmarks = newkeymap(),
 		.area = area,
 		.C = C,
 		.L = NULL,
@@ -358,6 +374,7 @@ Ref eval(
 	forlist(dag.u.list, stageone, &st, 0);
 	forlist(dag.u.list, stagetwo, &st, 0);
 
+	freekeymap(st.formmarks);
 	freekeymap(st.marks);
 	freekeymap(st.envkeep);
 	freekeymap(st.envdefs);

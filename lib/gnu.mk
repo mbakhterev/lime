@@ -23,10 +23,12 @@ lmsrc = \
 	leval.c		\
 	ntheval.c	\
 	exeqeval.c	\
-	eval.c
+	formeval.c	\
+	eval.c		\
+	progress.c	\
+
 
 # 	areaeval.c	\
-	formeval.c	\
 	progress.c	\
 
 lminc = \
