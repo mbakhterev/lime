@@ -886,6 +886,16 @@ void dofout(
 		return;
 	}
 
+	if(!isactive(U, T.area))
+	{
+		freeref(outs);
+
+		item = nodeline(N);
+		ERR("node \"%s\": can't output to inactive area",
+			nodename(U, N));
+		return;
+	}
+
 	if(intakeout(U, T.area, T.rid, outs.u.list))
 	{
 		freeref(outs);
@@ -1093,6 +1103,60 @@ static unsigned isvalidlink(const Ref r, const unsigned acceptnodes)
 // 	}
 // }
 // 
+
+void dofput(
+	Core *const C, Array *const area,
+	const Ref N, const Array *const marks, const Array *const formmarks)
+{
+	Array *const U = C->U;
+	Array *const activity = C->activity;
+	const Array *const V = C->verbs.system;
+
+	const Ref r = nodeattribute(N);
+	if(r.code != LIST)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting attribute list", nodename(U, N));
+		return;
+	}
+
+	const unsigned len = listlen(r.u.list);
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+
+	const Target T = len > 0 ? aim(R[0], area, formmarks) : notarget();
+	const Ref keys = len > 1 ? simplerewrite(R[1], marks) : reffree();
+
+	const Ref form = len <= 2 ?
+		  reffree()
+		: extractform(U, R[2],
+		  	keys, T.area != area || T.rid != 0, formmarks, V);
+	
+	if(len != 3 || T.area == NULL
+		|| keys.code != LIST || !issignaturekey(keys)
+		|| form.code != FORM)
+	{
+		if(form.code == FREE)
+		{
+			freeref(keys);
+		}
+		freeref(form);
+
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+		return;
+	}
+
+	assert(formkeys(form).u.list == keys.u.list);
+
+	intakeform(U, areareactor(U, T.area, T.rid), form);
+
+	if(T.area != area && !setmap(activity, refkeymap(T.area)))
+	{
+		tunesetmap(activity, refkeymap(T.area));
+	}
+}
+
 // static void eval(const Ref r, FEState *const st)
 // {
 // 	switch(r.code)

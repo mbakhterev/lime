@@ -55,7 +55,7 @@
 			))
 		));
 
-		.Go (.E ("ENV"; ("this")))
+		.Go (.E (("this")))
 	));
 
 	.FEnv (("E"; '44.1."="); .F
@@ -66,6 +66,6 @@
 		.FOut (.R (("RIGHT")); (
 			("rvalue"; "right")));
 
-		.Go (.E ("ENV"; ("this")))
+		.Go (.E (("this")))
 	))
 )

@@ -937,7 +937,7 @@ extern void freecore(Core *const);
 enum
 {
 	LNODE = 0, FIN, NTH,
-	FNODE, FENV, FOUT,
+	FNODE, FENV, FOUT, FPUT,
 	TNODE, TENV, TDEF,
 	ENODE, EDEF,
 	SNODE,
@@ -1008,6 +1008,10 @@ extern void dofenv(
 	const Ref N, const unsigned env);
 
 extern void dofout(
+	Core *const, Array *const area,
+	const Ref, const Array *const marks, const Array *const formmarks);
+
+extern void dofput(
 	Core *const, Array *const area,
 	const Ref, const Array *const marks, const Array *const formmarks);
 

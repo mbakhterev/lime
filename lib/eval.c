@@ -12,6 +12,7 @@ static const char *const limeverbs[] =
 	[FNODE]	= "F",
 	[FENV]	= "FEnv",
 	[FOUT]	= "FOut",
+	[FPUT]	= "FPut",
 	[TNODE]	= "T",
 	[TENV]	= "TEnv",
 	[TDEF]	= "TDef",
@@ -330,6 +331,18 @@ static int stagetwo(List *const l, void *const ptr)
 		}
 
 		dofout(C, area, N, marks, formmarks);
+		break;
+	
+	case FPUT:
+		if(mode == EMGEN || mode == EMINIT)
+		{
+			ERR("node \"%s\": can't eval in %s mode",
+				nodename(U, N), modenames[mode]);
+
+			return !0;
+		}
+
+		dofput(C, area, N, marks, formmarks);
 		break;
 
 	default:
