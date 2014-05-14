@@ -9,9 +9,9 @@
 
 // #define DBGFLAGS (DBGFENV)
 // #define DBGFLAGS (DBGFOUT | DBGFPUT)
-#define DBGFLAGS (DBGFENV)
+// #define DBGFLAGS (DBGFENV)
 
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 // Реализовано в соответствии с
 // 	2014-02-05 13:03:53

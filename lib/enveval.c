@@ -479,8 +479,8 @@ void doedef(
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
-	const unsigned eok = isenode(R[0], C->verbs.system);
-	const unsigned tok = isvalidtarget(R[1], C->verbs.system);
+	const unsigned eok = len > 0 && isenode(R[0], C->verbs.system);
+	const unsigned tok = len > 1 && isvalidtarget(R[1], C->verbs.system);
 
 	DBG(DBGDED, "len eok tok = %u (%u: %s) %u",
 		len, eok, nodename(U, R[0]), tok);

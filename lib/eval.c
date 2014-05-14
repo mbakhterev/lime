@@ -170,7 +170,7 @@ static int stagetwo(List *const l, void *const ptr)
 	EState *const E = ptr;
 
 	Core *const C = E->C;
-	const Array *const U = C->U;
+	Array *const U = C->U;
 	Array *const types = C->T;
 	Array *const environments = C->E;
 
@@ -248,7 +248,7 @@ static int stagetwo(List *const l, void *const ptr)
 		break;
 	
 	case UNIQ:
-		douniq(C->U, marks, N,
+		douniq(U, marks, N,
 			environments, envfornode(N, U, env, marks, envdefs));
 		break;
 	
@@ -263,14 +263,61 @@ static int stagetwo(List *const l, void *const ptr)
 		if(mode == EMGEN || mode == EMDAG)
 		{
 			ERR("node \"%s\": can't eval in %s mode",
-				nodename(U, N),
-				modenames[mode]);
+				nodename(U, N), modenames[mode]);
 
 			return !0;
 		}
 
 		dofenv(C, marks, formmarks, N,
 			envfornode(N, U, env, marks, envdefs));
+		break;
+	
+	case DONE:
+		if(mode != EMFULL)
+		{
+			ERR("node \"%s\": can't eval in %s mode",
+				nodename(U, N), modenames[mode]);
+
+			return !0;
+		}
+
+		dodone(U, area, N);
+		break;
+	
+	case GO:
+		if(mode != EMFULL)
+		{
+			ERR("node \"%s\": can't eval in %s mode",
+				nodename(U, N), modenames[mode]);
+
+			return !0;
+		}
+
+		C->envtogo = dogo(U, N, area, marks, C->envtogo);
+		break;
+	
+	case RNODE:
+		if(mode == EMGEN || mode == EMINIT)
+		{
+			ERR("node \"%s\": can't eval in %s mode",
+				nodename(U, N), modenames[mode]);
+
+			return !0;
+		}
+
+		dornode(U, area, formmarks, N, marks);
+		break;
+	
+	case RIP:
+		if(mode == EMGEN || mode == EMINIT)
+		{
+			ERR("node \"%s\": can't eval in %s mode",
+				nodename(U, N), modenames[mode]);
+
+			return !0;
+		}
+
+		E->L = append(E->L, dorip(U, N, formmarks));
 		break;
 
 	default:

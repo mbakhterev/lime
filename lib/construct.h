@@ -1001,9 +1001,27 @@ extern void douniq(
 extern void doex(
 	Core *const, Array *const marks, const Ref, const unsigned envnum);
 
+// Формы
+
 extern void dofenv(
 	Core *const, Array *const marks, Array *const areamarks,
 	const Ref N, const unsigned env);
+
+// Области вывода
+
+extern void dodone(Array *const U, Array *const area, const Ref N);
+
+extern unsigned dogo(
+	Array *const U,
+	const Ref, const Array *const area,
+	const Array *const marks, const unsigned envtogo);
+
+void dornode(
+	Array *const U,
+	Array *const area, Array *const formmarks,
+	const Ref, const Array *const marks);
+
+List *dorip(Array *const U, const Ref, const Array *const formmarks);
 
 enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
 

@@ -492,7 +492,6 @@ int main(int argc, char *const argv[])
 	}
 	else
 	{
-		fprintf(stderr, "progression error. Dumping state to stderr\n");
 	}
 
 	if(ok)
@@ -506,7 +505,7 @@ int main(int argc, char *const argv[])
 		Ref *const AD = areadag(U, A.u.array);
 		AD->u.list = append(D.u.list, AD->u.list);
 
-		dumpdag(0, stdout, 0, U, *AD, NULL, C->T);
+		dumpdag(0, stdout, 0, U, *AD, NULL, NULL);
 		assert(fputc('\n', stdout) == '\n');
 	}
 	else
@@ -522,11 +521,14 @@ int main(int argc, char *const argv[])
 
 		assert(fprintf(stderr, "STACK\n") > 0);
 
-		const Array *const stackescape = stdareaupstreams(U);
+		const Array *const stackescape = stdstackupstreams(U);
 		dumpareastack(0, stderr, 0, U, C->areastack, stackescape);
 		freekeymap((Array *)stackescape);
 
 		assert(fputc('\n', stderr) == '\n');
+
+		assert(fprintf(stderr,
+			"progression error. State dumped to stderr\n") > 0);
 	}
 
 	freecore(C);
