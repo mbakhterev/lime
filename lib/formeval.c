@@ -593,74 +593,74 @@ void dofenv(
 	tunerefmap(formmarks, N, bref);
 }
 
-typedef struct
-{
-	List *out;
-	const Array *const typemarks;
-	const Array *const typeverbs;
-	const Array *const sysverbs;
-	const unsigned allownodes;
-} TState;
-
-// static unsigned isvalidlink(const Ref, const Array *const);
-static unsigned isvalidlink(const Ref, const TState *const ptr);
-
-static int isvalidone(List *const l, void *const ptr)
-{
-	assert(l);
-	assert(ptr);
-	return isvalidlink(l->ref, ptr);
-}
-
-// static unsigned isvalidlink(const Ref r, const Array *const forbidden)
-static unsigned isvalidlink(const Ref r, const TState *const st)
-{
-	switch(r.code)
-	{
-	case NUMBER:
-	case ATOM:
-	case TYPE:
-		// Допустимые Ref-ы
-		return !0;
-	
-	case NODE:
-		if(!st->allownodes)
-		{
-			// Узлы нельзя передавать
-			return 0;
-		}
-
-		if(!r.external)
-		{
-			// В описании связи между кусочками графов не может быть
-			// определения узла
-			return 0;
-		}
-
-// 		if(knownverb(r, st->forbidden))
-		if(knownverb(r, st->sysverbs))
-		{
-			// Ссылаться на эти узлы нельзя. Основная причина - они
-			// системные и будут удалены из текущего кусочка графа
-			// ходе его трансформаций
-			return 0;
-		}
-
-		// Анализируем ссылки на узлы, поэтому атрибуты их нам не
-		// интересны. Поэтому, остальное допустимо
-
-		return !0;
-	
-	case LIST:
-// 		return forlist(r.u.list, isvalidone, (Array *)forbidden, !0);
-		return forlist(r.u.list, isvalidone, (TState *)st, !0);
-	
-	default:
-		// Всё остальное недопустимо
-		return 0;
-	}
-}
-
+// typedef struct
+// {
+// 	List *out;
+// 	const Array *const typemarks;
+// 	const Array *const typeverbs;
+// 	const Array *const sysverbs;
+// 	const unsigned allownodes;
+// } TState;
+// 
+// // static unsigned isvalidlink(const Ref, const Array *const);
+// static unsigned isvalidlink(const Ref, const TState *const ptr);
+// 
+// static int isvalidone(List *const l, void *const ptr)
+// {
+// 	assert(l);
+// 	assert(ptr);
+// 	return isvalidlink(l->ref, ptr);
+// }
+// 
+// // static unsigned isvalidlink(const Ref r, const Array *const forbidden)
+// static unsigned isvalidlink(const Ref r, const TState *const st)
+// {
+// 	switch(r.code)
+// 	{
+// 	case NUMBER:
+// 	case ATOM:
+// 	case TYPE:
+// 		// Допустимые Ref-ы
+// 		return !0;
+// 	
+// 	case NODE:
+// 		if(!st->allownodes)
+// 		{
+// 			// Узлы нельзя передавать
+// 			return 0;
+// 		}
+// 
+// 		if(!r.external)
+// 		{
+// 			// В описании связи между кусочками графов не может быть
+// 			// определения узла
+// 			return 0;
+// 		}
+// 
+// // 		if(knownverb(r, st->forbidden))
+// 		if(knownverb(r, st->sysverbs))
+// 		{
+// 			// Ссылаться на эти узлы нельзя. Основная причина - они
+// 			// системные и будут удалены из текущего кусочка графа
+// 			// ходе его трансформаций
+// 			return 0;
+// 		}
+// 
+// 		// Анализируем ссылки на узлы, поэтому атрибуты их нам не
+// 		// интересны. Поэтому, остальное допустимо
+// 
+// 		return !0;
+// 	
+// 	case LIST:
+// // 		return forlist(r.u.list, isvalidone, (Array *)forbidden, !0);
+// 		return forlist(r.u.list, isvalidone, (TState *)st, !0);
+// 	
+// 	default:
+// 		// Всё остальное недопустимо
+// 		return 0;
+// 	}
+// }
+// 
 // static int translateone(List *const l, void *const ptr)
 // {
 // 	assert(l);
@@ -839,6 +839,162 @@ static unsigned isvalidlink(const Ref r, const TState *const st)
 // 	}
 // }
 // 
+
+typedef struct
+{
+	Array *const area;
+	const unsigned rid;
+} Target;
+
+static Target notarget()
+{
+	return (Target) { .area = NULL, .rid = -1 };
+}
+
+static unsigned aregoodouts(const Ref outs, const unsigned acceptnodes);
+static Target aim(const Ref, Array *const area, const Array *const formmarks); 
+
+void dofout(
+	Core *const C, Array *const area,
+	const Ref N, const Array *const marks, const Array *const formmarks)
+{
+	Array *const U = C->U;
+	Array *const activity = C->activity;
+
+	const Ref r = nodeattribute(N);
+	if(r.code != LIST)
+	{
+		item = nodeline(N);
+		ERR("node \"%s\": expecting attribute list", nodename(U, N));
+		return;
+	}
+
+	const unsigned len = listlen(r.u.list);
+	const Ref R[len];
+	assert(writerefs(r.u.list, (Ref *)R, len) == len);
+
+	const Target T = len > 0 ? aim(R[0], area, formmarks) : notarget();
+	const Ref outs = len > 1 ? simplerewrite(R[1], marks) : reffree();
+
+	if(len != 2 || T.area == NULL
+		|| outs.code != LIST || !aregoodouts(outs, T.area == area))
+	{
+		freeref(outs);
+
+		item = nodeline(N);
+		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+		return;
+	}
+
+	if(intakeout(U, T.area, T.rid, outs.u.list))
+	{
+		freeref(outs);
+
+		item = nodeline(N);
+		ERR("node \"%s\": can't intake output list", nodename(U, N));
+		return;
+	}
+
+	freeref(outs);
+
+	if(T.area != area && !setmap(activity, refkeymap(T.area)))
+	{
+		tunesetmap(activity, refkeymap(T.area));
+	}
+}
+
+static Target aim(const Ref R, Array *const area, const Array *const formmarks)
+{
+	switch(R.code)
+	{
+	case NUMBER:
+		if(R.u.number > 1)
+		{
+			return notarget();
+		}
+
+		return (Target) { .area = area, .rid = R.u.number };
+	
+	case NODE:
+	{
+		Array *const area = envmap(formmarks, R);
+		if(!area)
+		{
+			return notarget();
+		}
+
+		return (Target) { .area = area, .rid = 0 };
+	}
+	}
+
+	return notarget();
+}
+
+typedef struct
+{
+	const unsigned acceptnodes;
+} VThread;
+
+static unsigned isvalidlink(const Ref r, const unsigned acceptnodes);
+
+static int isgoodone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	VThread *const th = ptr;
+
+	const Ref R[2];
+	const unsigned good
+		 = splitpair(l->ref, (Ref *)R)
+		&& issignaturekey(R[0])
+		&& isvalidlink(R[1], th->acceptnodes);
+	
+	return good;
+}
+
+static unsigned aregoodouts(const Ref outs, const unsigned acceptnodes)
+{
+	VThread th = { .acceptnodes = acceptnodes };
+	const unsigned good
+		 = outs.code == LIST
+		&& forlist(outs.u.list, isgoodone, &th, !0);
+	
+	return good;
+}
+
+static int isvalidone(List *const l, void *const ptr)
+{
+	assert(l);
+	assert(ptr);
+	VThread *const th = ptr;
+
+	return isvalidlink(l->ref, th->acceptnodes);
+}
+
+static unsigned isvalidlink(const Ref r, const unsigned acceptnodes)
+{
+	switch(r.code)
+	{
+	case NUMBER:
+	case ATOM:
+	case TYPE:
+	case SYM:
+	case ENV:
+		return !0;
+	
+	case NODE:
+		return acceptnodes && r.external;
+
+	case LIST:
+	{
+		VThread th = { .acceptnodes = acceptnodes };
+		return forlist(r.u.list, isvalidone, &th, !0);
+	}
+	}
+
+	return 0;
+}
+
 // static void fput(const Ref N, FEState *const E)
 // {
 // 	DBG(DBGFPUT, "%s", "here");

@@ -319,6 +319,18 @@ static int stagetwo(List *const l, void *const ptr)
 
 		E->L = append(E->L, dorip(U, N, formmarks));
 		break;
+	
+	case FOUT:
+		if(mode == EMGEN || mode == EMINIT)
+		{
+			ERR("node \"%s\": can't eval in %s mode",
+				nodename(U, N), modenames[mode]);
+
+			return !0;
+		}
+
+		dofout(C, area, N, marks, formmarks);
+		break;
 
 	default:
 	{

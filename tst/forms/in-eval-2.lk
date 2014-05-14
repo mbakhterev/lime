@@ -7,6 +7,11 @@
 		.Nth name (.FIn (); (1));
 		.X (.Ex ("S"; name));
 		.Go (.E (("this")));
+
+		.FOut (1; (
+			(.Uniq ("test"); .Nth (.S ('02.1."x"); (1)))
+		));
+
 		.Done ()
 	));
 

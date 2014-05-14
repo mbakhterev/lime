@@ -1007,6 +1007,10 @@ extern void dofenv(
 	Core *const, Array *const marks, Array *const areamarks,
 	const Ref N, const unsigned env);
 
+extern void dofout(
+	Core *const, Array *const area,
+	const Ref, const Array *const marks, const Array *const formmarks);
+
 // Области вывода
 
 extern void dodone(Array *const U, Array *const area, const Ref N);
@@ -1023,7 +1027,7 @@ void dornode(
 
 List *dorip(Array *const U, const Ref, const Array *const formmarks);
 
-enum { EMGEN = 0, EMDAG, EMINIT, EMFULL };
+enum { EMGEN = 0, EMINIT, EMDAG, EMFULL };
 
 extern Ref eval(
 	Core *const C, Array *const area,
