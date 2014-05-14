@@ -256,6 +256,9 @@ static int stagetwo(List *const l, void *const ptr)
 		doex(C, marks, N, envfornode(N, U, env, marks, envdefs));
 		break;
 	
+	case FNODE:
+		break;
+
 	case FENV:
 		if(mode == EMGEN || mode == EMDAG)
 		{

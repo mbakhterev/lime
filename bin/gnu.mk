@@ -13,6 +13,9 @@ cleanlmknl:
 	@ rm -r $(lkbits)/*.o \
 	&& rm $(B)/lime-knl
 
+# $(B)/lime-knl: $(lkobj) $(L)/liblime.a
+
+$(B)/lime-knl: lflags += -L $(L) -llime
 $(B)/lime-knl: $(lkobj) $(L)/liblime.a
 
 $(lkbits)/kernel.o: cflags += -D_XOPEN_SOURCE

@@ -294,6 +294,7 @@ static void activate(
 		assert(isform(form));
 		Ref *const R[FORMLEN];
 		assert(splitlist(form.u.list, (const Ref **)R, FORMLEN));
+
 		Ref *const AD = areadag(U, area);
 
 		assert(isdag(*R[TRACE]) && isdag(*AD));
@@ -321,7 +322,7 @@ static void activate(
 		char *const kstr = strref(U, NULL, reflist(st.inkeys));
 		char *const vstr = strref(U, NULL, reflist(st.invals));
 		assert(fprintf(stderr,
-			"\nactivating form. keys: %s\nvals: %s\noriginal",
+			"\nactivating form\nkeys: %s\nvals: %s\noriginal\n",
 			kstr, vstr) > 0);
 
 		free(kstr);
@@ -350,7 +351,8 @@ static void activate(
 	assert(isdag(D) && isdag(*AD));
 	AD->u.list = append(AD->u.list, D.u.list);
 	
-	freeref(D);
+// FIXME: руки оторвать за такое и лишить зарплаты!
+// 	freeref(D);
 }
 
 typedef struct
@@ -629,7 +631,8 @@ void ignite(Core *const C, const SyntaxNode op)
 {
 	const Ref key = reflist(RL(refatom(op.op), refatom(op.atom)));
 
-	if(!C->envtogo)
+// 	if(!C->envtogo)
+	if(C->envtogo == -1)
 	{
 		char *const skey = strref(C->U, NULL, key);
 		item = op.pos.line;

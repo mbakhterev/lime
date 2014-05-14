@@ -17,6 +17,7 @@
 !tst/*.c
 !tst/*.sh
 !tst/in-*.txt
+!tst/in-*.lk
 !tst/gnu.mk
 !tst/forms
 !tst/forms/*.lk

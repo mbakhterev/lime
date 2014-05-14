@@ -1012,7 +1012,6 @@ extern Ref eval(
 	const Ref dag, const unsigned env, const List *const inputs,
 	const unsigned mode);
 
-
 extern void ignite(Core *const, const SyntaxNode);
 extern void progress(Core *const);
 

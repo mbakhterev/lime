@@ -246,7 +246,7 @@ static Ref reexpress(const Array *const map, const Ref key)
 
 		List *const l = forklist(r.u.list);
 
-		if(listlen(l) == 0)
+		if(listlen(l) == 1)
 		{
 			// Если список единичной длины, то нам нужно только его
 			// содержимое

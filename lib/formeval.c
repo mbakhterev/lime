@@ -9,8 +9,9 @@
 
 // #define DBGFLAGS (DBGFENV)
 // #define DBGFLAGS (DBGFOUT | DBGFPUT)
+#define DBGFLAGS (DBGFENV)
 
-#define DBGFLAGS 0
+// #define DBGFLAGS 0
 
 // Реализовано в соответствии с
 // 	2014-02-05 13:03:53
@@ -523,21 +524,28 @@ void dofenv(
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
-	const Ref key = len > 1 ? simplerewrite(R[0], marks) : reffree();
-	const Ref form = len > 2 ?
+	const Ref key = len > 0 ? simplerewrite(R[0], marks) : reffree();
+	const Ref form = len > 1 ?
 		  extractform(U, R[1], reflist(NULL), 0, formmarks, V)
 		: reffree();
 	
-	if(len < 1 || 2 < len
-		|| !issignaturekey(key)
-		|| (len == 2 && form.code == FREE))
+	const unsigned kok = issignaturekey(key);
+	const unsigned fok = len != 2 || form.code == FORM;
+
+	DBG(DBGFENV, "len kok fok: %u %u %u", len, kok, fok);
+	
+// 	if(len < 1 || 2 < len
+// 		|| !issignaturekey(key)
+// 		|| (len == 2 && form.code == FREE))
+
+	if(len < 1 || 2 < len || !kok || !fok)
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
 		return;
 	}
 
-	if(form.code != FREE && formkeys(form).u.list == NULL)
+	if(form.code == FORM && formkeys(form).u.list != NULL)
 	{
 		item = nodeline(N);
 		ERR("node \"%s\": can't take form with trace into environment",
