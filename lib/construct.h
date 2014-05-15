@@ -425,18 +425,6 @@ extern List *tracepath(
 extern const Binding *pathlookup(
 	const List *const stack, const Ref key, unsigned *const depth);
 
-// // Для управления и анализа связей между разными keymap-ами (как связаны
-// // окружения или области вывода, которые реализованы через keymap) полезно уметь
-// // отслеживать перекрёстные ссылки между окружениями. Процедуры linkup и
-// // linkdown помогают подсчитывать количество ссылок на map из других окружений.
-// // Они возвращают результат выполнения операции. Счётчик не должен падать ниже
-// // нуля, иначе assert. isconnected проверяет, счётчик и позволяет сделать вывод
-// // о связанности map с другими
-// 
-// extern unsigned linkup(Array *const U, Array *const map);
-// extern unsigned linkdown(Array *const U, Array *const map);
-// extern unsigned isconnected(Array *const U, const Array *const map);
-
 extern void markactive(Array *const U, Array *const map, const unsigned flag);
 extern unsigned isactive(Array *const U, const Array *const map);
 
@@ -638,24 +626,6 @@ typedef int WalkOne(
 
 extern void walkdag(const Ref dag, WalkOne wlk, void *const, Array *const vm);
 
-// Процедура для конструирования по графу dag. Обращает внимание на .E и .Env
-// узлы. Результатами работы будет (1) дерево окружений, задаваемое .E-узлами,
-// построенное из корня в env; (2) семантика, записанное в ptrmap-отображение
-// envmarks, в котором узлам с verb-ами из markit будет сопоставлено то
-// окружение, где они объявлены (!Ref.external). enveval можно попросить не
-// трогать подвыражения в атрибутах узлов с verb-ами из escape (нужно для форм) 
-
-extern void enveval(
-	Array *const U,
-	Array *const env,
-	Array *const envmarks,
-	const Ref dag, const Array *const escape, const Array *const markit);
-
-extern void exeqeval(
-	Array *const U,
-	Array *const marks,
-	const Ref dag, const Array *const escape, const Array *const envmarks);
-
 // Процедура переписи выражения в другое с учётом накопленной информации о
 // значениях узлов. Ссылки на узлы подменяются на значения для них в map.
 // Подменяются только (Ref.code == NODE && Ref.external), verb-ы которых
@@ -676,17 +646,8 @@ extern void exeqeval(
 // 	приятная, но необходимая в текущей версии деталь. В следующей версии
 // 	необходимости делать это не будет
 
-extern Ref exprewrite(
-	const Ref exp, const Array *const map, const Array *const verbs);
-
 extern Ref simplerewrite(
 	const Ref exp, const Array *const map, const Array *const filter);
-
-extern void typeeval(
-	Array *const U,
-	Array *const types,
-	Array *const typemarks,
-	const Ref dag, const Array *const escape, const Array *const envmarks);
 
 extern const Binding *typeat(const Array *const, const Ref);
 extern unsigned typelookup(const Array *const, const Ref key);
@@ -700,38 +661,11 @@ extern void dumptable(
 	FILE *const, const unsigned tabs, const Array *const U,
 	const Array *const types);
 
-extern void symeval(
-	Array *const U,
-	Array *const symbols,
-	Array *const symmarks,
-	const Ref dag, const Array *const escape,
-	const Array *const envmarks, const Array *const typemarks);
-
-// Уникальный идентификатор символа (пока просто номер). Завёрнуто в Ref, чтобы
-// сразу можно было писать (как пример): ptrmap(map, symid(symmarks, N))
-
-extern Ref symid(const Array *const symmarks, const Ref N);
-
 // Процедуры для доступа к составляющим символа с уникальным идентификатором
 // id. Примерный вариант использования: symname(symbols, symid(symmarks, N))
 
 extern Ref symtype(const Array *const symbols, const Ref id);
 extern Ref symname(const Array *const symbols, const Ref id);
-
-// Внутренняя оценка графа. Раскрытие L-узлов
-
-extern Ref leval(Array *const U, const Ref dag, const Array *const escape);
-
-// Оценка узлов Nth и FIn. Процедура сконструирует новый граф с подставленными
-// вместо FIn и Nth значениями. Самих узлов не будет в новом графе. Отображения
-// symmarks и typemarks нужны для разбора на части символов и типов
-
-extern Ref ntheval(
-	Array *const U,
-	const Ref dag, const Array *const escape,
-	const Array *const typemarks, const Array *const types,
-	const Array *const symmarks, const Array *const symbols,
-	const List *const inlist);
 
 // Формы. Реализованы в виде списков из: списка сигнатур, списка узлов (тела
 // формы) и счётчика для отслеживания готовых входов для формы. Для счётчика
@@ -771,15 +705,7 @@ extern Array *areareactor(
 extern void unlinkareareactor(
 	Array *const U, Array *const area, const unsigned id);
 
-// extern Ref *reactorforms(
-// 	Array *const U, const Array *const area, const unsigned id);
-
 extern Ref *reactorforms(Array *const U, const Array *const reactor);
-
-// extern void dumparea(FILE *const, const Array *const, const List *const ctx);
-
-// extern Ref ripareaform(Array *const U, Array *const area);
-// extern Ref ripareadag(Array *const U, Array *const area);
 
 extern void riparea(
 	Array *const, Array *const area, Ref *const body, Ref *const trace);
@@ -839,48 +765,10 @@ extern unsigned intakeout(
 // и область вывода могут быть NULL-евыми, в этой ситуации выполнение
 // соответствующих операций будет приводить к сообщениям об ошибках.
 
-extern void formeval(
-	Array *const U,
-	Array *const area,
-	Array *const activity,
-	const Ref dag, const Array *const escape,
-	const Array *const envmarks,
-	const Array *const areamarks, 
-	const Array *const typemarks);
-
-// Обработка областей вывода
-
-// Обработка R-узлов. По образу и подобию обработки окружений. 
-
-extern void reval(
-	Array *const U,
-	Array *const area, Array *const areamarks,
-	const Ref dag, const Array *const escape);
-
-extern const Array *goeval(
-	Array *const U,
-	Array *const area,
-	const Ref dag, const Array *const escape, const Array *const envmarks,
-	const Array *const envtogo);
-
-// Без escape-ов, потому что эта обработка после сборки мусора. Все escape-ы уже
-// обработаны и вычищены
-
-extern void ripeval(
-	Array *const U, Ref *const dag,
-	const Array *const escape, const Array *const areamarks);
-
 // Ядерная функциональность
 
 // Синтаксические команды. Тут и дальше получается некий свободный поток
 // примитивов, не сгруппированный и не упорядоченный
-
-// #define FOP 0
-// #define AOP 1
-// #define UOP 2
-// #define LOP 3
-// #define BOP 4
-// #define EOP 5
 
 #define AOP 0
 #define UOP 1
@@ -959,7 +847,6 @@ extern void dropmarks(Marks *const);
 // сначала указывается список изменяемых объектов, потом Ref-а с узлом, которая
 // не будет изменяться, за ней список неизменяемых объектов
 
-
 extern void doedef(
 	Array *const envdefs, Array *const keep, const Ref, const Core *const);
 
@@ -983,18 +870,15 @@ extern void dotenv(
 	Core *const C, Marks *const, const Ref, const unsigned env);
 
 extern void dotdef(
-	Array *const T,
-	const Ref, const Array *const U, const Marks *const);
+	Array *const T, const Ref, const Array *const U, const Marks *const);
 
 // Обработка символов
 
-extern void dosnode(
-	Core *const, Marks *const, const Ref, const unsigned env);
+extern void dosnode(Core *const, Marks *const, const Ref, const unsigned env);
 
 // Обработка различных подстановок
 
-extern void dolnode(
-	Marks *const, const Ref, const Array *const U);
+extern void dolnode(Marks *const, const Ref, const Array *const U);
 
 extern void dofin(
 	Marks *const,
@@ -1011,9 +895,7 @@ extern void doex(
 
 // Формы
 
-extern void dofenv(
-	Core *const, Marks *const,
-	const Ref N, const unsigned env);
+extern void dofenv(Core *const, Marks *const, const Ref N, const unsigned env);
 
 extern void dofout(
 	Core *const, Array *const area, const Ref, const Marks *const);
@@ -1030,8 +912,7 @@ extern unsigned dogo(
 	const Ref, const Array *const area,
 	const Marks *const, const unsigned envtogo);
 
-void dornode(
-	Array *const U, Array *const area, Marks *const, const Ref);
+void dornode(Array *const U, Array *const area, Marks *const, const Ref);
 
 List *dorip(Array *const U, const Ref, const Marks *const);
 
