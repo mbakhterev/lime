@@ -230,7 +230,10 @@ void dosnode(
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
-	const Ref key = len > 0 ? simplerewrite(R[0], marks) : reffree();
+	const Ref key = len > 0 ?
+		  simplerewrite(R[0], marks, M->areamarks)
+		: reffree();
+
 	const Ref type = len > 1 ? refmap(marks, R[1]) : reffree();
 
 	if(DBGFLAGS & DBGS)

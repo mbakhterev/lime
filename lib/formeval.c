@@ -527,7 +527,9 @@ void dofenv(
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
-	const Ref key = len > 0 ? simplerewrite(R[0], marks) : reffree();
+	const Ref key = len > 0 ?
+		  simplerewrite(R[0], marks, formmarks) : reffree();
+
 	const Ref form = len > 1 ?
 		  extractform(U, R[1], reflist(NULL), 0, formmarks, V)
 		: reffree();
@@ -578,7 +580,7 @@ void dofenv(
 
 	if(bref.code == FREE)
 	{
-		const Ref tk = simplerewrite(R[0], marks);
+		const Ref tk = simplerewrite(R[0], marks, formmarks);
 		char *const kstr = strref(U, NULL, tk);
 		freeref(tk);
 
@@ -879,7 +881,8 @@ void dofout(
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
 	const Target T = len > 0 ? aim(R[0], area, formmarks) : notarget();
-	const Ref outs = len > 1 ? simplerewrite(R[1], marks) : reffree();
+	const Ref outs = len > 1 ?
+		simplerewrite(R[1], marks, formmarks) : reffree();
 
 	if(len != 2 || T.area == NULL
 		|| outs.code != LIST || !aregoodouts(outs, T.area == area))
@@ -1132,7 +1135,8 @@ void dofput(
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
 	const Target T = len > 0 ? aim(R[0], area, formmarks) : notarget();
-	const Ref keys = len > 1 ? simplerewrite(R[1], marks) : reffree();
+	const Ref keys = len > 1 ?
+		simplerewrite(R[1], marks, formmarks) : reffree();
 
 	const Ref form = len <= 2 ?
 		  reffree()

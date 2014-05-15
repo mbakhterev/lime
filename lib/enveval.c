@@ -537,7 +537,7 @@ void doenode(Core *const C, Marks *const M, const Ref N, const unsigned env)
 		return;
 	}
 
-	const Ref K = simplerewrite(R[0], marks);
+	const Ref K = simplerewrite(R[0], marks, M->areamarks);
 	if(K.code != LIST || !isbasickey(K))
 	{
 		freeref(K);

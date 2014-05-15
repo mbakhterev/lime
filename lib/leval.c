@@ -96,7 +96,7 @@ void dolnode(Marks *const M, const Ref N, const Array *const U)
 {
 	Array *const marks = M->marks;
 
-	const Ref val = simplerewrite(nodeattribute(N), marks);
+	const Ref val = simplerewrite(nodeattribute(N), marks, M->areamarks);
 	if(val.code == FREE)
 	{
 		item = nodeline(N);

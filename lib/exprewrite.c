@@ -217,9 +217,11 @@ typedef struct
 {
 	List *L;
 	const Array *const map;
+	const Array *const filter;
 } SRState;
 
-static Ref reexpress(const Array *const map, const Ref key)
+static Ref reexpress(
+	const Array *const map, const Array *const filter, const Ref key)
 {
 	const Ref r = refmap(map, key);
 
@@ -230,8 +232,10 @@ static Ref reexpress(const Array *const map, const Ref key)
 	case TYPE:
 	case SYM:
 	case ENV:
-	case FREE:
 		return r;
+
+	case FREE:
+		return refmap(filter, key).code == FREE ? key : reffree();
 	
 	case NODE:
 	case MAP:
@@ -269,7 +273,8 @@ static Ref reexpress(const Array *const map, const Ref key)
 	return reffree();
 }
 
-Ref simplerewrite(const Ref r, const Array *const map)
+Ref simplerewrite(
+	const Ref r, const Array *const map, const Array *const filter)
 {
 	switch(r.code)
 	{
@@ -282,14 +287,15 @@ Ref simplerewrite(const Ref r, const Array *const map)
 	
 	case NODE:
 		assert(r.external);
-		return reexpress(map, r);
+		return reexpress(map, filter, r);
 	
 	case LIST:
 	{
 		SRState st =
 		{
 			.L = NULL,
-			.map = map
+			.map = map,
+			.filter = filter
 		};
 
 		if(forlist(r.u.list, simplerewriteone, &st, 0))
@@ -314,7 +320,7 @@ int simplerewriteone(List *const l, void *const ptr)
 	assert(ptr);
 	SRState *const S = ptr;
 
-	const Ref r = simplerewrite(l->ref, S->map);
+	const Ref r = simplerewrite(l->ref, S->map, S->filter);
 	if(r.code == FREE)
 	{
 		return !0;

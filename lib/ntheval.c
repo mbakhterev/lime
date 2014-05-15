@@ -543,7 +543,9 @@ void donth(Marks *const M, const Ref N, const Core *const C)
 	// список. В обоих случаях в indexone можно безопасно вызывать freeref
 	// после вырезания из src кусочка.
 
-	const Ref src = len > 0 ? simplerewrite(R[0], marks) : reffree();
+	const Ref src = len > 0 ?
+		  simplerewrite(R[0], marks, M->areamarks)
+		: reffree();
 
 	if(len != 2 || src.code == FREE || R[1].code != LIST)
 	{

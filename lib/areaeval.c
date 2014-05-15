@@ -122,7 +122,9 @@ void dornode(
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
-	const Ref key = len > 0 ? simplerewrite(R[0], marks) : reffree();
+	const Ref key = len > 0 ?
+		simplerewrite(R[0], marks, formmarks) : reffree();
+
 	const Ref target = len > 1 ? refmap(formmarks, R[1]) : reffree();
 
 	if(len < 1 || 2 < len

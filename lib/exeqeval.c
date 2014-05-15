@@ -197,7 +197,9 @@ void doex(
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
 	const Ref space = len > 0 ? searchspace(R[0], V, U) : reffree();
-	const Ref name = len > 1 ? simplerewrite(R[1], marks) : reffree();
+	const Ref name = len > 1 ?
+		  simplerewrite(R[1], marks, M->areamarks)
+		: reffree();
 
 	if(len != 2 || space.code != ATOM || !isbasickey(name))
 	{

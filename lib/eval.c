@@ -414,7 +414,7 @@ static List *dogeneric(
 	const Ref attr
 		= r.code == DAG ?
 			  eval(C, area, r, env, inputs, dagmode)
-			: simplerewrite(r, marks);
+			: simplerewrite(r, marks, M->areamarks);
 
 	if(attr.code == FREE)
 	{

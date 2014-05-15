@@ -116,7 +116,7 @@ void dotnode(
 	Array *const marks = M->marks;
 
 	// Превращаем атрибуты узла в выражение в текущем контексте обработки
-	const Ref key = simplerewrite(nodeattribute(N), marks);
+	const Ref key = simplerewrite(nodeattribute(N), marks, M->areamarks);
 
 	// Полученное выражение должно быть формулой для типа
 
@@ -290,7 +290,10 @@ void dotenv(
 
 	DBG(DBGTENV, "len = %u", len);
 
-	const Ref key = len > 0 ? simplerewrite(R[0], marks) : reffree();
+	const Ref key = len > 0 ?
+		  simplerewrite(R[0], marks, M->areamarks)
+		: reffree();
+
 	const Ref T = len > 1 ? refmap(marks, R[1]) : reffree();
 
 	if(len < 1 || 2 < len
@@ -409,7 +412,10 @@ void dotdef(
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
 	const Ref type = len > 0 ? refmap(marks, R[0]) : reffree();
-	const Ref def = len > 1 ? simplerewrite(R[1], marks) : reffree();
+
+	const Ref def = len > 1 ?
+		  simplerewrite(R[1], marks, M->areamarks)
+		: reffree();
 
 	if(len != 2 || type.code != TYPE || !issignaturekey(def))
 	{

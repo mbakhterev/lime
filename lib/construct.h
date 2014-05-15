@@ -679,7 +679,8 @@ extern void exeqeval(
 extern Ref exprewrite(
 	const Ref exp, const Array *const map, const Array *const verbs);
 
-extern Ref simplerewrite(const Ref exp, const Array *const map);
+extern Ref simplerewrite(
+	const Ref exp, const Array *const map, const Array *const filter);
 
 extern void typeeval(
 	Array *const U,
