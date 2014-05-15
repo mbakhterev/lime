@@ -211,11 +211,12 @@ static Ref setnew(
 // }
 
 void dosnode(
-	Core *const C, Array *const marks, const Ref N, const unsigned envid)
+	Core *const C, Marks *const M, const Ref N, const unsigned envid)
 {
 	Array *const U = C->U;
 	Array *const E = C->E;
 	Array *const S = C->S;
+	Array *const marks = M->marks;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)

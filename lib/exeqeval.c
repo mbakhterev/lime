@@ -177,11 +177,12 @@ static Ref decodesearch(
 // }
 
 void doex(
-	Core *const C, Array *const marks, const Ref N, const unsigned envnum)
+	Core *const C, Marks *const M, const Ref N, const unsigned envnum)
 {
 	Array *const U = C->U;
 	const Array *const E = C->E;
 	const Array *const V = C->verbs.system;
+	Array *const marks = M->marks;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
@@ -257,9 +258,11 @@ static Ref uniqatom(Array *const U, Array *const E, const Ref atom);
 // }
 
 void douniq(
-	Array *const U, Array *const marks,
+	Array *const U, Marks *const M,
 	const Ref N, const Array *const E, const unsigned envnum)
 {
+	Array *const marks = M->marks;
+
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
 	{

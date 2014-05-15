@@ -92,8 +92,10 @@
 // 	return r;
 // }
 
-void dolnode(Array *const marks, const Ref N, const Array *const U)
+void dolnode(Marks *const M, const Ref N, const Array *const U)
 {
+	Array *const marks = M->marks;
+
 	const Ref val = simplerewrite(nodeattribute(N), marks);
 	if(val.code == FREE)
 	{

@@ -510,10 +510,11 @@ static Array *nextpoint(Array *const U, const Array *const map);
 static Array *newtarget(
 	Array *const U, const Array *const map, const Ref id, void *const E);
 
-void doenode(Core *const C, Array *const marks, const Ref N, const unsigned env)
+void doenode(Core *const C, Marks *const M, const Ref N, const unsigned env)
 {
 	Array *const U = C->U;
 	Array *const E = C->E;
+	Array *const marks = M->marks;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)

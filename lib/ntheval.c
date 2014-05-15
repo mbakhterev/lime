@@ -486,9 +486,11 @@ static Ref reexpress(List *const l)
 // }
 
 void dofin(
-	Array *const marks,
+	Marks *const M,
 	const Ref N, const Array *const U, const List *const inputs)
 {
+	Array *const marks = M->marks;
+
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST || listlen(r.u.list) != 0)
 	{
@@ -515,8 +517,9 @@ typedef struct
 
 static int indexone(List *const, void *const);
 
-void donth(Array *const marks, const Ref N, const Core *const C)
+void donth(Marks *const M, const Ref N, const Core *const C)
 {
+	Array *const marks = M->marks;
 	const Array *const U = C->U;
 
 	const Ref r = nodeattribute(N);

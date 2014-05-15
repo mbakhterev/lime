@@ -107,12 +107,28 @@ void freecore(Core *const C)
 	freekeymap((Array *)C->verbs.escape);
 }
 
+Marks makemarks(void)
+{
+	return (Marks)
+	{
+		.marks = newkeymap(),
+		.areamarks = newkeymap()
+	};
+}
+
+void dropmarks(Marks *const M)
+{
+	freekeymap(M->areamarks);
+	freekeymap(M->marks);
+}
+
 typedef struct
 {
 	Array *const envdefs;
 	Array *const envkeep;
-	Array *const marks;
-	Array *const formmarks;
+
+// 	Array *const marks;
+// 	Array *const formmarks;
 	
 	Array *const area;
 
@@ -123,6 +139,8 @@ typedef struct
 	const List *const inputs;
 	const unsigned env;
 	const unsigned mode;
+
+	Marks M;
 } EState;
 
 static int stageone(List *const l, void *const ptr)
@@ -144,8 +162,7 @@ static int stageone(List *const l, void *const ptr)
 }
 
 static List *dogeneric(
-	Core *const, Array *const area,
-	Array *const marks,
+	Core *const, Array *const area, Marks *const,
 	const Ref, const unsigned env, const List *const inputs,
 	const unsigned mode);
 
@@ -176,8 +193,12 @@ static int stagetwo(List *const l, void *const ptr)
 	Array *const environments = C->E;
 
 	Array *const area = E->area;
-	Array *const marks = E->marks;
-	Array *const formmarks = E->formmarks;
+
+// 	Array *const marks = E->marks;
+// 	Array *const formmarks = E->formmarks;
+
+	Marks *const M = &E->M;
+
 	Array *const envdefs = E->envdefs;
 	Array *const envkeep = E->envkeep;
 	const unsigned env = E->env;
@@ -193,33 +214,33 @@ static int stagetwo(List *const l, void *const ptr)
 		}
 		
 		List *const l
-			= dogeneric(C, area, marks, N, env, inputs, mode);
+			= dogeneric(C, area, M, N, env, inputs, mode);
 		E->L = append(E->L, l);
 
 		break;
 	
 	case ENODE:
-		doenode(C, marks, N, env);
+		doenode(C, M, N, env);
 		break;
 	
 	case TNODE:
-		dotnode(U, types, marks, N);
+		dotnode(U, types, M, N);
 		break;
 	
 	case TDEF:
-		dotdef(types, N, U, marks);
+		dotdef(types, N, U, M);
 		break;
 	
 	case TENV:
-		dotenv(C, marks, N, envfornode(N, U, env, marks, envdefs));
+		dotenv(C, M, N, envfornode(N, U, env, M->marks, envdefs));
 		break;
 	
 	case SNODE:
-		dosnode(C, marks, N, envfornode(N, U, env, marks, envdefs));
+		dosnode(C, M, N, envfornode(N, U, env, M->marks, envdefs));
 		break;
 	
 	case LNODE:
-		dolnode(marks, N, U);
+		dolnode(M, N, U);
 		break;
 	
 	case FIN:
@@ -232,29 +253,20 @@ static int stagetwo(List *const l, void *const ptr)
 			return !0;
 		}
 
-		dofin(marks, N, U, inputs);
+		dofin(M, N, U, inputs);
 		break;
 	
 	case NTH:
-// 		if(mode == EMGEN)
-// 		{
-// 			ERR("node \"%s\": can't eval in %s mode",
-// 				nodename(U, N),
-// 				modenames[mode]);
-// 
-// 			return !0;
-// 		}
-
-		donth(marks, N, C);
+		donth(M, N, C);
 		break;
 	
 	case UNIQ:
-		douniq(U, marks, N,
-			environments, envfornode(N, U, env, marks, envdefs));
+		douniq(U, M, N,
+			environments, envfornode(N, U, env, M->marks, envdefs));
 		break;
 	
 	case EX:
-		doex(C, marks, N, envfornode(N, U, env, marks, envdefs));
+		doex(C, M, N, envfornode(N, U, env, M->marks, envdefs));
 		break;
 	
 	case FNODE:
@@ -269,8 +281,7 @@ static int stagetwo(List *const l, void *const ptr)
 			return !0;
 		}
 
-		dofenv(C, marks, formmarks, N,
-			envfornode(N, U, env, marks, envdefs));
+		dofenv(C, M, N, envfornode(N, U, env, M->marks, envdefs));
 		break;
 	
 	case DONE:
@@ -294,7 +305,7 @@ static int stagetwo(List *const l, void *const ptr)
 			return !0;
 		}
 
-		C->envtogo = dogo(U, N, area, marks, C->envtogo);
+		C->envtogo = dogo(U, N, area, M, C->envtogo);
 		break;
 	
 	case RNODE:
@@ -306,7 +317,7 @@ static int stagetwo(List *const l, void *const ptr)
 			return !0;
 		}
 
-		dornode(U, area, formmarks, N, marks);
+		dornode(U, area, M, N);
 		break;
 	
 	case RIP:
@@ -318,7 +329,7 @@ static int stagetwo(List *const l, void *const ptr)
 			return !0;
 		}
 
-		E->L = append(E->L, dorip(U, N, formmarks));
+		E->L = append(E->L, dorip(U, N, M));
 		break;
 	
 	case FOUT:
@@ -330,7 +341,7 @@ static int stagetwo(List *const l, void *const ptr)
 			return !0;
 		}
 
-		dofout(C, area, N, marks, formmarks);
+		dofout(C, area, N, M);
 		break;
 	
 	case FPUT:
@@ -342,14 +353,14 @@ static int stagetwo(List *const l, void *const ptr)
 			return !0;
 		}
 
-		dofput(C, area, N, marks, formmarks);
+		dofput(C, area, N, M);
 		break;
 
 	default:
 	{
-		const unsigned nenv = envfornode(N, U, env, marks, envdefs);
+		const unsigned nenv = envfornode(N, U, env, M->marks, envdefs);
 		List *const l
-			= dogeneric(C, area, marks, N, nenv, inputs, mode);
+			= dogeneric(C, area, M, N, nenv, inputs, mode);
 		E->L = append(E->L, l);
 
 		break;
@@ -386,12 +397,12 @@ static unsigned envfornode(
 }
 
 static List *dogeneric(
-	Core *const C, Array *const area,
-	Array *const marks,
+	Core *const C, Array *const area, Marks *const M,
 	const Ref N, const unsigned env, const List *const inputs,
 	const unsigned mode)
 {
 	const Array *const U = C->U;
+	Array *const marks = M->marks;
 
 	const unsigned verb = nodeverb(N, NULL);
 	const unsigned line = nodeline(N);
@@ -412,15 +423,15 @@ static List *dogeneric(
 		return NULL;
 	}
 
-	const Ref M = newnode(verb, attr, line);
-	tunerefmap(marks, N, M);
+	const Ref n = newnode(verb, attr, line);
+	tunerefmap(marks, N, n);
 
-	if(knownverb(M, C->verbs.envmarks))
+	if(knownverb(n, C->verbs.envmarks))
 	{
-		tunerefmap(C->envmarks, M, refenv(env));
+		tunerefmap(C->envmarks, n, refenv(env));
 	}
 
-	return RL(M);
+	return RL(n);
 }
 
 Ref eval(
@@ -436,21 +447,23 @@ Ref eval(
 	{
 		.envdefs = newkeymap(),
 		.envkeep = newkeymap(),
-		.marks = newkeymap(),
-		.formmarks = newkeymap(),
+// 		.marks = newkeymap(),
+// 		.formmarks = newkeymap(),
 		.area = area,
 		.C = C,
 		.L = NULL,
 		.inputs = inputs,
 		.env = env,
-		.mode = mode
+		.mode = mode,
+		.M = makemarks()
 	};
 
 	forlist(dag.u.list, stageone, &st, 0);
 	forlist(dag.u.list, stagetwo, &st, 0);
 
-	freekeymap(st.formmarks);
-	freekeymap(st.marks);
+// 	freekeymap(st.formmarks);
+// 	freekeymap(st.marks);
+	dropmarks(&st.M);
 	freekeymap(st.envkeep);
 	freekeymap(st.envdefs);
 

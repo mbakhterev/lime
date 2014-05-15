@@ -105,10 +105,11 @@ static Array *nextpoint(Array *const U, const Array *const map)
 // 
 
 void dornode(
-	Array *const U,
-	Array *const area, Array *const formmarks,
-	const Ref N, const Array *const marks)
+	Array *const U, Array *const area, Marks *const M, const Ref N)
 {
+	const Array *const marks = M->marks;
+	Array *const formmarks = M->areamarks;
+
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
 	{
@@ -298,8 +299,10 @@ void dodone(Array *const U, Array *const area, const Ref N)
 unsigned dogo(
 	Array *const U,
 	const Ref N, const Array *const area,
-	const Array *const marks, const unsigned envtogo)
+	const Marks *const M, const unsigned envtogo)
 {
+	const Array *const marks = M->marks;
+
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
 	{
@@ -496,8 +499,10 @@ unsigned dogo(
 // }
 // 
 
-List *dorip(Array *const U, const Ref N, const Array *const formmarks)
+List *dorip(Array *const U, const Ref N, const Marks *const M)
 {
+	const Array *const formmarks = M->areamarks;
+
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
 	{

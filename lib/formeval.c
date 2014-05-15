@@ -505,12 +505,15 @@ static Ref extractform(
 // }
 
 void dofenv(
-	Core *const C, Array *const marks, Array *const formmarks,
+	Core *const C, Marks *const M,
 	const Ref N, const unsigned envnum)
 {
 	Array *const U = C->U;
 	Array *const E = C->E;
 	const Array *const V = C->verbs.system;
+
+	Array *const marks = M->marks;
+	Array *const formmarks = M->areamarks;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
@@ -855,11 +858,13 @@ static unsigned aregoodouts(const Ref outs, const unsigned acceptnodes);
 static Target aim(const Ref, Array *const area, const Array *const formmarks); 
 
 void dofout(
-	Core *const C, Array *const area,
-	const Ref N, const Array *const marks, const Array *const formmarks)
+	Core *const C, Array *const area, const Ref N, const Marks *const M)
 {
 	Array *const U = C->U;
 	Array *const activity = C->activity;
+
+	const Array *const marks = M->marks;
+	const Array *const formmarks = M->areamarks;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
@@ -1105,12 +1110,14 @@ static unsigned isvalidlink(const Ref r, const unsigned acceptnodes)
 // 
 
 void dofput(
-	Core *const C, Array *const area,
-	const Ref N, const Array *const marks, const Array *const formmarks)
+	Core *const C, Array *const area, const Ref N, const Marks *const M)
 {
 	Array *const U = C->U;
 	Array *const activity = C->activity;
 	const Array *const V = C->verbs.system;
+
+	const Array *const marks = M->marks;
+	const Array *const formmarks = M->areamarks;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)

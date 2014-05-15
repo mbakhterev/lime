@@ -945,7 +945,14 @@ enum
 	RNODE, RIP, DONE, GO
 };
 
-// extern unsigned isnodeitem(const List *const node);
+typedef struct
+{
+	Array *const marks;
+	Array *const areamarks;
+} Marks;
+
+extern Marks makemarks(void);
+extern void dropmarks(Marks *const);
 
 // Общая логика в аргументах функций, которые вызываются для обработки узлов:
 // сначала указывается список изменяемых объектов, потом Ref-а с узлом, которая
@@ -956,7 +963,7 @@ extern void doedef(
 	Array *const envdefs, Array *const keep, const Ref, const Core *const);
 
 extern void doenode(
-	Core *const, Array *const marks, const Ref, const unsigned env);
+	Core *const, Marks *const, const Ref, const unsigned env);
 
 // Вспомогательные функции для работы с окружениями
 
@@ -969,51 +976,49 @@ extern Ref envrootpath(const Array *const E, const Ref id);
 // Обработка типов
 
 extern void dotnode(
-	const Array *const U, Array *const T, Array *const marks, const Ref);
+	const Array *const U, Array *const T, Marks *const, const Ref);
 
 extern void dotenv(
-	Core *const C, Array *const marks, const Ref, const unsigned env);
+	Core *const C, Marks *const, const Ref, const unsigned env);
 
 extern void dotdef(
 	Array *const T,
-	const Ref, const Array *const U, const Array *const marks);
+	const Ref, const Array *const U, const Marks *const);
 
 // Обработка символов
 
 extern void dosnode(
-	Core *const, Array *const marks, const Ref, const unsigned env);
+	Core *const, Marks *const, const Ref, const unsigned env);
 
 // Обработка различных подстановок
 
 extern void dolnode(
-	Array *const marks, const Ref, const Array *const U);
+	Marks *const, const Ref, const Array *const U);
 
 extern void dofin(
-	Array *const marks,
+	Marks *const,
 	const Ref, const Array *const U, const List *const inputs);
 
-extern void donth(Array *const marks, const Ref, const Core *const);
+extern void donth(Marks *const, const Ref, const Core *const);
 
 extern void douniq(
-	Array *const U, Array *const marks,
+	Array *const U, Marks *const,
 	const Ref, const Array *const environments, const unsigned envnum);
 
 extern void doex(
-	Core *const, Array *const marks, const Ref, const unsigned envnum);
+	Core *const, Marks *const, const Ref, const unsigned envnum);
 
 // Формы
 
 extern void dofenv(
-	Core *const, Array *const marks, Array *const areamarks,
+	Core *const, Marks *const,
 	const Ref N, const unsigned env);
 
 extern void dofout(
-	Core *const, Array *const area,
-	const Ref, const Array *const marks, const Array *const formmarks);
+	Core *const, Array *const area, const Ref, const Marks *const);
 
 extern void dofput(
-	Core *const, Array *const area,
-	const Ref, const Array *const marks, const Array *const formmarks);
+	Core *const, Array *const area, const Ref, const Marks *const);
 
 // Области вывода
 
@@ -1022,14 +1027,12 @@ extern void dodone(Array *const U, Array *const area, const Ref N);
 extern unsigned dogo(
 	Array *const U,
 	const Ref, const Array *const area,
-	const Array *const marks, const unsigned envtogo);
+	const Marks *const, const unsigned envtogo);
 
 void dornode(
-	Array *const U,
-	Array *const area, Array *const formmarks,
-	const Ref, const Array *const marks);
+	Array *const U, Array *const area, Marks *const, const Ref);
 
-List *dorip(Array *const U, const Ref, const Array *const formmarks);
+List *dorip(Array *const U, const Ref, const Marks *const);
 
 enum { EMGEN = 0, EMINIT, EMDAG, EMFULL };
 

@@ -111,8 +111,10 @@
 // }
 
 void dotnode(
-	const Array *const U, Array *const T, Array *const marks, const Ref N)
+	const Array *const U, Array *const T, Marks *const M, const Ref N)
 {
+	Array *const marks = M->marks;
+
 	// Превращаем атрибуты узла в выражение в текущем контексте обработки
 	const Ref key = simplerewrite(nodeattribute(N), marks);
 
@@ -267,10 +269,12 @@ static unsigned setnew(
 // 
 
 void dotenv(
-	Core *const C, Array *const marks, const Ref N, const unsigned envid)
+	Core *const C, Marks *const M, const Ref N, const unsigned envid)
 {
 	Array *const U = C->U;
 	Array *const E = C->E;
+
+	Array *const marks = M->marks;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
@@ -385,10 +389,12 @@ void dotenv(
 
 void dotdef(
 	Array *const T,
-	const Ref N, const Array *const U, const Array *const marks)
+	const Ref N, const Array *const U, const Marks *const M)
 {
 // 	Array *const U = C->U;
 // 	Array *const E = C->E;
+
+	const Array *const marks = M->marks;
 
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
