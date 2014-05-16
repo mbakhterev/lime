@@ -718,10 +718,10 @@ void dofput(
 	const Target T = len > 0 ? aim(R[0], area, formmarks) : notarget();
 	const Ref keys = len > 1 ? simplerewrite(R[1], marks, V) : reffree();
 
-	const Ref form = len <= 2 ?
-		  reffree()
-		: extractform(U, R[2],
+	const Ref form = len > 2 ?
+		  extractform(U, R[2],
 		  	keys, T.area != area || T.rid != 0, formmarks, V);
+		: reffree()
 	
 	if(len != 3 || T.area == NULL
 		|| keys.code != LIST || !issignaturekey(keys)

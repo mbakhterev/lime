@@ -636,7 +636,7 @@ void ignite(Core *const C, const SyntaxNode op)
 	{
 		char *const skey = strref(C->U, NULL, key);
 		item = op.pos.line;
-		ERR("STUCK state for input key: %s", skey);
+		ERR("no environment to Go with key: %s", skey);
 		free(skey);
 		return;
 	}
