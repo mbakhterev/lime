@@ -12,111 +12,17 @@
 
 #define DBGFLAGS 0
 
-// typedef struct
-// {
-// 	Array *const U;
-// 
-// 	// Результаты: таблица типов и метки для T и TEnv узлов с номерами
-// 	// типов, которые они задают
-// 
-// 	Array *const types;
-// 	Array *const typemarks;
-// 
-// 	// Информация об узлах: что не надо разбирать, и в какие окружения они
-// 	// приписаны
-// 
-// 	const Array *const escape;
-// 	const Array *const envmarks;
-// 
-// 	// verbmap-ы на разные случаи
-// 
-// 	const Array *const verbs;
-// 	const Array *const envverbs;
-// 	const Array *const typeverbs;
-// } EState;
-// 
-// // Nominate - это от номинальных типов. Мы должны сопоставить .T и .TEnv
-// // выражениям их уникальные (с учётом внутренней структуры T и окружений для
-// // .TEnv) имена (индексы в таблице)
-// 
-// static void nominate(const Ref, EState *const);
-// 
-// static int nominateone(List *const l, void *const ptr)
-// {
-// 	assert(l);
-// 	assert(ptr);
-// 
-// 	nominate(l->ref, ptr);
-// 
-// 	return 0;
-// }
-// 
-// #define TNODE 0
-// #define TENV 1
-// #define TDEF 2
-// 
-// static const char *const verbs[] =
-// {
-// 	[TNODE] = "T",
-// 	[TENV] = "TEnv",
-// 	[TDEF] = "TDef",
-// 	NULL
-// };
-// 
-// static Ref totypekey(const Ref r, EState *const st)
-// {
-// 	const Ref envtmp = exprewrite(r, st->envmarks, st->envverbs);
-// 	const Ref key = exprewrite(envtmp, st->typemarks, st->typeverbs);
-// 	freeref(envtmp);
-// 	return key;
-// }
-// 
-// static void tnode(const Ref r, EState *const st)
-// {
-// 	// Смотрим, во что превращается атрибут узла, в текущем рабочем
-// 	// контексте
-// 
-// 	const Ref key = totypekey(nodeattribute(r), st);
-// 
-// 	if(DBGFLAGS & DBGNMT)
-// 	{
-// 		char *const astr
-// 			= strref(st->U, NULL, nodeattribute(r));
-// 
-// 		char *const kstr
-// 			= strref(st->U, NULL, key);
-// 		
-// 		DBG(DBGNMT, "\n\tattr:\t%s\n\tkey:\t%s", astr, kstr);
-// 
-// 		free(astr);
-// 		free(kstr);
-// 	}
-// 
-// 	// Полученное выражение должно быть описанием типа
-// 
-// 	if(!istypekey(key))
-// 	{
-// 		item = nodeline(r);
-// 		ERR("node \"%s\": wrong attribute structure",
-// 			atombytes(atomat(st->U, nodeverb(r, NULL))));
-// 	}
-// 
-// 	// Присваиваем .T-выражению номер типа, которое оно задаёт. И
-// 	// запоминаем это в таблице соответствия узлов значениям
-// 
-// 	const unsigned typeid = typeenummap(st->types, key);
-// 	freeref(key);
-// 
-// 	tunerefmap(st->typemarks, r, reftype(typeid));
-// }
-
 void dotnode(
-	const Array *const U, Array *const T, Marks *const M, const Ref N)
+	Core *const C, Marks *const M, const Ref N)
 {
+	Array *const T = C->T;
+	const Array *const U = C->U;
+	const Array *const V = C->verbs.system;
+
 	Array *const marks = M->marks;
 
 	// Превращаем атрибуты узла в выражение в текущем контексте обработки
-	const Ref key = simplerewrite(nodeattribute(N), marks, M->areamarks);
+	const Ref key = simplerewrite(nodeattribute(N), marks, V);
 
 	// Полученное выражение должно быть формулой для типа
 
@@ -192,87 +98,12 @@ static unsigned setnew(
 	return typeref.u.number;
 }
 
-// static void tenv(const Ref r, EState *const E)
-// {
-// 	const Ref attr = nodeattribute(r);
-// 	if(attr.code != LIST)
-// 	{
-// 		item = nodeline(r);
-// 		ERR("node \"%s\": expecting attribute list",
-// 			atombytes(atomat(E->U, nodeverb(r, NULL))));
-// 	}
-// 
-// 	const unsigned len = listlen(attr.u.list);
-// 	DBG(DBGTENV, "len = %u", len);
-// 
-// 	if(len < 1 || 2 < len)
-// 	{
-// 		item = nodeline(r);
-// 		ERR("node \"%s\": expecting 1 or 2 attributes",
-// 			atombytes(atomat(E->U, nodeverb(r, NULL))));
-// 	}
-// 
-// 	// R, кстати, от rands - операнды по-модному
-// 
-// 	Ref R[len];
-// 	assert(writerefs(attr.u.list, R, len) == len);
-// 	
-// 	if(!isbasickey(R[0]))
-// 	{
-// 		item = nodeline(r);
-// 		ERR("node \"%s\": expecting 1st attribute to be basic key",
-// 			atombytes(atomat(E->U, nodeverb(r, NULL))));
-// 	}
-// 
-// 	// По входным выясняем, на что отображён второй аргумент, если он есть.
-// 	// Он должен задавать какой-нибудь тип, это будет проверено в setnew
-// 
-// 	const Ref typeref = len == 2 ? refmap(E->typemarks, R[1]) : reffree();
-// 
-// 	// Наконец, по входным данным выясняем, в каком окружении встретился
-// 	// текущий текущий TEnv (ага, название r очень информативное). Это
-// 	// отображение уже должно быть определено
-// 
-// 	Array *const env = envmap(E->envmarks, r);
-// 
-// 	DBG(DBGTENV, "env = %p", (void *)env);
-// 
-// 	if(!env)
-// 	{
-// 		item = nodeline(r);
-// 		ERR("node \"%s\": no environment definition for node",
-// 			atombytes(atomat(E->U, nodeverb(r, NULL))));
-// 	}
-// 
-// 	const unsigned typeid
-// 		= (len == 1) ? getexisting(env, E->U, R[0])
-// 		: (len == 2) ? setnew(env, E->U, R[0], typeref)
-// 		: -1;
-// 
-// 	DBG(DBGTENV, "typeid = %u", typeid);
-// 	
-// 	if(typeid == -1)
-// 	{
-// 		char *const strkey = strref(E->U, NULL, R[0]);
-// 
-// 		item = nodeline(r);
-// 		ERR("node \"%s\": can't %s type for key: %s",
-// 			atombytes(atomat(E->U, nodeverb(r, NULL))),
-// 			(len == 1) ? "locate" : "allocate",
-// 			strkey);
-// 
-// 		free(strkey);
-// 	}
-// 
-// 	tunerefmap(E->typemarks, r, reftype(typeid));
-// }
-// 
-
 void dotenv(
 	Core *const C, Marks *const M, const Ref N, const unsigned envid)
 {
 	Array *const U = C->U;
 	Array *const E = C->E;
+	const Array *const V = C->verbs.system;
 
 	Array *const marks = M->marks;
 
@@ -290,10 +121,7 @@ void dotenv(
 
 	DBG(DBGTENV, "len = %u", len);
 
-	const Ref key = len > 0 ?
-		  simplerewrite(R[0], marks, M->areamarks)
-		: reffree();
-
+	const Ref key = len > 0 ? simplerewrite(R[0], marks, V) : reffree();
 	const Ref T = len > 1 ? refmap(marks, R[1]) : reffree();
 
 	if(len < 1 || 2 < len
@@ -390,12 +218,11 @@ void dotenv(
 // }
 // 
 
-void dotdef(
-	Array *const T,
-	const Ref N, const Array *const U, const Marks *const M)
+void dotdef(Core *const C, const Ref N, const Marks *const M)
 {
-// 	Array *const U = C->U;
-// 	Array *const E = C->E;
+	Array *const T = C->T;
+	const Array *const U = C->U;
+	const Array *const V = C->verbs.system;
 
 	const Array *const marks = M->marks;
 
@@ -412,10 +239,7 @@ void dotdef(
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
 	const Ref type = len > 0 ? refmap(marks, R[0]) : reffree();
-
-	const Ref def = len > 1 ?
-		  simplerewrite(R[1], marks, M->areamarks)
-		: reffree();
+	const Ref def = len > 1 ? simplerewrite(R[1], marks, V) : reffree();
 
 	if(len != 2 || type.code != TYPE || !issignaturekey(def))
 	{
@@ -438,106 +262,6 @@ void dotdef(
 
 	b->ref = def;
 }
-
-// static void nominatenode(const Ref r, EState *const st)
-// {
-// 	switch(nodeverb(r, st->verbs))
-// 	{
-// 	case TNODE:
-// 		tnode(r, st);
-// 		break;
-// 
-// 	case TENV:
-// 		tenv(r, st);
-// 		break;
-// 
-// 	case TDEF:
-// 		tdef(r, st);
-// 		break;
-// 	}
-// }
-// 
-// static void nominate(const Ref r, EState *const E)
-// {
-// 	switch(r.code)
-// 	{
-// 	case NUMBER:
-// 	case ATOM:
-// 	case TYPE:
-// 		// В этом нет никакой информации о типах
-// 		return;
-// 
-// 	// Текущие алгоритмы таковы, что они не различают DAG и LIST
-// 
-// 	case LIST:
-// 	case DAG:
-// 		// В списке могут встретится определения узлов .T и .TEnv
-// 		// проходим его
-// 
-// 		forlist(r.u.list, nominateone, E, 0);
-// 		return;
-// 
-// 	case NODE:
-// 		if(r.external)
-// 		{
-// 			// Ссылками не интересуемся. Нам важны только
-// 			// определения
-// 
-// 			return;
-// 		}
-// 
-// 		if(knownverb(r, E->verbs))
-// 		{
-// 			// Если это один из обрабатываемых узлов, то занимаемся
-// 			// анализом и обработкой его атрибутов по специальному
-// 			// алгоритму
-// 
-// 			nominatenode(r, E);
-// 			return;
-// 		}
-// 
-// 		// Если это определение просто некоторого узла, надо разбирать
-// 		// его атрибуты в поисках значимого 
-// 
-// 		if(!knownverb(r, E->escape))
-// 		{
-// 			// Но только если нас не попросили не совать туда свой
-// 			// нос
-// 
-// 			nominate(nodeattribute(r), E);
-// 		}
-// 
-// 		return;
-// 	
-// 	default:
-// 		assert(0);
-// 	}
-// }
-// 
-// void typeeval(
-// 	Array *const U,
-// 	Array *const types,
-// 	Array *const typemarks,
-// 	const Ref dag, const Array *const escape, const Array *const envmarks)
-// {
-// 	EState st =
-// 	{
-// 		.U = U,
-// 		.types = types,
-// 		.typemarks = typemarks,
-// 		.escape = escape,
-// 		.envmarks = envmarks,
-// 		.verbs = newverbmap(U, 0, verbs),
-// 		.envverbs = newverbmap(U, 0, ES("E")),
-// 		.typeverbs = newverbmap(U, 0, ES("T", "TEnv"))
-// 	};
-// 
-// 	nominate(dag, &st);
-// 
-// 	freekeymap((Array *)st.typeverbs);
-// 	freekeymap((Array *)st.envverbs);
-// 	freekeymap((Array *)st.verbs);
-// }
 
 const Binding *typeat(const Array *const types, const Ref id)
 {

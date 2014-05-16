@@ -189,8 +189,8 @@ static int stagetwo(List *const l, void *const ptr)
 
 	Core *const C = E->C;
 	Array *const U = C->U;
-	Array *const types = C->T;
-	Array *const environments = C->E;
+// 	Array *const types = C->T;
+// 	Array *const environments = C->E;
 
 	Array *const area = E->area;
 
@@ -224,11 +224,11 @@ static int stagetwo(List *const l, void *const ptr)
 		break;
 	
 	case TNODE:
-		dotnode(U, types, M, N);
+		dotnode(C, M, N);
 		break;
 	
 	case TDEF:
-		dotdef(types, N, U, M);
+		dotdef(C, N, M);
 		break;
 	
 	case TENV:
@@ -240,7 +240,7 @@ static int stagetwo(List *const l, void *const ptr)
 		break;
 	
 	case LNODE:
-		dolnode(M, N, U);
+		dolnode(M, N, C);
 		break;
 	
 	case FIN:
@@ -253,7 +253,7 @@ static int stagetwo(List *const l, void *const ptr)
 			return !0;
 		}
 
-		dofin(M, N, U, inputs);
+		dofin(M, N, C, inputs);
 		break;
 	
 	case NTH:
@@ -261,8 +261,7 @@ static int stagetwo(List *const l, void *const ptr)
 		break;
 	
 	case UNIQ:
-		douniq(U, M, N,
-			environments, envfornode(N, U, env, M->marks, envdefs));
+		douniq(C, M, N, envfornode(N, U, env, M->marks, envdefs));
 		break;
 	
 	case EX:
@@ -317,7 +316,7 @@ static int stagetwo(List *const l, void *const ptr)
 			return !0;
 		}
 
-		dornode(U, area, M, N);
+		dornode(C, area, M, N);
 		break;
 	
 	case RIP:
@@ -402,6 +401,8 @@ static List *dogeneric(
 	const unsigned mode)
 {
 	const Array *const U = C->U;
+	const Array *const V = C->verbs.system;
+
 	Array *const marks = M->marks;
 
 	const unsigned verb = nodeverb(N, NULL);
@@ -414,7 +415,7 @@ static List *dogeneric(
 	const Ref attr
 		= r.code == DAG ?
 			  eval(C, area, r, env, inputs, dagmode)
-			: simplerewrite(r, marks, M->areamarks);
+			: simplerewrite(r, marks, V);
 
 	if(attr.code == FREE)
 	{

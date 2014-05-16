@@ -863,14 +863,11 @@ extern Ref envrootpath(const Array *const E, const Ref id);
 
 // Обработка типов
 
-extern void dotnode(
-	const Array *const U, Array *const T, Marks *const, const Ref);
+extern void dotnode(Core *const V, Marks *const, const Ref);
+extern void dotdef(Core *const C, const Ref, const Marks *const);
 
 extern void dotenv(
 	Core *const C, Marks *const, const Ref, const unsigned env);
-
-extern void dotdef(
-	Array *const T, const Ref, const Array *const U, const Marks *const);
 
 // Обработка символов
 
@@ -878,17 +875,16 @@ extern void dosnode(Core *const, Marks *const, const Ref, const unsigned env);
 
 // Обработка различных подстановок
 
-extern void dolnode(Marks *const, const Ref, const Array *const U);
+extern void dolnode(Marks *const, const Ref, const Core *const);
 
 extern void dofin(
 	Marks *const,
-	const Ref, const Array *const U, const List *const inputs);
+	const Ref, const Core *const, const List *const inputs);
 
 extern void donth(Marks *const, const Ref, const Core *const);
 
 extern void douniq(
-	Array *const U, Marks *const,
-	const Ref, const Array *const environments, const unsigned envnum);
+	Core *const, Marks *const, const Ref, const unsigned envnum);
 
 extern void doex(
 	Core *const, Marks *const, const Ref, const unsigned envnum);
@@ -912,7 +908,7 @@ extern unsigned dogo(
 	const Ref, const Array *const area,
 	const Marks *const, const unsigned envtogo);
 
-void dornode(Array *const U, Array *const area, Marks *const, const Ref);
+void dornode(Core *const, Array *const area, Marks *const, const Ref);
 
 List *dorip(Array *const U, const Ref, const Marks *const);
 

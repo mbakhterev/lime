@@ -9,43 +9,6 @@
 
 #define DBGFLAGS (0)
 
-// В основном, списано из typeeval. S ведут себя похожим на TEnv образом
-
-// typedef struct
-// {
-// 	Array *const U;
-// 	Array *const symbols;
-// 	Array *const symmarks;
-// 
-// 	const Array *const escape;
-// 	const Array *const envmarks;
-// 	const Array *const typemarks;
-// 
-// 	const Array *const verbs;
-// } EState;
-// 
-// static void eval(const Ref N, EState *const E);
-// 
-// static int evalone(List *const l, void *const ptr)
-// {
-// 	assert(l);
-// 	assert(ptr);
-// 
-// 	eval(l->ref, ptr);
-// 
-// 	return 0;
-// }
-// 
-// #define SNODE 0
-// 
-// static const char *const verbs[] =
-// {
-// 	[SNODE] = "S",
-// 	NULL
-// };
-// 
-// // static const Binding *getexisting(
-
 static Ref getexisting(
 	const Array *const env, Array *const U, const Ref key)
 {
@@ -117,105 +80,13 @@ static Ref setnew(
 	return b->ref;
 }
 
-// static void snode(const Ref N, EState *const E)
-// {
-// // 	// Если мы этот узел уже обработали, то не обращаем на него внимания.
-// // 	// Так? В качестве эксперимента пробуем
-// // 
-// // 	if(refmap(E->symmarks, N).code == FREE)
-// // 	{
-// // 		return;
-// // 	}
-// 
-// 	const Ref r = nodeattribute(N);
-// 	if(r.code != LIST)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": expecting attribute list",
-// 			atombytes(atomat(E->U, nodeverb(N, NULL))));
-// 
-// 		return;
-// 	}
-// 
-// 	const unsigned len = listlen(r.u.list);
-// 
-// 	if(len < 1 || 2 < len)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": expecting 1 or 2 attributes",
-// 			atombytes(atomat(E->U, nodeverb(N, NULL))));
-// 
-// 		// Это символично, конечно же. Вообще, надо возвращать именно
-// 		// ошибку и делать что-то в стиле монад, но на Си это сложно.
-// 		// Поэтому оставляем до следующей версии
-// 
-// 		return;
-// 	}
-// 
-// 	Ref R[len];
-// 	writerefs(r.u.list, R, len);
-// 
-// 	if(!isbasickey(R[0]))
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": expecting 1st attributes to be basic key",
-// 			atombytes(atomat(E->U, nodeverb(N, NULL))));
-// 
-// 		return;
-// 	}
-// 
-// 	const Ref typeref = len == 2 ? refmap(E->typemarks, R[1]) : reffree();
-// 
-// 	Array *const env = envmap(E->envmarks, N);
-// 
-// 	if(!env)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": no environment definition",
-// 			atombytes(atomat(E->U, nodeverb(N, NULL))));
-// 		
-// 		return;
-// 	}
-// 
-// 	const Ref id
-// 		= (len == 1) ? getexisting(env, E->U, R[0])
-// 		: (len == 2) ? setnew(env, E->U, E->symbols, R[0], typeref)
-// 		: reffree();
-// 
-// 	if(DBGS & DBGFLAGS)
-// 	{
-// 		char *const name = strref(E->U, NULL, R[0]);
-// 
-// 		DBG(DBGS, "(len: %u) (name: %s) (env: %p) (id: %u %u)",
-// 			len, name, (void *)env, id.code, id.u.number);
-// 
-// 
-// 		free(name);
-// 	}
-// 
-// 	if(id.code == FREE)
-// 	{
-// 		char *const strkey = strref(E->U, NULL, R[0]);
-// 		
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": can't %s symbol for key: %s",
-// 			atombytes(atomat(E->U, nodeverb(N, NULL))),
-// 			(len == 1) ? "locate" : "allocate",
-// 			strkey);
-// 
-// 		free(strkey);
-// 		return;
-// 	}
-// 
-// 	tunerefmap(E->symmarks, N, id);
-// }
-
 void dosnode(
 	Core *const C, Marks *const M, const Ref N, const unsigned envid)
 {
 	Array *const U = C->U;
 	Array *const E = C->E;
 	Array *const S = C->S;
+	const Array *const V = C->verbs.system;
 	Array *const marks = M->marks;
 
 	const Ref r = nodeattribute(N);
@@ -230,10 +101,7 @@ void dosnode(
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
-	const Ref key = len > 0 ?
-		  simplerewrite(R[0], marks, M->areamarks)
-		: reffree();
-
+	const Ref key = len > 0 ? simplerewrite(R[0], marks, V) : reffree();
 	const Ref type = len > 1 ? refmap(marks, R[1]) : reffree();
 
 	if(DBGFLAGS & DBGS)
@@ -280,89 +148,6 @@ void dosnode(
 	freeref(key);
 	tunerefmap(marks, N, id);
 }
-
-// static void evalnode(const Ref N, EState *const E)
-// {
-// 	switch(nodeverb(N, E->verbs))
-// 	{
-// 	case SNODE:
-// 		snode(N, E);
-// 		break;
-// 	}
-// }
-// 
-// static void eval(const Ref N, EState *const E)
-// {
-// 	switch(N.code)
-// 	{
-// 	case NUMBER:
-// 	case ATOM:
-// 	case TYPE:
-// 		return;
-// 	
-// 	// Для текущих алгоритмов нет разницы между DAG и LIST
-// 
-// 	case LIST:
-// 	case DAG:
-// 		forlist(N.u.list, evalone, E, 0);
-// 		return;
-// 	
-// 	case NODE:
-// 		if(N.external)
-// 		{
-// 			return;
-// 		}
-// 
-// 		if(knownverb(N, E->verbs))
-// 		{
-// 			evalnode(N, E);
-// 			return;
-// 		}
-// 
-// 		if(!knownverb(N, E->escape))
-// 		{
-// 			eval(nodeattribute(N), E);
-// 		}
-// 
-// 		return;
-// 	
-// 	default:
-// 		assert(0);
-// 		
-// 	}
-// }
-// 
-// void symeval(
-// 	Array *const U,
-// 	Array *const symbols,
-// 	Array *const symmarks,
-// 	const Ref dag, const Array *const escape,
-// 	const Array *const envmarks, const Array *typemarks)
-// {
-// 	EState E =
-// 	{
-// 		.U = U,
-// 		.symbols = symbols,
-// 		.symmarks = symmarks,
-// 
-// 		.typemarks = typemarks,
-// 		.envmarks = envmarks,
-// 		.escape = escape,
-// 
-// 		.verbs = newverbmap(U, 0, verbs)
-// 	};
-// 
-// 	eval(dag, &E);
-// 
-// 	freekeymap((Array *)E.verbs);
-// }
-// 
-// Ref symid(const Array *const symmarks, const Ref N)
-// {
-// 	const Ref id = refmap(symmarks, N);
-// 	assert(id.code == NUMBER);
-// 	return id;
-// }
 
 Ref symname(const Array *const symbols, const Ref id)
 {

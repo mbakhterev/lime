@@ -235,7 +235,8 @@ static Ref reexpress(
 		return r;
 
 	case FREE:
-		return refmap(filter, key).code == FREE ? key : reffree();
+// 		return refmap(filter, key).code == FREE ? key : reffree();
+		return !knownverb(key, filter) ? key : reffree();
 	
 	case NODE:
 	case MAP:

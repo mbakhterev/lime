@@ -230,51 +230,6 @@ unsigned intakeout(
 	return 0;
 }
 
-// #define FNODE	0
-// #define FPUT	1
-// #define FENV	2
-// #define FOUT	3
-// #define RNODE	4
-// 
-// static const char *const verbs[] =
-// {
-// 	[FNODE]	= "F",
-// 	[FPUT]	= "FPut",
-// 	[FENV]	= "FEnv",
-// 	[FOUT]	= "FOut",
-// 	[RNODE]	= "R",
-// 	NULL
-// };
-// 
-// typedef struct
-// {
-// 	Array *const U;
-// 	Array *const area;
-// 	Array *const activity;
-// 
-// 	const Array *const escape;
-// 
-// 	const Array *const typemarks;
-// 	const Array *const envmarks;
-// 	const Array *const areamarks;
-// 
-// 	const Array *const verbs;
-// 	const Array *const typeverbs;
-// 	const Array *const sysverbs;
-// 
-// 	Array *const formmarks;
-// } FEState;
-// 
-// static void eval(const Ref r, FEState *const st);
-// 
-// static int evalone(List *const l, void *const ptr)
-// {
-// 	assert(l);
-// 	assert(ptr);
-// 	eval(l->ref, ptr);
-// 	return 0;
-// }
-
 static Ref getexisting(const Array *const env, Array *const U, const Ref key)
 {
 	// WARNING: освобождаем переданный key локально
@@ -383,130 +338,8 @@ static Ref extractform(
 	return reffree();
 }
 
-// static void fenv(const Ref N, FEState *const E)
-// {
-// 	DBG(DBGFENV, "%s", "entry");
-// 
-// 	const Ref r = nodeattribute(N);
-// 	if(r.code != LIST)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": expecting attribute list",
-// 			nodename(E->U, N));
-// 
-// 		return;
-// 	}
-// 
-// 	const unsigned len = listlen(r.u.list);
-// 	if(len < 1 || 2 < len)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": expecting 1 or 2 attributes",
-// 			nodename(E->U, N));
-// 
-// 		return;
-// 	}
-// 
-// 	const Ref R[len];
-// 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
-// 
-// 	// В ключе могут быть ссылки на типы. Для форм мы это разрешаем. Поэтому
-// 	// надо преобразовать выражение
-// 
-// 	const Ref key = exprewrite(R[0], E->typemarks, E->typeverbs);
-// 
-// 	if(!issignaturekey(key))
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": expecting 1st attribute to be basic key",
-// 			nodename(E->U, N));
-// 
-// 		return;
-// 	}
-// 	
-// 	// В любом случае надо узнать, к какому окружению относится этот .FEnv
-// 
-// 	Array *const env = envmap(E->envmarks, N);
-// 	if(!env)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": no environment definition for node",
-// 			nodename(E->U, N));
-// 
-// 		return;
-// 	}
-// 
-// // 	const Ref body = len == 2 ? extractbody(R[1], 0, E) : reffree();
-// 	const Ref form
-// 		= len == 2 ? extractform(R[1], reflist(NULL), 0, E) : reffree();
-// 
-// 	if(len == 2 && form.code == FREE)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": can't reconstruct form with 2nd attribute",
-// 			nodename(E->U, N));
-// 	}
-// 
-// 	assert(len != 2 || formkeys(form).u.list == NULL);
-// 
-// 	if(len == 2 && formtrace(form).u.list != NULL)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": environment forms should be without trace",
-// 			nodename(E->U, N));
-// 	}
-// 
-// 	// Забираем из формы body, а саму форму освобождаем, почистив поле DAG.
-// 	// Это всё по условию, что у нас есть form
-// 
-// 	const Ref body = form.code != FREE ? formdag(form) : reffree();
-// 
-// 	if(form.code != FREE)
-// 	{
-// 		Ref *const R[FORMLEN];
-// 		splitlist(form.u.list, (const Ref **const)R, FORMLEN);
-// 		*R[BODY] = refdag(NULL);
-// 
-// 		freeform(form);
-// 	}
-// 
-// 	// Теперь надо понять, с каким видом .FEnv мы имеем дело мы имеем дело.
-// 	// Если у нас один параметр, то мы должны поискать форму в окружении.
-// 	// Если два, то это запрос на регистрацию формы. Форму надо при этом
-// 	// извлечь из второго параметра
-// 
-// 	const Ref bref
-// 		= (len == 1) ? getexisting(env, E->U, key)
-// 		: (len == 2) ? setnew(env, E->U, key, body)
-// 		: reffree();
-// 	
-// 	// WARNING: key и body будут освобождены в getexisting или setnew по
-// 	// необходимости
-// 
-// 	if(bref.code == FREE)
-// 	{
-// 		const Ref tk = exprewrite(R[0], E->typemarks, E->typeverbs);
-// 		char *const strkey = strref(E->U, NULL, tk);
-// 		freeref(tk);
-// 
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": can't %s type for key: %s",
-// 			nodename(E->U, N), len == 1 ? "locate" : "allocate",
-// 			strkey);
-// 
-// 		free(strkey);
-// 		return;
-// 	}
-// 
-// 	// Назначаем значение узлу. В form должен быть установлен external-бит
-// 
-// 	assert(isdag(bref) && bref.external);
-// 	tunerefmap(E->formmarks, N, bref);
-// }
-
 void dofenv(
-	Core *const C, Marks *const M,
-	const Ref N, const unsigned envnum)
+	Core *const C, Marks *const M, const Ref N, const unsigned envnum)
 {
 	Array *const U = C->U;
 	Array *const E = C->E;
@@ -527,8 +360,7 @@ void dofenv(
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
-	const Ref key = len > 0 ?
-		  simplerewrite(R[0], marks, formmarks) : reffree();
+	const Ref key = len > 0 ? simplerewrite(R[0], marks, V) : reffree();
 
 	const Ref form = len > 1 ?
 		  extractform(U, R[1], reflist(NULL), 0, formmarks, V)
@@ -539,10 +371,6 @@ void dofenv(
 
 	DBG(DBGFENV, "len kok fok: %u %u %u", len, kok, fok);
 	
-// 	if(len < 1 || 2 < len
-// 		|| !issignaturekey(key)
-// 		|| (len == 2 && form.code == FREE))
-
 	if(len < 1 || 2 < len || !kok || !fok)
 	{
 		item = nodeline(N);
@@ -580,7 +408,7 @@ void dofenv(
 
 	if(bref.code == FREE)
 	{
-		const Ref tk = simplerewrite(R[0], marks, formmarks);
+		const Ref tk = simplerewrite(R[0], marks, V);
 		char *const kstr = strref(U, NULL, tk);
 		freeref(tk);
 
@@ -597,253 +425,6 @@ void dofenv(
 	assert(isdag(bref) && bref.external);
 	tunerefmap(formmarks, N, bref);
 }
-
-// typedef struct
-// {
-// 	List *out;
-// 	const Array *const typemarks;
-// 	const Array *const typeverbs;
-// 	const Array *const sysverbs;
-// 	const unsigned allownodes;
-// } TState;
-// 
-// // static unsigned isvalidlink(const Ref, const Array *const);
-// static unsigned isvalidlink(const Ref, const TState *const ptr);
-// 
-// static int isvalidone(List *const l, void *const ptr)
-// {
-// 	assert(l);
-// 	assert(ptr);
-// 	return isvalidlink(l->ref, ptr);
-// }
-// 
-// // static unsigned isvalidlink(const Ref r, const Array *const forbidden)
-// static unsigned isvalidlink(const Ref r, const TState *const st)
-// {
-// 	switch(r.code)
-// 	{
-// 	case NUMBER:
-// 	case ATOM:
-// 	case TYPE:
-// 		// Допустимые Ref-ы
-// 		return !0;
-// 	
-// 	case NODE:
-// 		if(!st->allownodes)
-// 		{
-// 			// Узлы нельзя передавать
-// 			return 0;
-// 		}
-// 
-// 		if(!r.external)
-// 		{
-// 			// В описании связи между кусочками графов не может быть
-// 			// определения узла
-// 			return 0;
-// 		}
-// 
-// // 		if(knownverb(r, st->forbidden))
-// 		if(knownverb(r, st->sysverbs))
-// 		{
-// 			// Ссылаться на эти узлы нельзя. Основная причина - они
-// 			// системные и будут удалены из текущего кусочка графа
-// 			// ходе его трансформаций
-// 			return 0;
-// 		}
-// 
-// 		// Анализируем ссылки на узлы, поэтому атрибуты их нам не
-// 		// интересны. Поэтому, остальное допустимо
-// 
-// 		return !0;
-// 	
-// 	case LIST:
-// // 		return forlist(r.u.list, isvalidone, (Array *)forbidden, !0);
-// 		return forlist(r.u.list, isvalidone, (TState *)st, !0);
-// 	
-// 	default:
-// 		// Всё остальное недопустимо
-// 		return 0;
-// 	}
-// }
-// 
-// static int translateone(List *const l, void *const ptr)
-// {
-// 	assert(l);
-// 	assert(ptr);
-// 	TState *const st = ptr;
-// 
-// 	const Ref R[2];
-// 	if(!splitpair(l->ref, (Ref *)R))
-// 	{
-// 		return !0;
-// 	}
-// 
-// 	const Ref key = exprewrite(R[0], st->typemarks, st->typeverbs);
-// 	if(!issignaturekey(key))
-// 	{
-// 		freeref(key);
-// 		return !0;
-// 	}
-// 
-// 	const Ref links = exprewrite(R[1], st->typemarks, st->typeverbs);
-// 
-// // 	if(!isvalidlink(R[1], st->sysverbs))
-// // 	if(!isvalidlink(R[1], st))
-// 	if(!isvalidlink(links, st))
-// 	{
-// 		freeref(links);
-// 		freeref(key);
-// 		return !0;
-// 	}
-// 
-// // 	st->out = append(st->out, RL(reflist(RL(key, forkref(R[1], NULL)))));
-// 	st->out = append(st->out, RL(reflist(RL(key, links))));
-// 
-// 	return 0;
-// }
-// 
-// typedef struct
-// {
-// 	Array *const area;
-// 	const unsigned rid;
-// } Target;
-// 
-// static Target notarget()
-// {
-// 	return (Target) { .area = NULL, .rid = -1 };
-// }
-// 
-// static Target aim(const Ref R, FEState *const E)
-// {
-// 	switch(R.code)
-// 	{
-// 	case NUMBER:
-// 		if(R.u.number > 1)
-// 		{
-// 			return notarget();
-// 		}
-// 
-// 		return (Target) { .area = E->area, .rid = R.u.number };
-// 	
-// 	case NODE:
-// 	{
-// 		Array *const area = envmap(E->areamarks, R);
-// 		if(!area)
-// 		{
-// 			return notarget();
-// 		}
-// 
-// 		return (Target) { .area = area, .rid = 0 };
-// 	}
-// 	}
-// 
-// 	return notarget();
-// }
-// 
-// static void fout(const Ref N, FEState *const E)
-// {
-// 	if(!E->activity || !E->area)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": can't evaluate in init mode",
-// 			nodename(E->U, N));
-// 		return;
-// 	}
-// 
-// 	const Ref r = nodeattribute(N);
-// 	if(r.code != LIST)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": expecting attribute list", nodename(E->U, N));
-// 		return;
-// 	}
-// 
-// 	const unsigned len = listlen(r.u.list);
-// 	const Ref R[len];
-// 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
-// 	if(len != 2
-// 		|| (R[0].code != NUMBER && R[0].code != NODE)
-// 		|| R[1].code != LIST)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": wrong attribute structure",
-// 			nodename(E->U, N));
-// 		return;
-// 	}
-// 
-// 	const Target T = aim(R[0], E);
-// 	if(!T.area)
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": can't detect reactor with 1st attribute",
-// 			nodename(E->U, N));
-// 
-// 		return;
-// 	}
-// 
-// 	if(!isactive(E->U, T.area))
-// 	{
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": inactive area is specified",
-// 			nodename(E->U, N));
-// 
-// 		return;
-// 	}
-// 
-// // 	const unsigned rid = R[0].u.number;
-// 
-// 	// Теперь нужно превратить исходный список пар в новый список пар с
-// 	// преобразованными с учётом типов и проверенными на корректность
-// 	// ключами. Эта операция может не завершиться успехом. Учитываем это
-// 
-// 	TState st =
-// 	{
-// 		.out = NULL,
-// 		.typeverbs = E->typeverbs,
-// 		.typemarks = E->typemarks,
-// 		.sysverbs = E->sysverbs,
-// 		.allownodes = T.area == E->area
-// 	};
-// 
-// 	if(forlist(R[1].u.list, translateone, &st, 0))
-// 	{
-// 		freelist(st.out);
-// 
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": wrong output list structure",
-// 			nodename(E->U, N));
-// 		return;
-// 	}
-// 
-// 	if(DBGFLAGS & DBGFOUT)
-// 	{
-// 		char *const ostr = strlist(E->U, st.out);
-// 		DBG(DBGFOUT, "intaking: %s", ostr);
-// 		free(ostr);
-// 	}
-// 
-// // 	if(intakeout(E->U, E->area, rid, st.out))
-// 	if(intakeout(E->U, T.area, T.rid, st.out))
-// 	{
-// 		freelist(st.out);
-// 
-// 		item = nodeline(N);
-// 		ERR("node \"%s\": can't intake output list",
-// 			nodename(E->U, N));
-// 		return;
-// 	}
-// 
-// 	freelist(st.out);
-// 
-// 	// Добавляем информацию об активности в области, если она отличается от
-// 	// текущей
-// 
-// 	if(T.area != E->area && !setmap(E->activity, refkeymap(T.area)))
-// 	{
-// 		tunesetmap(E->activity, refkeymap(T.area));
-// 	}
-// }
-// 
 
 typedef struct
 {
@@ -864,6 +445,7 @@ void dofout(
 {
 	Array *const U = C->U;
 	Array *const activity = C->activity;
+	const Array *const V = C->verbs.system;
 
 	const Array *const marks = M->marks;
 	const Array *const formmarks = M->areamarks;
@@ -881,8 +463,7 @@ void dofout(
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
 	const Target T = len > 0 ? aim(R[0], area, formmarks) : notarget();
-	const Ref outs = len > 1 ?
-		simplerewrite(R[1], marks, formmarks) : reffree();
+	const Ref outs = len > 1 ? simplerewrite(R[1], marks, V) : reffree();
 
 	if(len != 2 || T.area == NULL
 		|| outs.code != LIST || !aregoodouts(outs, T.area == area))
@@ -1135,8 +716,7 @@ void dofput(
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
 	const Target T = len > 0 ? aim(R[0], area, formmarks) : notarget();
-	const Ref keys = len > 1 ?
-		simplerewrite(R[1], marks, formmarks) : reffree();
+	const Ref keys = len > 1 ? simplerewrite(R[1], marks, V) : reffree();
 
 	const Ref form = len <= 2 ?
 		  reffree()
