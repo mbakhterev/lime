@@ -328,7 +328,7 @@ static void activate(
 		free(kstr);
 		free(vstr);
 
-		dumpdag(0, stderr, 0, U, formdag(form), NULL, NULL);
+		dumpdag(0, stderr, 0, U, formdag(form)); // , NULL, NULL);
 		assert(fputc('\n', stderr) == '\n');
 	}
 
@@ -343,7 +343,7 @@ static void activate(
 	if(dip)
 	{
 		assert(fprintf(stderr, "\nevaluated\n") > 0);
-		dumpdag(0, stderr, 0, U, D, NULL, NULL);
+		dumpdag(0, stderr, 0, U, D); // , NULL, NULL);
 		assert(fputc('\n', stderr) == '\n');
 	}
 

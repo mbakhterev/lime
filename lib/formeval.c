@@ -720,8 +720,8 @@ void dofput(
 
 	const Ref form = len > 2 ?
 		  extractform(U, R[2],
-		  	keys, T.area != area || T.rid != 0, formmarks, V);
-		: reffree()
+		  	keys, T.area != area || T.rid != 0, formmarks, V)
+		: reffree();
 	
 	if(len != 3 || T.area == NULL
 		|| keys.code != LIST || !issignaturekey(keys)

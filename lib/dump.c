@@ -266,7 +266,7 @@ static void dumpsubdag(const DState *const st, const Ref dag)
 	assert(f);
 
 	assert(fputc('\n', f) == '\n');
-	dumpdag(st->dbg, f, st->tabs + 1, st->U, dag, st->typemarks, st->types);
+	dumpdag(st->dbg, f, st->tabs + 1, st->U, dag);
 }
 
 static int dumpone(List *const l, void *const ptr)
@@ -419,19 +419,18 @@ static int mapone(List *const l, void *const ptr)
 
 void dumpdag(
 	const unsigned dbg, FILE *const f, const unsigned tabs,
-	const Array *const U, const Ref dag,
-	const Array *const typemarks, const Array *const types)
+	const Array *const U, const Ref dag)
 {
 	assert(f);
 	// FIXME: требовать ли Universe для работы dumpdag?
 	assert(U);
 	assert(isdag(dag));
 
-	// typemarks может служить для указания на необходимость восстановить
-	// типы. Может быть NULL. Если не NULL, то types тоже не может быть
-	// NULL
-
-	assert((typemarks != NULL) == (types != NULL));
+// 	// typemarks может служить для указания на необходимость восстановить
+// 	// типы. Может быть NULL. Если не NULL, то types тоже не может быть
+// 	// NULL
+// 
+// 	assert((typemarks != NULL) == (types != NULL));
 
 	DBG(DBGDAG, "f: %p", (void *)f);
 
@@ -444,8 +443,8 @@ void dumpdag(
 
 	MState mapst =
 	{
-		.T = types,
-		.typemarks = typemarks,
+// 		.T = types,
+// 		.typemarks = typemarks,
 		.drop = drop,
 		.nodes = nodes,
 		.typedag = (Ref *)&typedag,
@@ -453,9 +452,9 @@ void dumpdag(
 // 			= typemarks ?
 // 				  newverbmap((Array *)U, 0, ES("T", "TEnv"))
 // 				: NULL,
-		.typeverbs
-			= typemarks ?
-				newverbmap((Array *)U, 0, typeverbs) : NULL,
+// 		.typeverbs
+// 			= typemarks ?
+// 				newverbmap((Array *)U, 0, typeverbs) : NULL,
 		.N = 0
 	};
 
@@ -473,8 +472,8 @@ void dumpdag(
 		.dbg = dbg,
 		.drop = drop,
 		.nodes = nodes,
-		.typemarks = typemarks,
-		.types = types,
+// 		.typemarks = typemarks,
+// 		.types = types,
 		.tabs = tabs,
 		.tabstr = tabstr(tabs),
 		.L = dag.u.list
@@ -573,7 +572,7 @@ static int dumpformone(List *const l, void *const ptr)
 	assert(fprintf(
 		st->f, "\n%s\tform-dag(%u) %p:\n", st->tabstr,
 		dag.external, (void *)dag.u.list) > 0);
-	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, dag, NULL, NULL);
+	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, dag); // , NULL, NULL);
 
 	assert(fputc('\n', st->f) == '\n');
 
@@ -589,7 +588,7 @@ static int dumpdagone(List *const l, void *const ptr)
 
 	assert(fprintf(
 		st->f, "\n%s\tdag: %p\n", st->tabstr, (void *)D.u.list) > 0);
-	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, D, NULL, NULL);
+	dumpdag(st->dbg, st->f, st->tabs + 1, st->U, D); // , NULL, NULL);
 	assert(fputc('\n', st->f) == '\n');
 
 	return 0;

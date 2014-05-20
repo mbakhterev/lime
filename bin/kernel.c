@@ -505,7 +505,12 @@ int main(int argc, char *const argv[])
 		Ref *const AD = areadag(U, A.u.array);
 		AD->u.list = append(D.u.list, AD->u.list);
 
-		dumpdag(0, stdout, 0, U, *AD, NULL, NULL);
+		const Ref dag
+			= reconstruct(U,
+				*AD, C->verbs.system, C->E, C->T, C->S);
+
+		dumpdag(0, stdout, 0, U, dag);
+		freeref(dag);
 		assert(fputc('\n', stdout) == '\n');
 	}
 	else

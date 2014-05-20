@@ -589,8 +589,7 @@ extern unsigned isdag(const Ref N);
 
 extern void dumpdag(
 	const unsigned dbg, FILE *const, const unsigned tabs,
-	const Array *const U, const Ref dag,
-	const Array *const typemarks, const Array *const types);
+	const Array *const U, const Ref dag);
 
 extern Ref forkdag(const Ref dag);
 
@@ -921,5 +920,10 @@ extern Ref eval(
 
 extern void ignite(Core *const, const SyntaxNode);
 extern void progress(Core *const);
+
+extern Ref reconstruct(
+	Array *const U,
+	const Ref, const Array *const verbs,
+	const Array *const E, const Array *const T, const Array *const S);
 
 #endif

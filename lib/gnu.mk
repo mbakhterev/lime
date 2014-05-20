@@ -26,7 +26,8 @@ lmsrc = \
 	formeval.c	\
 	areaeval.c	\
 	eval.c		\
-	progress.c
+	progress.c	\
+	reconstruct.c
 
 lminc = \
 	$(I)/lime/construct.h	\
