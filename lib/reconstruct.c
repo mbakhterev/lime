@@ -230,6 +230,8 @@ static int gatherone(List *const l, void *const ptr)
 	return 0;
 }
 
+static void gathertype(RState *const, const Ref);
+
 void gather(RState *const st, const Ref r)
 {
 	Array *const marks = st->marks;
@@ -242,11 +244,12 @@ void gather(RState *const st, const Ref r)
 		return;
 
 	case TYPE:
-		if(refmap(marks, r).code == FREE)
-		{
-			tunerefmap(marks, r, r);
-		}
-
+// 		if(refmap(marks, r).code == FREE)
+// 		{
+// 			tunerefmap(marks, r, r);
+// 		}
+		
+		gathertype(st, r);
 		return;
 
 	case SYM:
@@ -272,4 +275,56 @@ void gather(RState *const st, const Ref r)
 	default:
 		assert(0);
 	}
+}
+
+void gathertype(RState *const st, const Ref r)
+{
+	Array *const marks = st->marks;
+	Array *const U = st->U;
+	Array *const tdefs = st->typedefs;
+
+	{
+		const Ref t = refmap(st->marks, r);
+		if(t.code != FREE)
+		{
+			assert(t.code == NODE && t.external);
+			return;
+		}
+	}
+
+	const Binding *const b = typeat(st->T, r);
+
+	// Сначала нужно добавить узлы, необходимые для описания структуры типа
+	gather(st, b->key);
+
+	// Затем добавить в список сам узел с описанием типа и отождествить с
+	// ним r
+
+	const Ref tnodeattr = totalrewrite(b->key, marks);
+	assert(tnodeattr.code != FREE);
+
+	const Ref tnode = newnode(readtoken(U, "T").u.number, tnodeattr, 0);
+	tunerefmap(marks, r, tnode);
+
+	st->L = append(st->L, RL(tnode));
+
+	if(b->ref.code == FREE || setmap(tdefs, r))
+	{
+		return;
+	}
+
+	// Если у типа есть определение, и оно ещё не было сделано, то надо
+	// добавить в список узел TDef. И пометить r, как определённый. Перед
+	// этим нужно добавить в список всё необходимое
+
+	gather(st, b->ref);
+
+	const Ref tdefattr
+		= reflist(RL(markext(tnode), totalrewrite(b->ref, marks)));
+	assert(tdefattr.code != FREE);
+
+	const Ref tdef = newnode(readtoken(U, "TDef").u.number, tdefattr, 0);
+	tunesetmap(tdefs, r);
+
+	st->L = append(st->L, RL(tdef));
 }

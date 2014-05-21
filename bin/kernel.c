@@ -510,6 +510,7 @@ int main(int argc, char *const argv[])
 				*AD, C->verbs.system, C->E, C->T, C->S);
 
 		dumpdag(0, stdout, 0, U, dag);
+		fflush(stdout);
 		freeref(dag);
 		assert(fputc('\n', stdout) == '\n');
 	}
