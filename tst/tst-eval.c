@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 	const Ref D = loaddag(stdin, U, lb);
 	printf("loaded\n");
 
-	dumpdag(1, stdout, 0, U, D, NULL, NULL);
+	dumpdag(1, stdout, 0, U, D); // , NULL, NULL);
 	fputc('\n', stdout);
 	fflush(stdout);
 
@@ -33,9 +33,14 @@ int main(int argc, char *argv[])
 	const Ref d = eval(C, NULL, D, 0, inputs, EMDAG);
 	freelist(inputs);
 
-	dumpdag(1, stdout, 0, U, d, NULL, NULL);
+	const Ref rd = reconstruct(C->U, d, C->verbs.system, C->E, C->T, C->S);
+	freeref(d);
+
+	dumpdag(1, stdout, 0, U, rd); // , NULL, NULL);
 	fputc('\n', stdout);
 	fflush(stdout);
+
+	freeref(rd);
 
 	printf("envmarks ");
 	dumpkeymap(1, stdout, 0, U, envmarks, NULL);

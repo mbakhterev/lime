@@ -28,12 +28,13 @@ typedef struct
 {
 	Array *const U;
 	Array *const marks;
-	Array *const envdefs;
+	Array *const envmarks;
 
 	Array *const symdefs;
 	Array *const typedefs;
 
 	List *L;
+	List *G;
 
 	const Array *const E;
 	const Array *const T;
@@ -56,10 +57,11 @@ Ref reconstructcore(
 	{
 		.U = U,
 		.marks = newkeymap(),
-		.envdefs = newkeymap(),
+		.envmarks = newkeymap(),
 		.symdefs = symdefs,
 		.typedefs = typedefs,
 		.L = NULL,
+		.G = NULL,
 		.E = E,
 		.T = T,
 		.S = S,
@@ -70,15 +72,17 @@ Ref reconstructcore(
 		= forlist(dag.u.list, stageone, &st, 0) == 0
 			&& forlist(dag.u.list, stagetwo, &st, 0) == 0;
 
-	freekeymap(st.envdefs);
+	freekeymap(st.envmarks);
 	freekeymap(st.marks);
 
 	if(ok)
 	{
-		return refdag(st.L);
+		return refdag(append(st.G, st.L));
 	}
 
 	freelist(st.L);
+	freelist(st.G);
+
 	return reffree();
 }
 
@@ -108,7 +112,7 @@ int stageone(List *const l, void *const ptr)
 	switch(nodeverb(l->ref, st->verbs))
 	{
 	case EDEF:
-		return defenv(st->envdefs, l->ref, st->U);
+		return defenv(st->envmarks, l->ref, st->U);
 	}
 
 	return 0;
@@ -190,13 +194,21 @@ Ref totalrewrite(const Ref R, const Array *const map)
 		return R;
 	
 	case TYPE:
-	case SYM:
-	case ENV:
 	case NODE:
 	{
 		const Ref r = refmap(map, R);
-		return r;
+		if(r.code != FREE)
+		{
+			assert(r.code == NODE);
+			return r;
+		}
+
+		return reffree();
 	}
+
+	case SYM:
+	case ENV:
+		return refmap(map, R);
 	
 	case LIST:
 	{
@@ -306,7 +318,7 @@ void gathertype(RState *const st, const Ref r)
 	const Ref tnode = newnode(readtoken(U, "T").u.number, tnodeattr, 0);
 	tunerefmap(marks, r, tnode);
 
-	st->L = append(st->L, RL(tnode));
+	st->G = append(st->G, RL(tnode));
 
 	if(b->ref.code == FREE || setmap(tdefs, r))
 	{
@@ -326,5 +338,5 @@ void gathertype(RState *const st, const Ref r)
 	const Ref tdef = newnode(readtoken(U, "TDef").u.number, tdefattr, 0);
 	tunesetmap(tdefs, r);
 
-	st->L = append(st->L, RL(tdef));
+	st->G = append(st->G, RL(tdef));
 }
