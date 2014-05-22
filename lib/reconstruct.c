@@ -4,7 +4,8 @@
 #include <assert.h>
 
 static Ref reconstructcore(
-	Array *const U, Array *const symdefs, Array *const typedefs,
+	Array *const U,
+	Array *const envdefs, Array *const symdefs, Array *const typedefs,
 	const Ref, const Array *const V,
 	const Array *const E, const Array *const T, const Array *const S);
 
@@ -13,13 +14,17 @@ Ref reconstruct(
 	const Ref dag, const Array *const V,
 	const Array *const E, const Array *const T, const Array *const S)
 {
+	Array *const envdefs = newkeymap();
 	Array *const symdefs = newkeymap();
 	Array *const typedefs = newkeymap();
 
-	const Ref r = reconstructcore(U, symdefs, typedefs, dag, V, E, T, S);
+	const Ref r
+		= reconstructcore(U,
+			envdefs, symdefs, typedefs, dag, V, E, T, S);
 
 	freekeymap(typedefs);
 	freekeymap(symdefs);
+	freekeymap(envdefs);
 
 	return r;
 }
@@ -30,6 +35,7 @@ typedef struct
 	Array *const marks;
 	Array *const envmarks;
 
+	Array *const envdefs;
 	Array *const symdefs;
 	Array *const typedefs;
 
@@ -47,7 +53,8 @@ static int stageone(List *const, void *const);
 static int stagetwo(List *const, void *const);
 
 Ref reconstructcore(
-	Array *const U, Array *const symdefs, Array *const typedefs,
+	Array *const U,
+	Array *const envdefs, Array *const symdefs, Array *const typedefs,
 	const Ref dag, const Array *const verbs,
 	const Array *const E, const Array *const T, const Array *const S)
 {
@@ -58,6 +65,7 @@ Ref reconstructcore(
 		.U = U,
 		.marks = newkeymap(),
 		.envmarks = newkeymap(),
+		.envdefs = envdefs,
 		.symdefs = symdefs,
 		.typedefs = typedefs,
 		.L = NULL,
@@ -132,6 +140,7 @@ int stagetwo(List *const l, void *const ptr)
 	RState *const st = ptr;
 
 	Array *const U = st->U;
+	Array *const edefs = st->envdefs;
 	Array *const sdefs = st->symdefs;
 	Array *const tdefs = st->typedefs;
 	Array *const marks = st->marks;
@@ -149,7 +158,7 @@ int stagetwo(List *const l, void *const ptr)
 
 	const Ref attr
 		= r.code == DAG ?
-			  reconstructcore(U, sdefs, tdefs, r, V, E, T, S)
+			  reconstructcore(U, edefs, sdefs, tdefs, r, V, E, T, S)
 			: totalrewrite(r, st->marks);
 	
 	assert(attr.code != FREE);
@@ -243,6 +252,7 @@ static int gatherone(List *const l, void *const ptr)
 }
 
 static void gathertype(RState *const, const Ref);
+static void gatherenv(RState *const, const Ref);
 
 void gather(RState *const st, const Ref r)
 {
@@ -273,11 +283,12 @@ void gather(RState *const st, const Ref r)
 		return;
 	
 	case ENV:
-		if(refmap(marks, r).code == FREE)
-		{
-			tunerefmap(marks, r, r);
-		}
+// 		if(refmap(marks, r).code == FREE)
+// 		{
+// 			tunerefmap(marks, r, r);
+// 		}
 
+		gatherenv(st, r);
 		return;
 	
 	case LIST:
@@ -339,4 +350,107 @@ void gathertype(RState *const st, const Ref r)
 	tunesetmap(tdefs, r);
 
 	st->G = append(st->G, RL(tdef));
+}
+
+static Ref idbylink(Array *const U, const Ref, Array *const env);
+
+void gatherenv(RState *const st, const Ref R)
+{
+	Array *const U = st->U;
+	Array *const marks = st->marks;
+	Array *const edefs = st->envdefs;
+	const Array *const E = st->E;
+
+	{
+		const Ref t = refmap(marks, R);
+		if(t.code != FREE)
+		{
+			assert(t.code == NODE && t.external);
+			return;
+		}
+	}
+
+	const Ref path = forkref(markext(envrootpath(E, R)), NULL);
+	assert(path.code == LIST);
+
+	// Сначала узел, описывающий само окружение. На него будут направлены
+	// все соответствующие E:N ссылки
+
+	const Ref aE = readtoken(U, "E");
+
+	const Ref enode = newnode(aE.u.number, reflist(RL(path)), 0);
+	tunerefmap(marks, R, enode);
+
+	// Нам может потребоваться определить this и parent ссылки, поэтому
+	// сразу в список узел не помещаем: трассировка parent может быть
+	// длинной, а для отладки лучше соблюсти плотную группировку 
+
+	if(setmap(edefs, R))
+	{
+		// Окружение уже определено. Ничего больше ссылки по имени на
+		// него не нужно
+
+		st->G = append(st->G, RL(enode));
+		return;
+	}
+
+	// Нужно определить окружение. Сначала узнаем идентификаторы this и
+	// parent и соберём для них выражения
+
+	const Ref athis = readtoken(U, "this");
+	const Ref aparent = readtoken(U, "parent");
+
+	const Ref thisid = idbylink(U, athis, envkeymap(E, R));
+	const Ref parentid = idbylink(U, aparent, envkeymap(E, R));
+
+	// Если parent или this указывают на само окружение, то не надо его
+	// выдавать. Будет сделано отдельно
+
+	if(parentid.code == ENV && parentid.u.number != R.u.number)
+	{
+		gather(st, parentid);
+	}
+
+	if(thisid.code == ENV && thisid.u.number != R.u.number)
+	{
+		gather(st, thisid);
+	}
+
+	// Тут можно выдавать уже узлы
+
+	st->G = append(st->G, RL(enode));
+
+	if(thisid.code == ENV)
+	{
+		const Ref thispath
+			= reflist(append(forklist(path.u.list), RL(athis)));
+
+		const Ref thisnode
+			= newnode(aE.u.number, reflist(RL(
+				thispath, refmap(marks, thisid))), 0);
+
+		st->G = append(st->G, RL(thisnode));
+	}
+
+	if(parentid.code == ENV)
+	{
+		const Ref parentpath
+			= reflist(append( forklist(path.u.list), RL(aparent)));
+		
+		const Ref parentnode
+			= newnode(aE.u.number, reflist(RL(
+				parentpath, refmap(marks, parentid))), 0);
+
+		st->G = append(st->G, RL(parentnode));
+	}
+
+	tunesetmap(edefs, R);
+}
+
+Ref idbylink(Array *const U, const Ref name, Array *const env)
+{
+	const Array *const t
+		= linkmap(U, env, readtoken(U, "ENV"), name, reffree());
+
+	return t ? envid(U, t) : reffree();
 }
