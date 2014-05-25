@@ -7,7 +7,8 @@ static Ref reconstructcore(
 	Array *const U,
 	Array *const envdefs, Array *const symdefs, Array *const typedefs,
 	const Ref, const Array *const V,
-	const Array *const E, const Array *const T, const Array *const S);
+	const Array *const E, const Array *const T, const Array *const S,
+	const unsigned envnum);
 
 Ref reconstruct(
 	Array *const U,
@@ -20,7 +21,7 @@ Ref reconstruct(
 
 	const Ref r
 		= reconstructcore(U,
-			envdefs, symdefs, typedefs, dag, V, E, T, S);
+			envdefs, symdefs, typedefs, dag, V, E, T, S, 0);
 
 	freekeymap(typedefs);
 	freekeymap(symdefs);
@@ -47,6 +48,7 @@ typedef struct
 	const Array *const S;
 
 	const Array *const verbs;
+	const unsigned envnum;
 } RState;
 
 static int stageone(List *const, void *const);
@@ -56,7 +58,8 @@ Ref reconstructcore(
 	Array *const U,
 	Array *const envdefs, Array *const symdefs, Array *const typedefs,
 	const Ref dag, const Array *const verbs,
-	const Array *const E, const Array *const T, const Array *const S)
+	const Array *const E, const Array *const T, const Array *const S,
+	const unsigned envnum)
 {
 	assert(isdag(dag));
 
@@ -73,7 +76,8 @@ Ref reconstructcore(
 		.E = E,
 		.T = T,
 		.S = S,
-		.verbs = verbs
+		.verbs = verbs,
+		.envnum = envnum
 	};
 
 	const unsigned ok
@@ -126,10 +130,9 @@ int stageone(List *const l, void *const ptr)
 	return 0;
 }
 
-// static int gatherone(List *const, void *const);
 static void gather(RState *const, const Ref);
-
 static Ref totalrewrite(const Ref, const Array *const);
+static int selectenv(const unsigned, const Array *const envmarks, const Ref N);
 
 int stagetwo(List *const l, void *const ptr)
 {
@@ -144,10 +147,12 @@ int stagetwo(List *const l, void *const ptr)
 	Array *const sdefs = st->symdefs;
 	Array *const tdefs = st->typedefs;
 	Array *const marks = st->marks;
+	Array *const envmarks = st->envmarks;
 	const Array *const E = st->E;
 	const Array *const T = st->T;
 	const Array *const S = st->S;
 	const Array *const V = st->verbs;
+	const unsigned envnum = st->envnum;
 
 	const Ref r = nodeattribute(N);
 
@@ -157,9 +162,10 @@ int stagetwo(List *const l, void *const ptr)
 	}
 
 	const Ref attr
-		= r.code == DAG ?
-			  reconstructcore(U, edefs, sdefs, tdefs, r, V, E, T, S)
-			: totalrewrite(r, st->marks);
+		= r.code != DAG ?
+			  totalrewrite(r, st->marks)
+			: reconstructcore(U, edefs, sdefs, tdefs,
+				r, V, E, T, S, selectenv(envnum, envmarks, N));
 	
 	assert(attr.code != FREE);
 
@@ -169,6 +175,13 @@ int stagetwo(List *const l, void *const ptr)
 	st->L = append(st->L, RL(n));
 
 	return 0;
+}
+
+int selectenv(
+	const unsigned envnum, const Array *const envmarks, const Ref N)
+{
+	const Ref t = refmap(envmarks, N);
+	return t.code == ENV ? t.u.number : envnum;
 }
 
 typedef struct
@@ -253,10 +266,11 @@ static int gatherone(List *const l, void *const ptr)
 
 static void gathertype(RState *const, const Ref);
 static void gatherenv(RState *const, const Ref);
+static void gathersym(RState *const, const Ref);
 
 void gather(RState *const st, const Ref r)
 {
-	Array *const marks = st->marks;
+// 	Array *const marks = st->marks;
 
 	switch(r.code)
 	{
@@ -266,28 +280,19 @@ void gather(RState *const st, const Ref r)
 		return;
 
 	case TYPE:
-// 		if(refmap(marks, r).code == FREE)
-// 		{
-// 			tunerefmap(marks, r, r);
-// 		}
-		
 		gathertype(st, r);
 		return;
 
 	case SYM:
-		if(refmap(marks, r).code == FREE)
-		{
-			tunerefmap(marks, r, r);
-		}
-
-		return;
-	
-	case ENV:
 // 		if(refmap(marks, r).code == FREE)
 // 		{
 // 			tunerefmap(marks, r, r);
 // 		}
 
+		gathersym(st, r);
+		return;
+	
+	case ENV:
 		gatherenv(st, r);
 		return;
 	
@@ -453,4 +458,69 @@ Ref idbylink(Array *const U, const Ref name, Array *const env)
 		= linkmap(U, env, readtoken(U, "ENV"), name, reffree());
 
 	return t ? envid(U, t) : reffree();
+}
+
+void gathersym(RState *const st, const Ref R)
+{
+	Array *const U = st->U;
+	Array *const marks = st->marks;
+	Array *const sdefs = st->symdefs;
+	const Array *const S = st->S;
+	const unsigned envnum = st->envnum;
+
+	{
+		const Ref t = refmap(marks, R);
+		if(t.code != FREE)
+		{
+			assert(t.code == NODE && t.external);
+			return;
+		}
+	}
+
+	const Ref aS = readtoken(U, "S");
+	const Ref name = forkref(markext(symname(S, R)), NULL);
+
+	if(setmap(sdefs, R))
+	{
+		const Ref snode
+			= newnode(aS.u.number, reflist(RL(name)), 0);
+
+		st->G = append(st->G, RL(snode));
+		tunerefmap(marks, R, snode);
+
+		return;
+	}
+
+	const Ref stype = symtype(S, R);
+	assert(stype.code == TYPE);
+	gather(st, stype);
+
+	const Ref senv = symenv(S, R);
+	assert(senv.code == ENV);
+	if(senv.u.number != envnum)
+	{
+		gather(st, senv);
+	}
+
+	const Ref snode
+		= newnode(aS.u.number,
+			reflist(RL(name, refmap(marks, stype))), 0);
+	
+	st->G = append(st->G, RL(snode));
+	tunerefmap(marks, R, snode);
+
+	if(senv.u.number != envnum)
+	{
+		const Ref aEDef = readtoken(U, "EDef");
+		const Ref edef
+			= newnode(
+				aEDef.u.number,
+				reflist(RL(
+					refmap(marks, senv), markext(snode))),
+				0);
+
+		st->G = append(st->G, RL(edef));
+	}
+
+	tunesetmap(sdefs, R);
 }

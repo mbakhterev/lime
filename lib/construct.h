@@ -663,6 +663,7 @@ extern void dumptable(
 // Процедуры для доступа к составляющим символа с уникальным идентификатором
 // id. Примерный вариант использования: symname(symbols, symid(symmarks, N))
 
+extern Ref symenv(const Array *const symbols, const Ref id);
 extern Ref symtype(const Array *const symbols, const Ref id);
 extern Ref symname(const Array *const symbols, const Ref id);
 

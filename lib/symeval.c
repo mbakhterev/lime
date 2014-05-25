@@ -166,6 +166,20 @@ Ref symname(const Array *const symbols, const Ref id)
 	return markext(R[1]);
 }
 
+Ref symenv(const Array *const symbols, const Ref id)
+{
+	assert(symbols);
+	assert(id.code == SYM && id.u.number < symbols->count);
+
+	const Binding *const b = (Binding *)symbols->u.data + id.u.number;
+	assert(b->key.code == LIST && b->ref.code == TYPE);
+
+	const Ref R[2];
+	assert(splitpair(b->key, (Ref *)R) && R[0].code == ENV);
+
+	return R[0];
+}
+
 Ref symtype(const Array *const symbols, const Ref id)
 {
 	assert(symbols);
