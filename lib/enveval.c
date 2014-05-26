@@ -215,6 +215,16 @@ static Array *newtarget(
 	Array *const R = envkeymap(E, refenv(0));
 	assert(linkmap(U, T,
 		readtoken(U, "ENV"), readtoken(U, "/"), refkeymap(R)) == R);
+	
+	// FIXME: автоматические this и parent. Кажется, разумно их создавать
+	// именно так
+
+	assert(linkmap(U, T,
+		readtoken(U, "ENV"), readtoken(U, "this"), refkeymap(T)) == T);
+	
+	assert(linkmap(U, T,
+		readtoken(U, "ENV"),
+		readtoken(U, "parent"), refkeymap((Array *)map)) == map);
 
 	return T;
 }

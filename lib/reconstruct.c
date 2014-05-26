@@ -357,13 +357,13 @@ void gathertype(RState *const st, const Ref r)
 	st->G = append(st->G, RL(tdef));
 }
 
-static Ref idbylink(Array *const U, const Ref, Array *const env);
+// static Ref idbylink(Array *const U, const Ref, Array *const env);
 
 void gatherenv(RState *const st, const Ref R)
 {
 	Array *const U = st->U;
 	Array *const marks = st->marks;
-	Array *const edefs = st->envdefs;
+// 	Array *const edefs = st->envdefs;
 	const Array *const E = st->E;
 
 	{
@@ -386,79 +386,79 @@ void gatherenv(RState *const st, const Ref R)
 	const Ref enode = newnode(aE.u.number, reflist(RL(path)), 0);
 	tunerefmap(marks, R, enode);
 
-	// Нам может потребоваться определить this и parent ссылки, поэтому
-	// сразу в список узел не помещаем: трассировка parent может быть
-	// длинной, а для отладки лучше соблюсти плотную группировку 
-
-	if(setmap(edefs, R))
-	{
-		// Окружение уже определено. Ничего больше ссылки по имени на
-		// него не нужно
-
-		st->G = append(st->G, RL(enode));
-		return;
-	}
-
-	// Нужно определить окружение. Сначала узнаем идентификаторы this и
-	// parent и соберём для них выражения
-
-	const Ref athis = readtoken(U, "this");
-	const Ref aparent = readtoken(U, "parent");
-
-	const Ref thisid = idbylink(U, athis, envkeymap(E, R));
-	const Ref parentid = idbylink(U, aparent, envkeymap(E, R));
-
-	// Если parent или this указывают на само окружение, то не надо его
-	// выдавать. Будет сделано отдельно
-
-	if(parentid.code == ENV && parentid.u.number != R.u.number)
-	{
-		gather(st, parentid);
-	}
-
-	if(thisid.code == ENV && thisid.u.number != R.u.number)
-	{
-		gather(st, thisid);
-	}
-
-	// Тут можно выдавать уже узлы
+// 	// Нам может потребоваться определить this и parent ссылки, поэтому
+// 	// сразу в список узел не помещаем: трассировка parent может быть
+// 	// длинной, а для отладки лучше соблюсти плотную группировку 
+// 
+// 	if(setmap(edefs, R))
+// 	{
+// 		// Окружение уже определено. Ничего больше ссылки по имени на
+// 		// него не нужно
+// 
+// 		st->G = append(st->G, RL(enode));
+// 		return;
+// 	}
+// 
+// 	// Нужно определить окружение. Сначала узнаем идентификаторы this и
+// 	// parent и соберём для них выражения
+// 
+// 	const Ref athis = readtoken(U, "this");
+// 	const Ref aparent = readtoken(U, "parent");
+// 
+// 	const Ref thisid = idbylink(U, athis, envkeymap(E, R));
+// 	const Ref parentid = idbylink(U, aparent, envkeymap(E, R));
+// 
+// 	// Если parent или this указывают на само окружение, то не надо его
+// 	// выдавать. Будет сделано отдельно
+// 
+// 	if(parentid.code == ENV && parentid.u.number != R.u.number)
+// 	{
+// 		gather(st, parentid);
+// 	}
+// 
+// 	if(thisid.code == ENV && thisid.u.number != R.u.number)
+// 	{
+// 		gather(st, thisid);
+// 	}
+// 
+// 	// Тут можно выдавать уже узлы
 
 	st->G = append(st->G, RL(enode));
 
-	if(thisid.code == ENV)
-	{
-		const Ref thispath
-			= reflist(append(forklist(path.u.list), RL(athis)));
-
-		const Ref thisnode
-			= newnode(aE.u.number, reflist(RL(
-				thispath, refmap(marks, thisid))), 0);
-
-		st->G = append(st->G, RL(thisnode));
-	}
-
-	if(parentid.code == ENV)
-	{
-		const Ref parentpath
-			= reflist(append( forklist(path.u.list), RL(aparent)));
-		
-		const Ref parentnode
-			= newnode(aE.u.number, reflist(RL(
-				parentpath, refmap(marks, parentid))), 0);
-
-		st->G = append(st->G, RL(parentnode));
-	}
-
-	tunesetmap(edefs, R);
+// 	if(thisid.code == ENV)
+// 	{
+// 		const Ref thispath
+// 			= reflist(append(forklist(path.u.list), RL(athis)));
+// 
+// 		const Ref thisnode
+// 			= newnode(aE.u.number, reflist(RL(
+// 				thispath, refmap(marks, thisid))), 0);
+// 
+// 		st->G = append(st->G, RL(thisnode));
+// 	}
+// 
+// 	if(parentid.code == ENV)
+// 	{
+// 		const Ref parentpath
+// 			= reflist(append( forklist(path.u.list), RL(aparent)));
+// 		
+// 		const Ref parentnode
+// 			= newnode(aE.u.number, reflist(RL(
+// 				parentpath, refmap(marks, parentid))), 0);
+// 
+// 		st->G = append(st->G, RL(parentnode));
+// 	}
+// 
+// 	tunesetmap(edefs, R);
 }
 
-Ref idbylink(Array *const U, const Ref name, Array *const env)
-{
-	const Array *const t
-		= linkmap(U, env, readtoken(U, "ENV"), name, reffree());
-
-	return t ? envid(U, t) : reffree();
-}
+// Ref idbylink(Array *const U, const Ref name, Array *const env)
+// {
+// 	const Array *const t
+// 		= linkmap(U, env, readtoken(U, "ENV"), name, reffree());
+// 
+// 	return t ? envid(U, t) : reffree();
+// }
 
 void gathersym(RState *const st, const Ref R)
 {

@@ -13,8 +13,7 @@
 // #define DBGFLAGS (DBGPRGS | DBGGF)
 // #define DBGFLAGS (DBGPRGS | DBGSYNTH | DBGCLLT)
 // #define DBGFLAGS (DBGSYNTH | DBGACT | DBGPRGS)
-
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGGF)
 
 static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 {
@@ -42,6 +41,8 @@ static Ref getbody(
 
 	// Берём окружение для текущей области вывода
 	Array *const env = areaenv(U, toparea(C->areastack));
+
+	DBG(DBGGF, "E:%u", envid(U, env).u.number);
 
 	// Путь к корню дерева окружений
 	List *const p
@@ -396,7 +397,9 @@ static unsigned synthesize(Core *const C, Array *const A, const unsigned rid)
 {
 	if(C->dumpinfopath)
 	{
-		fprintf(stderr, "\nnext synthesis cycle at M:%p\n", (void *)A);
+		fprintf(stderr, "\nnext synthesis cycle at M:%p E:%u\n",
+			(void *)A,
+			envid(C->U, areaenv(C->U, A)).u.number);
 	}
 
 	assert(isactive(C->U, A));
