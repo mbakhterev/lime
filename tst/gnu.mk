@@ -50,25 +50,25 @@ cleanlmtst:
 	@ rm -r $(lmtstbits) \
 	&& rm $(lmtstbin)
 
-$(T)/tst-rune: $(lmtstbits)/tst-rune.o $(lmlib)
-$(T)/tst-array: $(lmtstbits)/tst-array.o $(lmlib)
-$(T)/tst-heapsort: $(lmtstbits)/tst-heapsort.o $(lmlib)
+$(T)/tst-rune: $(lmtstbits)/tst-rune.o | $(lmlib)
+$(T)/tst-array: $(lmtstbits)/tst-array.o | $(lmlib)
+$(T)/tst-heapsort: $(lmtstbits)/tst-heapsort.o | $(lmlib)
 
-$(T)/tst-loadatom: $(lmtstbits)/tst-loadatom.o $(lmlib)
-$(T)/tst-loadtoken: $(lmtstbits)/tst-loadtoken.o $(lmlib)
-$(T)/gen-atomtab: $(lmtstbits)/gen-atomtab.o $(lmlib)
+$(T)/tst-loadatom: $(lmtstbits)/tst-loadatom.o | $(lmlib)
+$(T)/tst-loadtoken: $(lmtstbits)/tst-loadtoken.o | $(lmlib)
+$(T)/gen-atomtab: $(lmtstbits)/gen-atomtab.o | $(lmlib)
 $(T)/tst-atomtab.sh: $(lmtstnode)/tst-atomtab.sh
 
-$(T)/tst-list: $(lmtstbits)/tst-list.o $(lmlib)
-$(T)/tst-loaddag: $(lmtstbits)/tst-loaddag.o $(lmlib)
-$(T)/tst-gcnodes: $(lmtstbits)/tst-gcnodes.o $(lmlib)
-$(T)/tst-forkdag: $(lmtstbits)/tst-forkdag.o $(lmlib)
-$(T)/tst-ntheval: $(lmtstbits)/tst-ntheval.o $(lmlib)
-$(T)/tst-evalforms: $(lmtstbits)/tst-evalforms.o $(lmlib)
+$(T)/tst-list: $(lmtstbits)/tst-list.o | $(lmlib)
+$(T)/tst-loaddag: $(lmtstbits)/tst-loaddag.o | $(lmlib)
+$(T)/tst-gcnodes: $(lmtstbits)/tst-gcnodes.o | $(lmlib)
+$(T)/tst-forkdag: $(lmtstbits)/tst-forkdag.o | $(lmlib)
+$(T)/tst-ntheval: $(lmtstbits)/tst-ntheval.o | $(lmlib)
+$(T)/tst-evalforms: $(lmtstbits)/tst-evalforms.o | $(lmlib)
 
-$(T)/tst-env: $(lmtstbits)/tst-env.o $(lmlib)
+$(T)/tst-env: $(lmtstbits)/tst-env.o | $(lmlib)
 
-$(T)/tst-eval: $(lmtstbits)/tst-eval.o $(lmlib)
+$(T)/tst-eval: $(lmtstbits)/tst-eval.o | $(lmlib)
 
 lmtstforms = \
 	$(T)/forms/simple-atom.lk
