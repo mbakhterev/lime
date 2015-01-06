@@ -7,16 +7,16 @@ lkobj = $(call c2o, $(lkbits),$(lksrc))
 
 .PHONY: lmknl cleanlmknl
 
-lmknl: $(B)/lime-knl
+lmknl: $(B)/mc-knl
 
 cleanlmknl:
 	@ rm -r $(lkbits)/*.o \
-	&& rm $(B)/lime-knl
+	&& rm $(B)/mc-knl
 
-# $(B)/lime-knl: $(lkobj) $(L)/liblime.a
+# $(B)/mc-knl: $(lkobj) $(L)/liblime.a
 
-$(B)/lime-knl: lflags += -L $(L) -llime
-$(B)/lime-knl: $(lkobj) | $(L)/liblime.a
+$(B)/mc-knl: lflags += -L $(L) -llime
+$(B)/mc-knl: $(lkobj) | $(L)/liblime.a
 
 $(lkbits)/kernel.o: cflags += -D_XOPEN_SOURCE
 
