@@ -68,7 +68,7 @@ static int walkone(List *const l, void *const ptr)
 	const unsigned go
 		= st->wlk(l->ref, nodeverb(l->ref, st->map), attr, st->ptr);
 
-	if(go)
+	if(go && isdag(l->ref))
 	{
 		walkdag(*attr, st->wlk, st->ptr, st->map);
 	}
