@@ -10,8 +10,9 @@
 !sign
 
 !lib
-!lib/*.[ch]
-!lib/gnu.mk
+!lib/lime
+!lib/lime/*.[ch]
+!lib/lime/gnu.mk
 
 !tst
 !tst/*.c
@@ -33,8 +34,9 @@
 !tcn/*.mk
 
 !bin
-!bin/*.[ch]
-!bin/gnu.mk
+!bin/lime
+!bin/lime/*.[ch]
+!bin/lime/gnu.mk
 
 !txt
 !txt/*.txt
