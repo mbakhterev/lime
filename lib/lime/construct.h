@@ -440,7 +440,7 @@ extern unsigned unlinkmap(
 // 
 // 	basic - { NUMBER, ATOM };
 // 	signature - { NUMBER, ATOM, TYPE };
-//	type - { NUMBER, ATOM, TYPE, TYPEVAR }.
+//	type - { NUMBER, ATOM, TYPE, ENV }.
 
 extern unsigned isbasickey(const Ref);
 extern unsigned issignaturekey(const Ref);
@@ -883,11 +883,9 @@ extern void dofin(
 
 extern void donth(Marks *const, const Ref, const Core *const);
 
-extern void douniq(
-	Core *const, Marks *const, const Ref, const unsigned envnum);
-
-extern void doex(
-	Core *const, Marks *const, const Ref, const unsigned envnum);
+extern void doeq(Marks *const, const Ref, const Core *const);
+extern void doex(Core *const, Marks *const, const Ref, const unsigned envnum);
+extern void douniq(Core *const, Marks *const, const Ref, const unsigned envnum);
 
 // Формы
 

@@ -268,6 +268,10 @@ static int stagetwo(List *const l, void *const ptr)
 		doex(C, M, N, envfornode(N, U, env, M->marks, envdefs));
 		break;
 	
+	case EQ:
+		doeq(M, N, C);
+		break;
+	
 	case FNODE:
 		break;
 
