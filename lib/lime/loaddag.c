@@ -272,7 +272,9 @@ static LoadCurrent core(
 	{
 		// Загрузка атома из последовательности между кавычек
 
-		const Ref t = loadtoken(U, f, 0, "[0-9A-Za-z ]");
+// 		const Ref t = loadtoken(U, f, 0, "[.0-9A-Za-z ]");
+		
+		const Ref t = loadtoken(U, f, 0, "[^\"]");
 		int n = 0;
 		if(fscanf(f, "\"%n", &n) != 0 || n != 1)
 		{
