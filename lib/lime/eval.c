@@ -26,6 +26,8 @@ static const char *const limeverbs[] =
 	[RIP]	= "Rip",
 	[DONE]	= "Done",
 	[GO]	= "Go",
+	[ERROR] = "Error",
+	[DEBUG] = "Debug",
 	NULL
 };
 
@@ -358,6 +360,14 @@ static int stagetwo(List *const l, void *const ptr)
 
 		dofput(C, area, N, M);
 		break;
+	
+	case ERROR:
+		doerror(N, M, C);
+		break;
+	
+	case DEBUG:
+		dodebug(N, M, C);
+		break;
 
 	default:
 	{
@@ -411,6 +421,7 @@ static List *dogeneric(
 
 	const unsigned verb = nodeverb(N, NULL);
 	const unsigned line = nodeline(N);
+	const unsigned file = nodefileatom(N);
 
 	const Ref r = nodeattribute(N);
 
@@ -428,7 +439,7 @@ static List *dogeneric(
 		return NULL;
 	}
 
-	const Ref n = newnode(verb, attr, line);
+	const Ref n = newnode(verb, attr, file, line);
 	tunerefmap(marks, N, n);
 
 	if(knownverb(n, C->verbs.envmarks))

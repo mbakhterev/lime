@@ -169,7 +169,10 @@ int stagetwo(List *const l, void *const ptr)
 	
 	assert(attr.code != FREE);
 
-	const Ref n = newnode(nodeverb(N, NULL), attr, nodeline(N));
+	const Ref n
+		= newnode(nodeverb(N, NULL), attr,
+			nodefileatom(N), nodeline(N));
+
 	tunerefmap(marks, N, n);
 
 	st->L = append(st->L, RL(n));
@@ -331,7 +334,11 @@ void gathertype(RState *const st, const Ref r)
 	const Ref tnodeattr = totalrewrite(b->key, marks);
 	assert(tnodeattr.code != FREE);
 
-	const Ref tnode = newnode(readtoken(U, "T").u.number, tnodeattr, 0);
+// 	const Ref tnode = newnode(readtoken(U, "T").u.number, tnodeattr, 0);
+
+	// FIXME: Имя исходного файла для узла устанавливаем тоже в "T"
+	const unsigned verb = readtoken(U, "T").u.number;
+	const Ref tnode = newnode(verb, tnodeattr, verb, 0);
 	tunerefmap(marks, r, tnode);
 
 	st->G = append(st->G, RL(tnode));
@@ -351,7 +358,11 @@ void gathertype(RState *const st, const Ref r)
 		= reflist(RL(markext(tnode), totalrewrite(b->ref, marks)));
 	assert(tdefattr.code != FREE);
 
-	const Ref tdef = newnode(readtoken(U, "TDef").u.number, tdefattr, 0);
+// 	const Ref tdef = newnode(readtoken(U, "TDef").u.number, tdefattr, 0);
+
+	// FIXME: Имя файла устанавливаем в "TDef"
+	const unsigned tdefverb = readtoken(U, "TDef").u.number;
+	const Ref tdef = newnode(tdefverb, tdefattr, tdefverb, 0);
 	tunesetmap(tdefs, r);
 
 	st->G = append(st->G, RL(tdef));
@@ -383,7 +394,12 @@ void gatherenv(RState *const st, const Ref R)
 
 	const Ref aE = readtoken(U, "E");
 
-	const Ref enode = newnode(aE.u.number, reflist(RL(path)), 0);
+// 	const Ref enode = newnode(aE.u.number, reflist(RL(path)), 0);
+
+	// FIXME: Имя файла для узла устанавливаем в "E"
+	const Ref enode
+		= newnode(aE.u.number, reflist(RL(path)), aE.u.number, 0);
+
 	tunerefmap(marks, R, enode);
 
 // 	// Нам может потребоваться определить this и parent ссылки, поэтому
@@ -482,8 +498,10 @@ void gathersym(RState *const st, const Ref R)
 
 	if(setmap(sdefs, R))
 	{
+		// FIXME: Имя файла искусственно установлено в "S"
 		const Ref snode
-			= newnode(aS.u.number, reflist(RL(name)), 0);
+			= newnode(aS.u.number, reflist(RL(name)),
+				aS.u.number, 0);
 
 		st->G = append(st->G, RL(snode));
 		tunerefmap(marks, R, snode);
@@ -502,9 +520,11 @@ void gathersym(RState *const st, const Ref R)
 		gather(st, senv);
 	}
 
+	// FIXME: Имя файла искусствено установлено в "S"
 	const Ref snode
 		= newnode(aS.u.number,
-			reflist(RL(name, refmap(marks, stype))), 0);
+			reflist(RL(name, refmap(marks, stype))),
+				aS.u.number, 0);
 	
 	st->G = append(st->G, RL(snode));
 	tunerefmap(marks, R, snode);
@@ -512,12 +532,14 @@ void gathersym(RState *const st, const Ref R)
 	if(senv.u.number != envnum)
 	{
 		const Ref aEDef = readtoken(U, "EDef");
+
+		// FIXME: Имя файла установлено в "EDef"
 		const Ref edef
 			= newnode(
 				aEDef.u.number,
 				reflist(RL(
 					refmap(marks, senv), markext(snode))),
-				0);
+				aEDef.u.number, 0);
 
 		st->G = append(st->G, RL(edef));
 	}

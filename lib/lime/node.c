@@ -1,26 +1,13 @@
+#include "util.h"
 #include "construct.h"
 
 #include <assert.h>
 
-// enum { NODELEN = 3, VERB = 0, LINE = 2, ATTR = 1 };
-// enum { VERB = 0, ATTR, LINE, NODELEN };
+#define DBGVAL 1
 
-// static unsigned splitnode(const List *const l, const Ref *parts[])
-// {
-// 	unsigned nmatch = 0;
-// 	const Ref F = reffree();
-// 	const Ref n = reflist((List *)l);
-// 
-// 	DL(pattern, RS(F, F, F));
-// 
-// 	if(keymatch(pattern, &n, parts, NODELEN, &nmatch))
-// 	{
-// 		assert(nmatch == NODELEN);
-// 		return !0;
-// 	}
-// 
-// 	return 0;
-// }
+// #define DBGFLAGS DBGVAL
+
+#define DBGFLAGS 0
 
 unsigned splitnode(const Ref N, const Ref *parts[])
 {
@@ -34,7 +21,11 @@ unsigned splitnode(const Ref N, const Ref *parts[])
 
 static unsigned verbandline(const Ref *const n[])
 {
-	return n[VERB]->code == ATOM && n[LINE]->code == NUMBER;
+	DBG(DBGVAL, "%u %u %u %u",
+		n[0]->code, n[1]->code, n[2]->code, n[3]->code);
+
+	return n[VERB]->code == ATOM
+		&& n[LINE]->code == NUMBER && n[FILEATOM]->code == ATOM;
 }
 
 unsigned isnodelist(const List *const l)
@@ -55,10 +46,7 @@ unsigned issinglenode(const List *const l)
 
 unsigned nodeverb(const Ref n, const Array *const map)
 {
-// 	assert(n.code == NODE);
-
 	const Ref *R[NODELEN];
-// 	splitnode(n.u.list, R);
 
 	assert(splitnode(n, R) && verbandline(R));
 
@@ -67,9 +55,7 @@ unsigned nodeverb(const Ref n, const Array *const map)
 
 const Ref *nodeattributecell(const Ref n)
 {
-// 	assert(n.code == NODE);
 	const Ref *R[NODELEN];
-// 	splitnode(n.u.list, R);
 
 	assert(splitnode(n, R) && verbandline(R));
 
@@ -81,9 +67,26 @@ Ref nodeattribute(const Ref n)
 	return *nodeattributecell(n);
 }
 
-Ref newnode(const unsigned verb, const Ref attribute, const unsigned line)
+unsigned nodefileatom(const Ref N)
 {
-	return cleanext(refnode(RL(refatom(verb), attribute, refnum(line))));
+	const Ref *R[NODELEN];
+
+	assert(splitnode(N, R) && verbandline(R));
+
+	return R[FILEATOM]->u.number;
+}
+
+const char *const nodefilename(const Array *const U, const Ref N)
+{
+	return (const char *)atombytes(atomat(U, nodefileatom(N)));
+}
+
+Ref newnode(
+	const unsigned verb, const Ref attribute,
+	const unsigned fileatom, const unsigned line)
+{
+	return cleanext(refnode(RL(refatom(verb), attribute, 
+		refatom(fileatom), refnum(line))));
 }
 
 void freenode(const Ref n)
@@ -159,7 +162,7 @@ Ref forknode(const Ref node, Array *const M)
 		= newnode(
 			nodeverb(node, NULL),
 			forkref(nodeattribute(node), M),
-			nodeline(node));
+			nodefileatom(node), nodeline(node));
 	
 	// Процедура tunerefmap сама за-assert-ит попытку
 	// сделать не-уникальное отображение

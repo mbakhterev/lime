@@ -133,7 +133,7 @@ static Ref initone(Core *const C, const Ref D, const char *const optarg)
 	}
 
 	Array *const subdags = newverbmap(U, 0, dagverbs);
-	const Ref src = loaddag(f, U, subdags);
+	const Ref src = loaddag(f, unitname, U, subdags);
 	freekeymap(subdags);
 	fclose(f);
 

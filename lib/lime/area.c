@@ -318,7 +318,8 @@ static int onout(const Binding *const b, void *const ptr)
 		((Binding *)b)->ref = reffree();
 		const Ref attr = reflist(RL(refnum(0), reflist(RL(pair))));
 
-		st->nodes = append(st->nodes, RL(newnode(verb, attr, 0)));
+		// Имя исходного файла устанавливаем равным "FOut"
+		st->nodes = append(st->nodes, RL(newnode(verb, attr, verb, 0)));
 	}
 
 	// Никуда глубже проходить не нужно

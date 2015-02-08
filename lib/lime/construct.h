@@ -538,6 +538,8 @@ extern void walkbindings(
 
 extern unsigned nodeverb(const Ref exp, const Array *const vm);
 extern unsigned nodeline(const Ref exp);
+extern unsigned nodefileatom(const Ref exp);
+extern const char *const nodefilename(const Array *const U, const Ref N);
 extern const unsigned char *nodename(const Array *const U, const Ref N);
 
 extern Ref nodeattribute(const Ref exp);
@@ -550,7 +552,8 @@ extern unsigned knownverb(const Ref exp, const Array *const verbs);
 // узел (случай (Ref.code == NODE && Ref.external))
 
 extern Ref newnode(
-	const unsigned verb, const Ref attribute, const unsigned line);
+	const unsigned verb, const Ref attribute,
+	const unsigned fileatom, const unsigned line);
 
 extern void freenode(const Ref);
 
@@ -559,7 +562,7 @@ extern void freenode(const Ref);
 extern unsigned isnode(const Ref);
 extern unsigned isnodelist(const List *const);
 
-enum { VERB = 0, ATTR, LINE, NODELEN };
+enum { VERB = 0, ATTR, FILEATOM, LINE, NODELEN };
 extern unsigned splitnode(const Ref N, const Ref *parts[]);
 
 // Процедура для копирования выражений (узлов). Для воспроизведения ссылок на
@@ -578,7 +581,8 @@ extern Ref forknode(const Ref, Array *const nodemap);
 // узлы, в атрибутах которых должен быть записан замкнутый граф
 
 extern Ref loaddag(
-	FILE *const, Array *const U, const Array *const map);
+	FILE *const, const char *const filename,
+	Array *const U, const Array *const map);
 
 extern unsigned isdaglist(const List *const);
 extern unsigned isdag(const Ref N);
@@ -831,7 +835,8 @@ enum
 	ENODE, EDEF,
 	SNODE,
 	EX, EQ, UNIQ,
-	RNODE, RIP, DONE, GO
+	RNODE, RIP, DONE, GO,
+	ERROR, DEBUG
 };
 
 typedef struct
@@ -886,6 +891,10 @@ extern void donth(Marks *const, const Ref, const Core *const);
 extern void doeq(Marks *const, const Ref, const Core *const);
 extern void doex(Core *const, Marks *const, const Ref, const unsigned envnum);
 extern void douniq(Core *const, Marks *const, const Ref, const unsigned envnum);
+
+extern void doerror(const Ref, const Marks *const, const Core *const);
+extern void dodebug(const Ref, const Marks *const, const Core *const);
+extern void doloud(const Ref);
 
 // Формы
 

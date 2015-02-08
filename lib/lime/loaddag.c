@@ -25,6 +25,7 @@
 typedef struct
 {
 	FILE *const file;
+	const unsigned fileatom;
 	Array *const universe;
 	const Array *const dagmap;
 } LoadContext;
@@ -359,8 +360,10 @@ static LoadCurrent loadsubdag(
 	// этим полем node (см. ниже NEWNODE) замыкает список атрибутов нового
 	// узла
 
-	const Ref r = loaddag(f, U, ctx->dagmap);
-// 	assert(r.code == LIST);
+	const Ref r
+		= loaddag(f, (const char *)atombytes(atomat(U, ctx->fileatom)),
+			U, ctx->dagmap);
+
 	assert(r.code == DAG);
 
 	return LC(nodes, r.u.list);
@@ -448,7 +451,11 @@ static LoadCurrent node(
 		free(ns);
 	}
 
-	const Ref n = newnode(verb, (isdag ? refdag : reflist)(lc.refs), here);
+	const Ref n
+		= newnode(verb,
+			(isdag ? refdag : reflist)(lc.refs),
+				ctx->fileatom, here);
+
 	List *const l = RL(markext(n));
 
 	// Узел создан, и если под него зарезервирована метка в окружении, надо
@@ -463,7 +470,8 @@ static LoadCurrent node(
 }
 
 Ref loaddag(
-	FILE *const f, Array *const U, const Array *const dagmap)
+	FILE *const f, const char *const filename,
+	Array *const U, const Array *const dagmap)
 {
 	List *const env = NULL;
 	List *const nodes = NULL;
@@ -474,6 +482,7 @@ Ref loaddag(
 	const LoadContext ctx =
 	{
 		.file = f,
+		.fileatom = readtoken(U, filename).u.number,
 		.universe = U,
 		.dagmap = dagmap
 	};

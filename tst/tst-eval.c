@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 	Array *const lb = newverbmap(U, 0, ES("LB"));
 
 	printf("loading\n");
-	const Ref D = loaddag(stdin, U, lb);
+	const Ref D = loaddag(stdin, "stdin", U, lb);
 	printf("loaded\n");
 
 	dumpdag(1, stdout, 0, U, D); // , NULL, NULL);

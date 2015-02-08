@@ -90,7 +90,7 @@ static Ref redef(
 		= newnode(
 			nodeverb(N, NULL),
 			rewrite(nodeattribute(N), map, verbs, nodemap),
-			nodeline(N));
+			nodefileatom(N), nodeline(N));
 	
 	tunerefmap(nodemap, N, n);
 	
