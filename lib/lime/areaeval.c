@@ -1,5 +1,6 @@
 #include "construct.h"
 #include "util.h"
+#include "nodeutil.h"
 
 #include <assert.h>
 
@@ -119,8 +120,10 @@ unsigned dogo(
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST)
 	{
-		item = nodeline(N);
-		ERR("node \"%s\": expecting attribute list", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": expecting attribute list", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "expecting attribute list");
 		return -1;
 	}
 
@@ -132,22 +135,28 @@ unsigned dogo(
 
 	if(len != 1 || target.code != ENV)
 	{
-		item = nodeline(N);
-		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "wrong attribute structure");
 		return -1;
 	}
 
 	if(envtogo != -1)
 	{
-		item = nodeline(N);
-		ERR("node \"%s\": Go already pointed", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": Go already pointed", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "Go already detected");
 		return -1;
 	}
 
 	if(!isontop(U, area))
 	{
-		item = nodeline(N);
-		ERR("node \"%s\": can Go only from stack top", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": can Go only from stack top", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "can Go only from stack top");
 		return -1;
 	}
 

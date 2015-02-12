@@ -13,10 +13,8 @@ cleanlmknl:
 	@ rm -r $(lkbits)/*.o \
 	&& rm $(B)/mc-knl
 
-# $(B)/mc-knl: $(lkobj) $(L)/liblime.a
-
-$(B)/mc-knl: lflags += -L $(L) -llime
-$(B)/mc-knl: $(lkobj) $(L)/liblime.a
+# $(B)/mc-knl: lflags += -L $(L) -llime
+$(B)/mc-knl: $(lkobj) $(L)/liblime.a $(L)/liblimeio.a
 
 $(lkbits)/kernel.o: cflags += -D_XOPEN_SOURCE
 

@@ -1,5 +1,6 @@
 #include <lime/construct.h>
 #include <lime/util.h>
+#include <lime/fs.h>
 
 #include <assert.h>
 
@@ -7,6 +8,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <string.h>
 
 #define DBGMAIN		1
 #define DBGMAINEX	2
@@ -23,95 +25,6 @@
 
 unsigned item = 1;
 const char *unitname = "stdin";
-
-// // Загрузка исходных форм в окружение и контекст (?)
-// 
-// const char *const stdmap[] =
-// {
-// 	"F", "LB", NULL
-// };
-// 
-// const char *const initgarbage[] =
-// {
-// 	"L", "FIn", "Nth",
-// 	"E",
-// 	"T",
-// 	"R", "Go", "Done",
-// 	"F", "FEnv", "FPut", "FOut",
-// 	NULL
-// };
-// 
-// static Ref initone(
-// 	const char *const optarg,
-// 	Array *const U, Array *const R, Array *const T, Array *const typemarks, 
-// // 	Array *const symmarks,
-// 	const Ref D)
-// {
-// 	assert(isdag(D));
-// 
-// 	unitname = optarg;
-// 	item = 1;
-// 	FILE *const f = fopen(unitname, "r");
-// 	if(!f)
-// 	{
-// 		ERR("can't open form-source: %s", unitname);
-// 	}
-// 
-// 	Array *const subdags = newverbmap(U, 0, stdmap);
-// 	const Ref rawdag = loaddag(f, U, subdags);
-// 	freekeymap(subdags);
-// 	fclose(f);
-// 	
-// 	if(DBGFLAGS & DBGINIT)
-// 	{
-// 		dumpdag(1, stderr, 0, U, rawdag, NULL, NULL);
-// 		assert(fputc('\n', stderr) == '\n');
-// 	}
-// 
-// 	Array *const escape = newverbmap(U, 0, ES("F"));
-// 
-// 	const Ref dag = leval(U, rawdag, escape);
-// 	freeref(rawdag);
-// 
-// 	Array *const envmarks = newkeymap();
-// // 	Array *const typemarks = newkeymap();
-// 
-// 	Array *const tomark = newverbmap(U, 0, ES("FEnv", "TEnv"));
-// 	enveval(U, R, envmarks, dag, escape, tomark);
-// 	freekeymap(tomark);
-// 
-// 	if(DBGFLAGS & DBGINIT)
-// 	{
-// 		dumpkeymap(1, stderr, 0, U, envmarks, NULL);
-// 		assert(fputc('\n', stderr) == '\n');
-// 	}
-// 
-// 	typeeval(U, T, typemarks, dag, escape, envmarks);
-// 	formeval(U, NULL, NULL, dag, escape, envmarks, NULL, typemarks);
-// 
-// 	if(DBGFLAGS & DBGINIT)
-// 	{
-// 		dumptable(stderr, 0, U, T);
-// 		assert(fputc('\n', stderr) == '\n');
-// 	}
-// 
-// // 	freekeymap(escape);
-// // 	freekeymap(typemarks);
-// 	freekeymap(envmarks);
-// 
-// // 	freeref(dag);
-// 
-// 	const Array *const nonroots = newverbmap(U, 0, initgarbage);
-// 	gcnodes((Ref *)&dag, escape, nonroots, NULL);
-// 	freekeymap((Array *)nonroots);
-// 
-// 	freekeymap(escape);
-// 
-// 	assert(isdag(dag));
-// 
-// // 	return D;
-// 	return refdag(append(D.u.list, dag.u.list));
-// }
 
 static const char *const dagverbs[] =
 {
@@ -143,35 +56,68 @@ static Ref initone(Core *const C, const Ref D, const char *const optarg)
 	return refdag(append(D.u.list, dag.u.list));
 }
 
-// static Ref initforms(
-// 	const int argc, char *const argv[],
-// 	Array *const U, Array *const R, Array *const T,
-// 	Array *const typemarks)
-// // 	, Array *const symmarks)
-// {
-// 	Ref D = refdag(NULL);
-// 
-// 	optind = 1;
-// 	int opt = 0;
-// 	while((opt = getopt(argc, argv, "df:")) != -1)
-// 	{
-// 		switch(opt)
-// 		{
-// 		case 'f':
-// // 			D = initone(optarg, U, R, T, typemarks, symmarks, D);
-// 			D = initone(optarg, U, R, T, typemarks, D);
-// 			break;
-// 
-// 		case 'd':
-// 			break;
-// 		
-// 		default:
-// 			ERR("%s", "usage: [-d] [-f form-source]+");
-// 		}
-// 	}
-// 
-// 	return D;
-// }
+static Ref initmany(Core *const C, const Ref D, const char *const optarg)
+{
+	assert(isdag(D));
+
+	FILE *const f = fopen(optarg, "r");
+	if(!f)
+	{
+		ERR("can't open initial forms sources list: %s", optarg);
+		return reffree();
+	}
+
+	// Буфер для очередного имени файла
+	char buffer[MAXPATH + 2];
+
+	// Граф в котором будем копить формы
+	Ref d = D;
+
+	while(fgets(buffer, MAXPATH + 1, f) == buffer)
+	{
+		// unitname будет меняться после каждого обращения к initone
+		unitname = optarg;
+
+		const unsigned len = strlen(buffer);
+
+		// Разбор крайних случаев
+
+		if(len == 1 && buffer[len - 1] == '\n')
+		{
+			// Прочитана пустая строка, пропускаем
+			continue;
+		}
+
+		if(len == MAXPATH && !feof(f))
+		{
+			// В этом случае буфер заполнен под завязку, а конец
+			// файла или перевод строки не обнаружены. Это ошибка,
+			// слишком длинное имя файла
+
+			ERR("file name is too long: %s", buffer);
+			continue;
+		}
+
+		// В оставшихся случаях всё должно быть хорошо
+
+		if(buffer[len - 1] == '\n')
+		{
+			buffer[len - 1] = '\0';
+		}
+		else
+		{
+			assert(buffer[len - 1] == '\0' && feof(f));
+		}
+
+		// Загружаем
+
+		char *const fullpath = joinpath(optarg, buffer);
+		d = initone(C, d, fullpath);
+		free(fullpath);
+	}
+
+	return d;
+}
 
 static Ref initforms(Core *const C, const int argc, char *const argv[])
 {
@@ -179,7 +125,7 @@ static Ref initforms(Core *const C, const int argc, char *const argv[])
 
 	optind = 1;
 	int opt = -1;
-	while((opt = getopt(argc, argv, "df:")) != -1)
+	while((opt = getopt(argc, argv, "df:F:")) != -1)
 	{
 		switch(opt)
 		{
@@ -187,11 +133,18 @@ static Ref initforms(Core *const C, const int argc, char *const argv[])
 			D = initone(C, D, optarg);
 			break;
 
+		case 'F':
+			D = initmany(C, D, optarg);
+			break;
+
 		case 'd':
 			break;
 
 		default:
-			ERR("%s", "usage: [-d] [-f form-source]+");
+			ERR("%s",
+				"usage: [-d] "
+				"[-f form-source]+ "
+				"[-F form-source-list]+");
 			break;
 		}
 	}
@@ -204,7 +157,7 @@ static unsigned initinfodump(const int argc, char *const argv[])
 	optind = 1;
 	int opt = 0;
 	unsigned dump = 0;
-	while((opt = getopt(argc, argv, "df:")) != -1)
+	while((opt = getopt(argc, argv, "df:F:")) != -1)
 	{
 		switch(opt)
 		{
@@ -215,32 +168,28 @@ static unsigned initinfodump(const int argc, char *const argv[])
 			}
 			else
 			{
-				ERR("%s", "usage: [-d] [-f form-source]+");
+				ERR("%s",
+					"usage: [-d] "
+					"[-f form-source]+ "
+					"[-F form-source-list]+");
 			}
 
 			break;
 		
 		case 'f':
+		case 'F':
 			break;
 
 		default:
-			ERR("%s", "usage: [-d] [-f form-source]+");
+			ERR("%s",
+				"usage: [-d]"
+				"[-f form-source]+ "
+				"[-F form-source-list]+");
 		}
 	}
 
 	return dump;
 }
-
-// const char *const syntaxops[] =
-// {
-// 	[FOP] = "F",
-// 	[AOP] = "A",
-// 	[UOP] = "U",
-// 	[LOP] = "L",
-// 	[BOP] = "B",
-// 	[EOP] = "E",
-// 	NULL
-// };
 
 static char *const syntaxops[] =
 {
@@ -261,7 +210,6 @@ static unsigned opdecode(int c)
 	case 'A': return AOP;
 	case 'U': return UOP;
 	case 'L': return LOP;
-// 	case 'B': return BOP;
 	case 'E': return EOP;
 	}
 
@@ -389,7 +337,6 @@ static void progressread(FILE *const f, Core *const C)
 				dumpareastack(0, stderr, 0,
 					C->U, C->areastack, escape);
 				freekeymap((Array *)escape);
-// 				assert(fputc('\n', stderr) == '\n');
 			}
 
 			progress(C);
@@ -417,47 +364,12 @@ static Array *const inituniverse(void)
 	return U;
 }
 
-// static Array *const inittypes(Array *const U)
-// {
-// 	Array *const T = newkeymap();
-// 	return T;
-// }
-// 
-// static Array *const initroot(Array *const U)
-// {
-// 	Array *const R = newkeymap();
-// 
-// 	assert(linkmap(U, R,
-// 		readtoken(U, "ENV"), readtoken(U, "this"), refkeymap(R)) == R);
-// 
-// 	return R;
-// }
-
 int main(int argc, char *const argv[])
 {
 	const unsigned dip = initinfodump(argc, argv);
 	Array *const U = inituniverse();
-	
-// 	Array *const R = initroot(U);
-// 	Array *const T = inittypes(U);
-// 
-// 	Core C =
-// 	{
-// 		.U = U,
-// 		.types = T,
-// 		.typemarks = newkeymap(),
-// 		.symbols = newkeymap(),
-// 		.symmarks = newkeymap(),
-// 		.root = R,
-// 		.envtogo = R,
-// 		.areastack = NULL,
-// 		.activity = newkeymap(),
-// 		.dumpinfopath = dip
-// 	};
 
 	Core *const C = newcore(U, NULL, NULL, dip);
-
-// 	const Ref D = initforms(argc, argv, U, R, T, C.typemarks);
 
 	const Ref D = initforms(C, argc, argv);
 

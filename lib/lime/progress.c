@@ -13,7 +13,11 @@
 // #define DBGFLAGS (DBGPRGS | DBGGF)
 // #define DBGFLAGS (DBGPRGS | DBGSYNTH | DBGCLLT)
 // #define DBGFLAGS (DBGSYNTH | DBGACT | DBGPRGS)
-#define DBGFLAGS (DBGGF)
+// #define DBGFLAGS (DBGGF)
+
+#define DBGFLAGS 0xff
+
+// #define DBGFLAGS 0
 
 static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 {
@@ -36,7 +40,6 @@ static Ref getbody(
 	DBG(DBGGF, "%s", "entry");
 
 	Array *const U = C->U;
-// 	Array *const T = C->types;
 	Array *const T = C->T;
 
 	// Берём окружение для текущей области вывода
@@ -50,7 +53,6 @@ static Ref getbody(
 			readtoken(U, "ENV"), readtoken(U, "parent"));
 	
 	// Последний элемент в списке должен быть root-ом
-// 	assert(p && iskeymap(p->ref) && p->ref.u.array == C->root);
 	assert(p && iskeymap(p->ref) && envid(U, p->ref.u.array).u.number == 0);
 
 	DBG(DBGGF, "%s", "1st");
@@ -151,138 +153,6 @@ static int collectone(List *const l, void *const ptr)
 
 	return 0;
 }
-
-// static void activate(
-// 	const Ref form, const Array *const reactor,
-// 	Array *const area, Core *const C)
-// {
-// 	// Сначала надо прицепить трассу формы к текущему графу и удалить эту
-// 	// трассу из формы, чтобы сохранить её при освобождении формы в
-// 	// synthesize
-// 
-// 	{
-// 		assert(isform(form));
-// 		Ref *const R[FORMLEN];
-// 		assert(splitlist(form.u.list, (const Ref **)R, FORMLEN));
-// 		Ref *const AD = areadag(C->U, area);
-// 
-// 		assert(isdag(*R[TRACE]) && isdag(*AD));
-// 		AD->u.list = append(AD->u.list, R[TRACE]->u.list);
-// 
-// 		*R[TRACE] = refdag(NULL);
-// 	}
-// 
-// 	// Надо составить список входов для основного тела формы
-// 
-// 	AState st =
-// 	{
-// 		.inkeys = NULL,
-// 		.invals = NULL,
-// 		.U = C->U,
-// 		.R = reactor
-// 	};
-// 
-// 	const Ref keys = formkeys(form);
-// 	assert(keys.code == LIST);
-// 	forlist(keys.u.list, collectone, &st, 0);
-// 
-// 	const List *const inlist = RL(reflist(st.inkeys), reflist(st.invals));
-// 
-// 	// Теперь нужно выполнить процедуры оценки
-// 
-// 	const Array *const escape = newverbmap(C->U, 0, ES("F"));
-// 
-// 	const Array *const nonroots
-// 		= newverbmap(C->U, 0, ES(
-// 			"L", "FIn", "Nth",
-// 			"E",
-// 			"R", "Go", "Done",
-// 			"F", "FEnv", "FPut", "FOut",
-// 			"Ex", "Uniq"));
-// 
-// 	if(C->dumpinfopath)
-// 	{
-// 		fprintf(stderr, "\nnext active form. Original body\n");
-// 		dumpdag(0, stderr, 0, C->U, formdag(form), NULL, NULL);
-// 		assert(fputc('\n', stderr) == '\n');
-// 	}
-// 
-// 	const Ref rawbody
-// 		= ntheval(
-// 			C->U, formdag(form), escape,
-// 			C->typemarks, C->types, C->symmarks, C->symbols,
-// 			inlist);
-// 	
-// 	const Ref body = leval(C->U, rawbody, escape);
-// 	freeref(rawbody);
-// 
-// 	if(C->dumpinfopath)
-// 	{
-// 		fprintf(stderr, "\nexpanded\n");
-// 		dumpdag(0, stderr, 0, C->U, body, NULL, NULL);
-// 		assert(fputc('\n', stderr) == '\n');
-// 	}
-// 
-// 	Array *const envmarks = newkeymap();
-// 	const Array *const tomark
-// 		= newverbmap(C->U, 0, ES("FEnv", "TEnv", "S", "Ex", "Uniq"));
-// 	
-// 	Array *const env = areaenv(C->U, area);
-// 
-// 	enveval(C->U, env, envmarks, body, escape, tomark);
-// 	freekeymap((Array *)tomark);
-// 
-// 	typeeval(C->U, C->types, C->typemarks, body, escape, envmarks);
-// 
-// 	Array *const areamarks = newkeymap();
-// 	reval(C->U, area, areamarks, body, escape);
-// 
-// 	symeval(C->U, C->symbols, C->symmarks,
-// 		body, escape, envmarks, C->typemarks);
-// 	
-// 	exeqeval(C->U, C->typemarks, body, escape, envmarks);
-// 
-// 	formeval(C->U, area, C->activity,
-// 		body, escape, envmarks, areamarks, C->typemarks);
-// 
-// 	const Array *const etg
-// 		= goeval(C->U, area, body, escape, envmarks, C->envtogo);
-// 	
-// 	// Убеждаемся, что: !envtogo. Если так, то etg может быть произвольным.
-// 	// Иначе только NULL (случай ошибки) или совпадать с envtogo (Go не
-// 	// встретили)
-// 
-// 	assert(!C->envtogo || !etg || etg == C->envtogo);
-// 
-// 	if(!C->envtogo)
-// 	{
-// 		C->envtogo = etg;
-// 	}
-// 
-// 	freekeymap(envmarks);
-// 
-// 	// FIXME: ещё несколько стадий
-// 
-// 	// Убираем использованные синтаксические команды
-// 	gcnodes((Ref *)&body, escape, nonroots, NULL);
-// 
-// 	freekeymap((Array *)nonroots);
-// 
-// 	// Подстановка графов из других окружений заменой Rip и удалением
-// 	// оставшихся R
-// 	ripeval(C->U, (Ref *)&body, escape, areamarks);
-// 
-// 	freekeymap(areamarks);
-// 	freekeymap((Array *)escape);
-// 
-// 	// Будут удалены все части списка:
-// 	freelist((List *)inlist);
-// 
-// 	// Наращиваем тело графа
-// 	Ref *const AD = areadag(C->U, area);
-// 	assert(isdag(body) && isdag(*AD));
-// 	AD->u.list = append(AD->u.list, body.u.list);
-// }
 
 static void activate(
 	Core *const C, Array *const area,
@@ -385,7 +255,6 @@ static int synthone(List *const l, void *const ptr)
 	}
 
 	st->alive = 1;
-// 	activate(l->ref, st->reactor, st->area, st->core);
 	activate(st->core, st->area, l->ref, st->reactor);
 
 	// Область может утратить активность, в этом случае цикл обработки нужно
@@ -482,7 +351,6 @@ static Array *stackarea(Core *const C, const SyntaxNode op)
 	case UOP:
 	{
 		// Нам понадобится новая область
-// 		Array *const area = newarea(U, key, C->envtogo);
 		Array *const area
 			= newarea(U, key, envkeymap(C->E, refenv(C->envtogo)));
 		assert(area);
@@ -518,7 +386,6 @@ static Array *stackarea(Core *const C, const SyntaxNode op)
 			return NULL;
 		}
 
-// 		Array *const area = newarea(U, key, C->envtogo);
 		Array *const area
 			= newarea(U, key, envkeymap(C->E, refenv(C->envtogo)));
 		assert(area);
@@ -634,7 +501,6 @@ void ignite(Core *const C, const SyntaxNode op)
 {
 	const Ref key = reflist(RL(refatom(op.op), refatom(op.atom)));
 
-// 	if(!C->envtogo)
 	if(C->envtogo == -1)
 	{
 		char *const skey = strref(C->U, NULL, key);
@@ -689,7 +555,6 @@ void ignite(Core *const C, const SyntaxNode op)
 	}
 
 	// И зарядить Core на ожидание нового Go
-// 	C->envtogo = NULL;
 	C->envtogo = -1;
 }
 

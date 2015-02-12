@@ -1,5 +1,6 @@
 *
 !.gitignore
+!BUGS
 !TODO
 !TREE
 !README
@@ -13,6 +14,10 @@
 !lib/lime
 !lib/lime/*.[ch]
 !lib/lime/gnu.mk
+
+!lib/io
+!lib/io/*.[ch]
+!lib/io/gnu.mk
 
 !tst
 !tst/*.c

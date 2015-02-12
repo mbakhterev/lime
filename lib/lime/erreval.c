@@ -30,7 +30,7 @@ void dodebug(const Ref N, const Marks *const M, const Core *const C)
 	const char *const str = strref(U, NULL, val);
 	freeref(val);
 
-	fprintf(stderr, "%s.%u: DBG: %s\n",
+	fprintf(stderr, "%s:%u: DBG: %s\n",
 		nodefilename(U, N), nodeline(N), str);
 
 	free((char *)str);
