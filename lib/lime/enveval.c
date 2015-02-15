@@ -3,17 +3,19 @@
 
 #include <assert.h>
 
-#define DBGEVE	1
-#define DBGAL	2
-#define DBGAE	4
-#define DBGDED	8
+#define DBGEVE		1
+#define DBGAL		2
+#define DBGAE		4
+#define DBGDED		8
+#define DBGNT		16
+#define DBGENODE	(1 << 5) // отладка enode
 
 // #define DBGFLAGS (DBGEVE | DBGAL)
 // #define DBGFLAGS (DBGEVE)
 // #define DBGFLAGS (DBGAE)
 // #define DBGFLAGS (DBGDED)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGNT | DBGENODE)
 
 static unsigned isenode(const Ref N, const Array *const limeverbs)
 {
@@ -97,6 +99,8 @@ static Array *newtarget(
 
 void doenode(Core *const C, Marks *const M, const Ref N, const unsigned env)
 {
+	DBG(DBGENODE, "enter. current root: %u", env);
+
 	Array *const U = C->U;
 	Array *const E = C->E;
 	const Array *const V = C->verbs.system;
@@ -178,6 +182,8 @@ void doenode(Core *const C, Marks *const M, const Ref N, const unsigned env)
 	freeref(K);
 
 	tunerefmap(marks, N, envid(U, target));
+
+	DBG(DBGENODE, "%s", "leave");
 }
 
 static Array *nextpoint(Array *const U, const Array *const map)
@@ -222,6 +228,8 @@ static Array *newtarget(
 	assert(linkmap(U, T,
 		readtoken(U, "ENV"), readtoken(U, "this"), refkeymap(T)) == T);
 	
+	DBG(DBGNT, "%s", "setting parent");
+
 	assert(linkmap(U, T,
 		readtoken(U, "ENV"),
 		readtoken(U, "parent"), refkeymap((Array *)map)) == map);

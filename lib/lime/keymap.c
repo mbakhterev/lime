@@ -9,20 +9,22 @@
 #define DBGPLU	(1 << 2)
 #define DBGDM	(1 << 3)
 #define DBGCK	(1 << 4)
-#define DBGMO	(1 << 5)
+#define DBGMO	(1 << 5) // отладка makeone
 #define DBGBL	(1 << 6)
 #define DBGUL	(1 << 7)
 #define DBGULC	(1 << 8)
+#define DBGTRP	(1 << 9) // отладка tracepath
 
 // #define DBGFLAGS (DBGFREE)
 // #define DBGFLAGS (DBGKM)
 // #define DBGFLAGS (DBGPLU)
 // #define DBGFLAGS (DBGDM | DBGCK | DBGPLU)
 // #define DBGFLAGS (DBGCK)
-// #define DBGFLAGS (DBGMO | DBGBL)
+#define DBGFLAGS (DBGMO | DBGBL)
 // #define DBGFLAGS (DBGUL | DBGULC)
+// #define DBGFLAGS (DBGTRP)
 
-#define DBGFLAGS 0
+// #define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -80,7 +82,7 @@ static int cmpkeys(const Ref k, const Ref l)
 	{
 		char *const kstr = strref(NULL, NULL, k);
 		char *const lstr = strref(NULL, NULL, l);
-		DBG(DBGCK, "(k.code l.kode = %u %u) (k = %s) (l = %s)",
+		DBG(DBGCK, "(k.code l.kode) = (%u %u) k = %s l = %s",
 			k.code, l.code, kstr, lstr);
 		
 		free(lstr);
@@ -356,10 +358,12 @@ static int makeone(List *const n, void *const ptr)
 
 	assert(st->current);
 
+	Array *const U = st->U;
+
 	// Можем ли мы пройти через этот элемент пути? Структуры, необходимые
 	// для этого могут быть уничтожены. Поэтому проверяем
 
-	if(!st->maypass(st->U, st->current))
+	if(!st->maypass(U, st->current))
 	{
 		return !0;
 	}
@@ -367,25 +371,53 @@ static int makeone(List *const n, void *const ptr)
 	// Привязываться будем к некоторой под-структуре текущей области,
 	// поэтому
 
-	Array *const curr = st->nextpoint(st->U, st->current);
+	Array *const curr = st->nextpoint(U, st->current);
 	assert(curr);
 
 	if(st->M.code == FREE || n != st->L)
 	{
+		if(DBGFLAGS & DBGMO)
+		{
+			char *const pstr = strref(U, NULL, st->path);
+			char *const kstr = strref(U, NULL, n->ref);
+			char *const lstr = strlist(U, st->L);
+
+			DBG(DBGMO,
+				"path: %s key: %s "
+				"(n != st->L): %u "
+				"L: %s "
+				"(st->M.code == FREE): %u",
+				pstr, kstr,
+				n != st->L, lstr,
+				st->M.code == FREE);
+
+			free(lstr);
+			free(kstr);
+			free(pstr);
+		}
+
 		// Нам не передано отображение, с которым надо устроить связь
 		// или мы находимся не в конце списка имён. В обоих случаях надо
 		// отыскать отображение с подходящим именем или создать новое 
 
 		const Array *next
-			= linkmap(st->U, curr, st->path, n->ref, reffree());
+			= linkmap(U, curr, st->path, n->ref, reffree());
+
+		if(DBGFLAGS & DBGMO
+			&& st->path.code == ATOM
+			&& readtoken(U, "ENV").u.number == st->path.u.number)
+		{
+			DBG(DBGMO, "envid: %u next: %p",
+				envid(U, curr).u.number, (void *)next);
+		}
 		
 		if(!next)
 		{
 			const Ref m
 				= refkeymap(st->newtarget(
-					st->U, st->current, n->ref, st->state));
+					U, st->current, n->ref, st->state));
 
-			next = linkmap(st->U, curr, st->path, n->ref, m);
+			next = linkmap(U, curr, st->path, n->ref, m);
 			assert(m.u.array == next);
 		}
 
@@ -397,7 +429,7 @@ static int makeone(List *const n, void *const ptr)
 
 	assert(st->M.code != FREE && n == st->L);
 
-	st->current = linkmap(st->U, curr, st->path, n->ref, st->M);
+	st->current = linkmap(U, curr, st->path, n->ref, st->M);
 	if(st->current)
 	{
 		assert(st->current == st->M.u.array);
@@ -437,7 +469,7 @@ Array *makepath(
 
 static List *tracekey(List *const acc, const Binding *const b, const Ref key)
 {
-	if(b == NULL)
+	if(b == NULL || b->ref.code == FREE)
 	{
 		return acc;
 	}

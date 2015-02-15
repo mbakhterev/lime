@@ -15,9 +15,8 @@
 // #define DBGFLAGS (DBGSYNTH | DBGACT | DBGPRGS)
 // #define DBGFLAGS (DBGGF)
 
-#define DBGFLAGS 0xff
-
-// #define DBGFLAGS 0
+// #define DBGFLAGS 0xff
+#define DBGFLAGS 0
 
 static Ref atomtype(Array *const U, Array *const T, const unsigned atom)
 {

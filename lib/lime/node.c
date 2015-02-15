@@ -89,18 +89,38 @@ Ref newnode(
 		refatom(fileatom), refnum(line))));
 }
 
+// void freenode(const Ref n)
+// {
+// 	assert(isnode(n));
+// 	
+// 	if(!n.external)
+// 	{
+// // FIXME: Полное освобождение узлов отключено, но список атрибутов имеет смысл
+// // чистить
+// // 		freelist(n.u.list);
+// 
+// 		freeref(nodeattribute(n));
+// 	}
+// }
+
 void freenode(const Ref n)
 {
-	assert(isnode(n));
-	
-	if(!n.external)
-	{
-// FIXME: Полное освобождение узлов отключено, но список атрибутов имеет смысл
-// чистить
-// 		freelist(n.u.list);
+	assert(n.code == NODE);
 
-		freeref(nodeattribute(n));
+	if(n.external)
+	{
+		// Сделать больше ничего не можем. Нельзя проверять при помощи
+		// isnode, потому что ссылка может указывать на уже
+		// освобождённый узел
+
+		return;
 	}
+
+	// Если это определение узла, то убеждаемся в корректности о освобождаем
+	// всё
+
+	assert(isnode(n));
+	freelist(n.u.list);
 }
 
 unsigned nodeline(const Ref n)

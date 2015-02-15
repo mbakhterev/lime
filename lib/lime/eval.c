@@ -49,6 +49,8 @@ static void initroot(Array *const U, Array *const E)
 	assert(linkmap(U, R,
 		readtoken(U, "ENV"), readtoken(U, "/"), refkeymap(R)) == R);
 	
+	// Установка окружения под именем "/" в таблицу окружений
+
 	DL(rootname, RS(readtoken(U, "/")));
 	const unsigned bid = bindkey(E, rootname);
 	assert(bid == 0);
@@ -57,6 +59,7 @@ static void initroot(Array *const U, Array *const E)
 	assert(B->ref.code == FREE);
 	B->ref = refkeymap(R);
 
+	// Установка идентификатора окружения
 	setenvid(U, R, 0);
 }
 
