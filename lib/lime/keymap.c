@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <stdint.h>
 
 #define DBGFREE	1
 #define DBGKM	(1 << 1)
@@ -398,10 +399,17 @@ static int makeone(List *const n, void *const ptr)
 
 		// Нам не передано отображение, с которым надо устроить связь
 		// или мы находимся не в конце списка имён. В обоих случаях надо
-		// отыскать отображение с подходящим именем или создать новое 
+		// отыскать отображение с подходящим именем или создать новое.
+		// Нужно учесть и возможность встретить заглушку
 
 		const Array *next
 			= linkmap(U, curr, st->path, n->ref, reffree());
+
+		if((void *)next == (void *)(intptr_t)-1)
+		{
+			// Встретилась заглушка. Прерываем цепочку
+			return !0;
+		}
 
 		if(DBGFLAGS & DBGMO
 			&& st->path.code == ATOM
@@ -413,6 +421,9 @@ static int makeone(List *const n, void *const ptr)
 		
 		if(!next)
 		{
+			// Если не обнаружили никаких значений по указанному
+			// ключу, создаём очередную keymap в цепочке
+
 			const Ref m
 				= refkeymap(st->newtarget(
 					U, st->current, n->ref, st->state));
@@ -425,12 +436,13 @@ static int makeone(List *const n, void *const ptr)
 		return 0;
 	}
 
-	// Привязываем указанное отображение к концу цепочки
+	// Привязываем указанное отображение к концу цепочки. Нужно учесть, что
+	// можем встретить зарезервированный ключ
 
 	assert(st->M.code != FREE && n == st->L);
 
 	st->current = linkmap(U, curr, st->path, n->ref, st->M);
-	if(st->current)
+	if(st->current && (void *)st->current != (void *)(intptr_t)-1)
 	{
 		assert(st->current == st->M.u.array);
 		return 0;
@@ -980,7 +992,15 @@ Array *linkmap(
 
 		if(b)
 		{
-			// Нечто нашлось и оно должно быть keymap-ой
+			// Нечто нашлось. Возможны варианты. Во-первых, это
+			// может быть заглушка
+
+			if(b->ref.code == FREE)
+			{
+				return (void *)(intptr_t)-1;
+			}
+
+			// Во-вторых, это должно быть keymap-ой
 			assert(iskeymap(b->ref));
 			return b->ref.u.array;
 		}

@@ -49,15 +49,29 @@ static void initroot(Array *const U, Array *const E)
 	assert(linkmap(U, R,
 		readtoken(U, "ENV"), readtoken(U, "/"), refkeymap(R)) == R);
 	
+	// FIXME: Вообще, это всё костыли, чтобы работала текущая схема с
+	// окружениями. Но это надо обязательно менять в следующих версиях.
+	// Необходимо зарезервировать "parent", для корректного прекращения
+	// поисков и обращения к "parent" из корневого окружения
+
+	{
+		DL(pair, RS(readtoken(U, "ENV"), readtoken(U, "parent")));
+		DL(key, RS(decoatom(U, DMAP), pair));
+
+		assert(bindingat(R, bindkey(R, key))->ref.code == FREE);
+	}
+	
 	// Установка окружения под именем "/" в таблицу окружений
 
-	DL(rootname, RS(readtoken(U, "/")));
-	const unsigned bid = bindkey(E, rootname);
-	assert(bid == 0);
-	
-	Binding *const B = (Binding *)bindingat(E, bid);
-	assert(B->ref.code == FREE);
-	B->ref = refkeymap(R);
+	{
+		DL(rootname, RS(readtoken(U, "/")));
+		const unsigned bid = bindkey(E, rootname);
+		assert(bid == 0);
+		
+		Binding *const B = (Binding *)bindingat(E, bid);
+		assert(B->ref.code == FREE);
+		B->ref = refkeymap(R);
+	}
 
 	// Установка идентификатора окружения
 	setenvid(U, R, 0);
