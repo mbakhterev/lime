@@ -1,5 +1,6 @@
 #include "construct.h"
 #include "util.h"
+#include "nodeutil.h"
 
 #include <assert.h>
 
@@ -178,9 +179,11 @@ void doeq(Marks *const M, const Ref N, const Core *const C)
 		freeref(key);
 		freeref(src);
 
-		item = nodeline(N);
-		ERR("node \"%s\": expecting signature list and key",
-			nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": expecting signature list and key",
+// 			nodename(U, N));
+
+		ERRNODE(U, N, "%s", "expecting signature list and key");
 
 		return;
 	}

@@ -1,5 +1,6 @@
 #include "construct.h"
 #include "util.h"
+#include "nodeutil.h"
 
 #include <assert.h>
 
@@ -470,8 +471,11 @@ void dofout(
 	{
 		freeref(outs);
 
-		item = nodeline(N);
-		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "wrong attribute structure");
+
 		return;
 	}
 
@@ -489,8 +493,11 @@ void dofout(
 	{
 		freeref(outs);
 
-		item = nodeline(N);
-		ERR("node \"%s\": can't intake output list", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": can't intake output list", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "can't intake output list");
+
 		return;
 	}
 
@@ -733,8 +740,11 @@ void dofput(
 		}
 		freeref(form);
 
-		item = nodeline(N);
-		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "wrong attribute structure");
+
 		return;
 	}
 

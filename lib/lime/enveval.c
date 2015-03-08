@@ -14,8 +14,9 @@
 // #define DBGFLAGS (DBGEVE)
 // #define DBGFLAGS (DBGAE)
 // #define DBGFLAGS (DBGDED)
+// #define DBGFLAGS (DBGNT | DBGENODE)
 
-#define DBGFLAGS (DBGNT | DBGENODE)
+#define DBGFLAGS 0
 
 static unsigned isenode(const Ref N, const Array *const limeverbs)
 {

@@ -211,6 +211,7 @@ static unsigned opdecode(int c)
 	case 'U': return UOP;
 	case 'L': return LOP;
 	case 'E': return EOP;
+	case 'F': return FOP;
 	}
 
 	return -1;
@@ -323,7 +324,11 @@ static void progressread(FILE *const f, Core *const C)
 	{
 		const SyntaxNode sntx = readone(f, C->U);
 
-		if(sntx.op != EOF)
+		if(sntx.op == FOP)
+		{
+			// FIXME: учесть смену имени файла
+		}
+		else if(sntx.op != EOF)
 		{
 			ignite(C, sntx);
 			DBG(DBGPRD, "%s", "ignited");

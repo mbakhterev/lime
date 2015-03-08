@@ -21,9 +21,11 @@
 // #define DBGFLAGS (DBGPLU)
 // #define DBGFLAGS (DBGDM | DBGCK | DBGPLU)
 // #define DBGFLAGS (DBGCK)
-#define DBGFLAGS (DBGMO | DBGBL)
+// #define DBGFLAGS (DBGMO | DBGBL)
 // #define DBGFLAGS (DBGUL | DBGULC)
 // #define DBGFLAGS (DBGTRP)
+
+#define DBGFLAGS (DBGUL)
 
 // #define DBGFLAGS 0
 

@@ -1,5 +1,6 @@
 #include "construct.h"
 #include "util.h"
+#include "nodeutil.h"
 
 #include <assert.h>
 
@@ -183,8 +184,11 @@ void donth(Marks *const M, const Ref N, const Core *const C)
 	{
 		freeref(th.L);
 
-		item  = nodeline(N);
-		ERR("node \"%s\": value-index mismatch", nodename(U, N));
+// 		item  = nodeline(N);
+// 		ERR("node \"%s\": value-index mismatch", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "value-index mismatch");
+
 		return;
 	}
 

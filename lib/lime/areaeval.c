@@ -99,8 +99,11 @@ void dodone(Array *const U, Array *const area, const Ref N)
 
 	if(!unlinkarealinks(U, area))
 	{
-		item = nodeline(N);
-		ERR("node \"%s\": can't kill interlinks", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": can't kill interlinks", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "can't kill interlinks");
+
 		return;
 	}
 
