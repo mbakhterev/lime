@@ -1,5 +1,6 @@
 #include "construct.h"
 #include "util.h"
+#include "nodeutil.h"
 
 #include <assert.h>
 
@@ -136,8 +137,13 @@ void dosnode(
 		freeref(key);
 
 		item = nodeline(N);
-		ERR("node \"%s\": can't %s symbol for key: %s",
-			nodename(U, N),
+
+// 		ERR("node \"%s\": can't %s symbol for key: %s",
+// 			nodename(U, N),
+// 			len == 1 ? "locate" : "allocate",
+// 			kstr);
+
+		ERRNODE(U, N, "can't %s symbol for key: %s",
 			len == 1 ? "locate" : "allocate",
 			kstr);
 

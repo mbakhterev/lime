@@ -24,10 +24,11 @@
 // #define DBGFLAGS (DBGMO | DBGBL)
 // #define DBGFLAGS (DBGUL | DBGULC)
 // #define DBGFLAGS (DBGTRP)
+// #define DBGFLAGS (DBGUL)
 
-#define DBGFLAGS (DBGUL)
+// #define DBGFLAGS (DBGULC)
 
-// #define DBGFLAGS 0
+#define DBGFLAGS 0
 
 // Проверка компонент ключа на сравниваемость. Есть два типа ключей: базовые, в
 // которых могут быть только ATOM, TYPE, NUMBER, и общие, в которых могут быть
@@ -1123,6 +1124,8 @@ static void unlinkcore(Array *const U, Binding *const B)
 
 	assert(!isactive(U, map) && !nlinks(U, map));
 // 	B->ref = reffree();
+
+	DBG(DBGULC, "really freeing map: %p", (void *)map);
 	freekeymap(map);
 }
 

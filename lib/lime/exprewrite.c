@@ -251,18 +251,20 @@ static Ref reexpress(
 
 		List *const l = forklist(r.u.list);
 
-		if(listlen(l) == 1)
-		{
-			// Если список единичной длины, то нам нужно только его
-			// содержимое
-
-			const Ref r = l->ref;
-
-			l->ref = reffree();
-			freelist(l);
-
-			return r;
-		}
+// FIXME: Не понятно. Но пока такое поведение только усложняет везде жизнь
+// 
+// 		if(listlen(l) == 1)
+// 		{
+// 			// Если список единичной длины, то нам нужно только его
+// 			// содержимое
+// 
+// 			const Ref r = l->ref;
+// 
+// 			l->ref = reffree();
+// 			freelist(l);
+// 
+// 			return r;
+// 		}
 
 		return reflist(l);
 	}	

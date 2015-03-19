@@ -2,6 +2,12 @@
 #include "util.h"
 #include "nodeutil.h"
 
+#define DBGDONE 1
+
+// #define DBGFLAGS (DBGDONE)
+
+#define DBGFLAGS 0
+
 #include <assert.h>
 
 static unsigned maypass(Array *const U, const Array *const map)
@@ -12,7 +18,18 @@ static unsigned maypass(Array *const U, const Array *const map)
 static Array *newtarget(
 	Array *const U, const Array *const map, const Ref id, void *const ptr)
 {
-	return newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
+// 	return newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
+
+	Array *const T = newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
+	assert(T);
+
+	Array *const TL = arealinks(U, T);
+	assert(TL);
+
+	assert(linkmap(U, T,
+		readtoken(U, "CTX"), readtoken(U, "SELF"), refkeymap(T)) == T);
+	
+	return T;
 }
 
 static Array *nextpoint(Array *const U, const Array *const map)
@@ -44,13 +61,16 @@ void dornode(
 	const Ref target = len > 1 ? refmap(formmarks, R[1]) : reffree();
 
 	if(len < 1 || 2 < len
-		|| !isbasickey(key)
+		|| key.code != LIST || !isbasickey(key)
 		|| (len == 2 && target.code != MAP))
 	{
 		freeref(key);
 
-		item = nodeline(N);
-		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "wrong attribute structure");
+
 		return;
 	}
 
@@ -81,6 +101,8 @@ void dornode(
 
 void dodone(Array *const U, Array *const area, const Ref N)
 {
+	DBG(DBGDONE, "done with area: %p", (void *)area);
+
 	const Ref r = nodeattribute(N);
 	if(r.code != LIST || listlen(r.u.list) != 0)
 	{
