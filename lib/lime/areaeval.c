@@ -18,18 +18,22 @@ static unsigned maypass(Array *const U, const Array *const map)
 static Array *newtarget(
 	Array *const U, const Array *const map, const Ref id, void *const ptr)
 {
-// 	return newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
+	return newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
 
-	Array *const T = newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
-	assert(T);
-
-	Array *const TL = arealinks(U, T);
-	assert(TL);
-
-	assert(linkmap(U, T,
-		readtoken(U, "CTX"), readtoken(U, "SELF"), refkeymap(T)) == T);
-	
-	return T;
+// 	Array *const T = newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
+// 	assert(T);
+// 
+// 	Array *const links = arealinks(U, T);
+// 	assert(links);
+// 
+// // FIXME: оторвать за такое руки
+// // 	assert(linkmap(U, T,
+// // 		readtoken(U, "CTX"), readtoken(U, "SELF"), refkeymap(T)) == T);
+// 
+// 	assert(linkmap(U, links,
+// 		readtoken(U, "CTX"), readtoken(U, "SELF"), refkeymap(T)) == T);
+// 	
+// 	return T;
 }
 
 static Array *nextpoint(Array *const U, const Array *const map)

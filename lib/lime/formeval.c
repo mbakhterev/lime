@@ -483,9 +483,12 @@ void dofout(
 	{
 		freeref(outs);
 
-		item = nodeline(N);
-		ERR("node \"%s\": can't output to inactive area",
-			nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": can't output to inactive area",
+// 			nodename(U, N));
+
+		ERRNODE(U, N, "%s", "can't output to inactive area");
+
 		return;
 	}
 

@@ -190,6 +190,12 @@ Array *newarea(Array *const U, const Ref syntax, const Array *const env)
 	}
 	initdag(U, area);
 
+	Array *const links = arealinks(U, area);
+	assert(links);
+
+	assert(linkmap(U, links, readtoken(U, "CTX"),
+		readtoken(U, "SELF"), refkeymap(area)) == area); 
+
 	return area;
 }
 
