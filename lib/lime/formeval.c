@@ -11,6 +11,7 @@
 // #define DBGFLAGS (DBGFENV)
 // #define DBGFLAGS (DBGFOUT | DBGFPUT)
 // #define DBGFLAGS (DBGFENV)
+// #define DBGFLAGS (DBGFOUT)
 
 #define DBGFLAGS 0
 
@@ -463,8 +464,35 @@ void dofout(
 	const Ref R[len];
 	assert(writerefs(r.u.list, (Ref *)R, len) == len);
 
+	DBG(DBGFOUT, "len: %u", len);
+
 	const Target T = len > 0 ? aim(R[0], area, formmarks) : notarget();
 	const Ref outs = len > 1 ? simplerewrite(R[1], marks, V) : reffree();
+
+	if(DBGFLAGS & DBGFOUT)
+	{
+		char *const strouts = strref(U, NULL, outs);
+		char *const ronestr = strref(U, NULL, R[1]);
+
+		DBG(DBGFOUT,
+			"len != 2: %u; "
+			"T.area == NULL: %u; "
+			"outs.code != LIST: %u; "
+			"T.area == area: %u; "
+			"!aregoodouts(outs, T.area == area): %u; "
+			"outs: %s; "
+			"R[1]: %s",
+			len != 2,
+			T.area == NULL,
+			outs.code != LIST,
+			T.area == area,
+			!aregoodouts(outs, T.area == area),
+			strouts,
+			ronestr);
+		
+		free(ronestr);
+		free(strouts);
+	}
 
 	if(len != 2 || T.area == NULL
 		|| outs.code != LIST || !aregoodouts(outs, T.area == area))

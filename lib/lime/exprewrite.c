@@ -236,7 +236,10 @@ static Ref reexpress(
 
 	case FREE:
 // 		return refmap(filter, key).code == FREE ? key : reffree();
-		return !knownverb(key, filter) ? key : reffree();
+//		return !knownverb(key, filter) ? key : reffree();
+
+// FIXME: временно (?) отключим проверку
+		return key;
 	
 	case NODE:
 	case MAP:

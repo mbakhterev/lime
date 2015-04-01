@@ -122,7 +122,7 @@ void dumpref(
 		}
 		else
 		{
-			assert(fprintf(f, "N:%p", (void *)r.u.list) > 0);
+			assert(fprintf(f, "N(%u):%p", r.external, (void *)r.u.list) > 0);
 		}
 
 		break;
