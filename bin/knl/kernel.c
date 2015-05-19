@@ -19,9 +19,10 @@
 // #define DBGFLAGS (DBGMAIN | DBGMAINEX | DBGINIT)
 // #define DBGFLAGS (DBGMAIN | DBGMAINEX)
 // #define DBGFLAGS (DBGMAIN | DBGINIT)
-// #define DBGFLAGS (DBGMAIN | DBGPRD)
 
-#define DBGFLAGS 0
+#define DBGFLAGS (DBGMAIN | DBGPRD)
+
+// #define DBGFLAGS 0
 
 unsigned item = 1;
 const char *unitname = "stdin";
@@ -243,30 +244,59 @@ static unsigned isgoodpos(Position p)
 	return 1;
 }
 
-static Position readposition(FILE *const f)
+typedef struct
 {
+	// Входной поток синтаксических инструкций
+	FILE *const f;
+
+	// Координаты очередного токена в исходном тексты программы
 	unsigned line;
-	unsigned col;
+	unsigned column;
+	unsigned file;
+} ReadContext;
+
+// static Position readposition(FILE *const f)
+
+static Position readposition(ReadContext *const rc, const unsigned op)
+{
+	int lineoffset;
+	int coloffset;
 	
-	if(fscanf(f, "%u.%u", &line, &col) == 2
-		&& line < MAXNUM && col < MAXNUM)
+	if(fscanf(rc->f, "%d.%d", &lineoffset, &coloffset) != 2)
 	{
+		return notapos();
+	}
+	
+	const unsigned line = op == FOP ? rc->line : rc->line + lineoffset;
+	const unsigned column = op == FOP ? rc->column : rc->column + coloffset;
+
+	if(line < MAXNUM && column < MAXNUM)
+	{
+		rc->line = line;
+		rc->column = column;
+
 		return (Position)
 		{
 			.line = line,
-			.column = col,
-			.file = 0 // FIXME
+			.column = column,
+
+			// FIXME: При обработке узла F заносим сюда информацию о
+			// предыдущем обрабатываемом файле. Может быть будет
+			// полезно делать именно так
+			.file = rc->file
 		};
 	}
 
 	return notapos();
 }
 
-static SyntaxNode readone(FILE *const f, Array *const U)
+// static SyntaxNode readone(FILE *const f, Array *const U)
+
+static SyntaxNode readone(ReadContext *const rc, Array *const U)
 {
 	int c = -1;
 	
-	if((c = skipspaces(f)) == EOF)
+	if((c = skipspaces(rc->f)) == EOF)
 	{
 		return syntaxend();
 	}
@@ -286,13 +316,13 @@ static SyntaxNode readone(FILE *const f, Array *const U)
 	// чтения текстовых файлов, где бы автоматически считалась позиция во
 	// вводе, но пока на это нет времени. Поэтому действуем топорно
 
-	if(!isdigit(c = skipspaces(f)))
+	if(!isdigit(c = skipspaces(rc->f)))
 	{
 		ERR("%s", "can't get syntax node position");
 	}
 
-	assert(ungetc(c, f) == c);
-	const Position pos = readposition(f);
+	assert(ungetc(c, rc->f) == c);
+	const Position pos = readposition(rc, op);
 	if(!isgoodpos(pos))
 	{
 		ERR("%s", "can't get syntax node position");
@@ -300,13 +330,13 @@ static SyntaxNode readone(FILE *const f, Array *const U)
 
 	// Сам атом. Должен начинаться с шестнадцатеричного hint
 
-	if(!isxdigit(c = skipspaces(f)))
+	if(!isxdigit(c = skipspaces(rc->f)))
 	{
 		ERR("%s", "can't get syntax node atom");
 	}
 
-	assert(ungetc(c, f) == c);
-	const unsigned atom = loadatom(U, f).u.number;
+	assert(ungetc(c, rc->f) == c);
+	const unsigned atom = loadatom(U, rc->f).u.number;
 
 	return (SyntaxNode)
 	{
@@ -318,15 +348,21 @@ static SyntaxNode readone(FILE *const f, Array *const U)
 
 // Тут read в форме past perfect
 
-static void progressread(FILE *const f, Core *const C)
+// static void progressread(FILE *const f, Core *const C)
+
+static void progressread(ReadContext *const rc, Core *const C)
 {
 	while(1)
 	{
-		const SyntaxNode sntx = readone(f, C->U);
+		const SyntaxNode sntx = readone(rc, C->U);
 
 		if(sntx.op == FOP)
 		{
 			// FIXME: учесть смену имени файла
+
+			rc->file = sntx.atom;
+			rc->line = sntx.pos.line;
+			rc->column = sntx.pos.column;
 		}
 		else if(sntx.op != EOF)
 		{
@@ -393,6 +429,15 @@ int main(int argc, char *const argv[])
 		dumptable(stderr, 0, U, C->T);
 	}
 
+	ReadContext rc =
+	{
+		.f = stdin,
+		.line = 1,
+		.column = 1,
+		.file = readpack(U, strpack(3, "<stdin>")).u.number
+	};
+
+
 	// Основной цикл вывода графа программы. Чтение с stdin. Если вывод не
 	// удался, то, всё равно, выдаём накопленный в "придонном" контексте
 	// граф. Потому что, пока cfe не отлажен корректный вывод не получится
@@ -403,7 +448,10 @@ int main(int argc, char *const argv[])
 		item = 1;
 		unitname = "stdin";
 
-		progressread(stdin, C);
+
+// 		progressread(stdin, C);
+		
+		progressread(&rc, C);
 		ok = 1;
 		checkout(0);
 	}
@@ -431,7 +479,7 @@ int main(int argc, char *const argv[])
 		freeref(dag);
 		assert(fputc('\n', stdout) == '\n');
 	}
-	else
+	else if(dip)
 	{
 		assert(fprintf(stderr, "\nENVIRONMENT\n\n") > 0);
 
