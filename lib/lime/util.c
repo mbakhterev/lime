@@ -6,8 +6,10 @@
 #include <error.h>
 
 #define DBGEG 1
+#define DBGSKIP 2
 
 // #define DBGFLAGS (DBGEG)
+// #define DBGFLAGS (DBGSKIP)
 
 #define DBGFLAGS 0
 
@@ -82,6 +84,7 @@ int skipspaces(FILE *const f)
 		while(isspace(c = fgetc(f)))
 		{
 			item += c == '\n';
+			DBG(DBGSKIP, "%s:%u", unitname, item);
 		}
 
 		switch(c)

@@ -24,7 +24,7 @@
 #define DBGFLAGS 0
 
 unsigned item = 1;
-const char *unitname = "stdin";
+const char *unitname = "<stdin>";
 
 static const char *const dagverbs[] =
 {
@@ -445,7 +445,7 @@ int main(int argc, char *const argv[])
 	if(CKPT() == 0)
 	{
 		item = 1;
-		unitname = "stdin";
+		unitname = "<stdin>";
 
 
 // 		progressread(stdin, C);

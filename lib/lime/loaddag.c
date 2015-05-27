@@ -1,3 +1,6 @@
+// FIXME: Неплохо вынести бы все pattern для загрузки тех или иных элементов в
+// отдельные константы 
+
 #include "construct.h"
 #include "util.h"
 
@@ -302,7 +305,7 @@ static LoadCurrent core(
 	{
 		assert(ungetc(c, f) == c);
 
-		const Ref l = loadtoken(U, f, 0, "[0-9A-Za-z]");
+		const Ref l = loadtoken(U, f, 0, "[0-9A-Za-z-.]");
 		const Ref *const r = keytoref(env, l);
 
 		if(r->code == FREE)
@@ -410,7 +413,7 @@ static LoadCurrent node(
 
 	if(isfirstid(c))
 	{
-		const Ref label = loadtoken(U, f, 0, "[0-9A-Za-z]");
+		const Ref label = loadtoken(U, f, 0, "[0-9A-Za-z-.]");
 		ref = keytoref(env, label);
 
 		if(ref->code == FREE)

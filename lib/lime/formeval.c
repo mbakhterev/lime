@@ -375,8 +375,10 @@ void dofenv(
 	
 	if(len < 1 || 2 < len || !kok || !fok)
 	{
-		item = nodeline(N);
-		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": wrong attribute structure", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "wrong attribute structure");
 		return;
 	}
 

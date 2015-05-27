@@ -503,8 +503,14 @@ void ignite(Core *const C, const SyntaxNode op)
 	if(C->envtogo == -1)
 	{
 		char *const skey = strref(C->U, NULL, key);
-		item = op.pos.line;
+
+// 		item = op.pos.line;
+
+		// FIXME: добавить красивую информацию о позиции в исходном
+		// файле
+
 		ERR("no environment to Go with key: %s", skey);
+
 		free(skey);
 		return;
 	}
@@ -513,7 +519,10 @@ void ignite(Core *const C, const SyntaxNode op)
 	if(!area)
 	{
 		char *const skey = strref(C->U, NULL, key);
-		item = op.pos.line;
+
+// 		item = op.pos.line;
+		// FIXME: добавить красоты о позиции в исходном файле
+
 		ERR("can't stack area for input key: %s", skey);
 		free(skey);
 		return;
@@ -523,7 +532,10 @@ void ignite(Core *const C, const SyntaxNode op)
 	if(body.code == FREE)
 	{
 		char *const skey = strref(C->U, NULL, key);
-		item = op.pos.line;
+
+// 		item = op.pos.line;
+		// FIXME: добавить красоты о позиции в исходном файле
+
 		ERR("can't find form for input key: %s", skey);
 		free(skey);
 		return;
@@ -535,7 +547,10 @@ void ignite(Core *const C, const SyntaxNode op)
 	if(intakeout(C->U, area, 0, out))
 	{
 		char *const skey = strref(C->U, NULL, key);
-		item = op.pos.line;
+
+// 		item = op.pos.line;
+		// FIXME: добавить красоты о позиции в исходном файле
+
 		ERR("can't intake output list: %s", skey);
 		free(skey);
 		freelist((List *)out);
