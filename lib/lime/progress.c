@@ -192,7 +192,7 @@ static void activate(
 		char *const kstr = strref(U, NULL, reflist(st.inkeys));
 		char *const vstr = strref(U, NULL, reflist(st.invals));
 		assert(fprintf(stderr,
-			"\nactivating form\nkeys: %s\nvals: %s\noriginal\n",
+			"\nactivating form\nkeys: %s\nvals: %s\noriginal \n",
 			kstr, vstr) > 0);
 
 		free(kstr);

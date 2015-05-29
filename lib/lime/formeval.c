@@ -416,11 +416,14 @@ void dofenv(
 		char *const kstr = strref(U, NULL, tk);
 		freeref(tk);
 
-		item = nodeline(N);
-		ERR("node \"%s\": can't %s type for key: %s",
-			nodename(U, N),
-			len == 1 ? "locate" : "allocate",
-			kstr);
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": can't %s type for key: %s",
+// 			nodename(U, N),
+// 			len == 1 ? "locate" : "allocate",
+// 			kstr);
+
+		ERRNODE(U, N, "can't %s form for key: %s",
+			len == 1 ? "locate" : "allocate", kstr);
 
 		free(kstr);
 		return;

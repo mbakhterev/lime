@@ -19,21 +19,6 @@ static Array *newtarget(
 	Array *const U, const Array *const map, const Ref id, void *const ptr)
 {
 	return newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
-
-// 	Array *const T = newarea(U, readtoken(U, "INTERNAL"), areaenv(U, map));
-// 	assert(T);
-// 
-// 	Array *const links = arealinks(U, T);
-// 	assert(links);
-// 
-// // FIXME: оторвать за такое руки
-// // 	assert(linkmap(U, T,
-// // 		readtoken(U, "CTX"), readtoken(U, "SELF"), refkeymap(T)) == T);
-// 
-// 	assert(linkmap(U, links,
-// 		readtoken(U, "CTX"), readtoken(U, "SELF"), refkeymap(T)) == T);
-// 	
-// 	return T;
 }
 
 static Array *nextpoint(Array *const U, const Array *const map)
@@ -221,15 +206,20 @@ List *dorip(Array *const U, const Ref N, const Marks *const M)
 
 	if(isareaconsumed(U, area))
 	{
-		item = nodeline(N);
-		ERR("node \"%s\": area is already ripped", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": area is already ripped", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "area is already ripped");
+
 		return NULL;
 	}
 
 	if(isactive(U, area))
 	{
-		item = nodeline(N);
-		ERR("node \"%s\": can't rip active area", nodename(U, N));
+// 		item = nodeline(N);
+// 		ERR("node \"%s\": can't rip active area", nodename(U, N));
+
+		ERRNODE(U, N, "%s", "can't rip active area");
 		return NULL;
 	}
 

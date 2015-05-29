@@ -2,6 +2,7 @@
 #include "util.h"
 
 #include <assert.h>
+#include <stdint.h>
 
 #define DBGAR	1
 #define DBGAE	(1 << 1)
@@ -376,5 +377,15 @@ void riparea(
 
 unsigned isareaconsumed(Array *const U, const Array *const area)
 {
-	return areareactorcore(U, area, 1) == NULL;
+	const Array *const map = areareactorcore(U, area, 1);
+
+	// FIXME: по неким причинам у нас есть концепция "заглушки". Если
+	// указатель на таблицу в другой таблице находится в состоянии заглушки,
+	// то areareactorcore вернёт -1 (изначально это решение принимается в
+	// linkmap)
+
+	return map == NULL || map == (void *)(intptr_t)-1;
+
+
+// 	return areareactorcore(U, area, 1) == NULL;
 }
